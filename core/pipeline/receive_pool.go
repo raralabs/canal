@@ -9,21 +9,19 @@ import (
 // A receivePool pools messages from all the processors the receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
 type receivePool struct {
-	pipelineId  uint32
-	stageId     uint32
-	receiveFrom map[uint32]*Processor
-	errorSender chan<- message.Msg
-	runLock     atomic.Value
-	wg          sync.WaitGroup
+	stage       *stage                //
+	receiveFrom map[uint32]*Processor //
+	errorSender chan<- message.Msg    //
+	runLock     atomic.Value          //
+	wg          sync.WaitGroup        //
 }
 
 // newReceiverPool creates a new receivePool
-func newReceiverPool(pipeline *Pipeline, stageId uint32) receivePool {
+func newReceiverPool(stage *stage) receivePool {
 	return receivePool{
-		pipelineId:  pipeline.id,
-		stageId:     stageId,
+		stage:       stage,
 		receiveFrom: make(map[uint32]*Processor),
-		errorSender: pipeline.errorReceiver,
+		errorSender: stage.pipeline.errorReceiver,
 	}
 }
 
@@ -67,8 +65,8 @@ func (rp *receivePool) loop(pool processorPool) {
 	if len(rp.receiveFrom) > 0 {
 		rp.wg.Add(len(rp.receiveFrom))
 		for _, proc := range rp.receiveFrom {
-			rchan := proc.channelForStageId(rp.stageId)
-			go func(){
+			rchan := proc.channelForStageId(rp.stage)
+			go func() {
 				for pod := range rchan {
 					pool.execute(pod)
 				}
@@ -78,7 +76,7 @@ func (rp *receivePool) loop(pool processorPool) {
 		rp.wg.Wait()
 	}
 
-	println("Receiveloop exited, closing ", pool.getStage().name)
+	println("Receiveloop exited, closing ", pool.stage.name)
 	pool.close()
 }
 
@@ -88,5 +86,5 @@ func (rp *receivePool) isRunning() bool {
 }
 
 func (rp *receivePool) error(code uint8, text string) {
-	rp.errorSender <- message.NewError(rp.pipelineId, rp.stageId, 0, code, text)
+	rp.errorSender <- message.NewError(rp.stage.pipeline.id, rp.stage.id, 0, code, text)
 }

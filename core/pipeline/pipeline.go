@@ -11,19 +11,19 @@ import (
 // A Pipeline represents a group of stages that are connected among themselves
 // according to some specification.
 type Pipeline struct {
-	id            uint32            // id of the network
-	stages        map[uint32]*stage // stages stored by the network
-	errorReceiver chan message.Msg  // A receiver to receive all the errors in the network after execution
-	stageFactory  stageFactory      // Factory to create new Stages
-	runLock       atomic.Value      // signifies if the Pipeline is runLock
-	wg            sync.WaitGroup    // For waiting all Stages to finish
+	id            uint32           // id of the network
+	stages        []*stage         // stages stored by the network
+	errorReceiver chan message.Msg // A receiver to receive all the errors in the network after execution
+	stageFactory  stageFactory     // Factory to create new Stages
+	runLock       atomic.Value     // signifies if the Pipeline is runLock
+	wg            sync.WaitGroup   // For waiting all Stages to finish
 }
 
 // NewPipeline creates a new network with the given id.
 func NewPipeline(id uint32) *Pipeline {
 	p := &Pipeline{
 		id:            id,
-		stages:        make(map[uint32]*stage),
+		stages:        []*stage{},
 		errorReceiver: make(chan message.Msg, 100),
 	}
 
@@ -43,7 +43,7 @@ func (pl *Pipeline) AddSource(name string) *stage {
 	}
 
 	stg := pl.stageFactory.new(name, SOURCE)
-	pl.stages[stg.id] = stg
+	pl.stages = append(pl.stages, stg)
 	return stg
 }
 
@@ -54,7 +54,7 @@ func (pl *Pipeline) AddTransform(name string) *stage {
 	}
 
 	stg := pl.stageFactory.new(name, TRANSFORM)
-	pl.stages[stg.id] = stg
+	pl.stages = append(pl.stages, stg)
 	return stg
 }
 
@@ -65,17 +65,8 @@ func (pl *Pipeline) AddSink(name string) *stage {
 	}
 
 	stg := pl.stageFactory.new(name, SINK)
-	pl.stages[stg.id] = stg
+	pl.stages = append(pl.stages, stg)
 	return stg
-}
-
-// GetStage returns a stage with given id if it is present in the network.
-func (pl *Pipeline) GetStage(id uint32) *stage {
-	if s, ok := pl.stages[id]; ok {
-		return s
-	}
-
-	return nil
 }
 
 // runLock initializes a Pipeline and checks that the Pipeline is configured correctly and is ready for execution.

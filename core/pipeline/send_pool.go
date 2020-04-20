@@ -13,10 +13,8 @@ const (
 
 // A sendPool does the Fanout of messages to all connected receivers
 type sendPool struct {
-	pipeline    *Pipeline            //
-	stageId     uint32               //
-	processorId uint32               //
-	sendRoutes  map[uint32]sendRoute //
+	processor   *Processor           //
+	sendRoutes  map[*stage]sendRoute //
 	errorSender chan<- message.Msg   //
 	closed      atomic.Value         //
 	runLock     atomic.Value         //
@@ -25,13 +23,11 @@ type sendPool struct {
 }
 
 // newSendPool creates a new receivePool
-func newSendPool(pipeline *Pipeline, stageId uint32, processorId uint32) sendPool {
+func newSendPool(processor *Processor) sendPool {
 	return sendPool{
-		pipeline:    pipeline,
-		stageId:     stageId,
-		processorId: processorId,
-		sendRoutes:  make(map[uint32]sendRoute),
-		errorSender: pipeline.errorReceiver,
+		processor: processor,
+		sendRoutes:  make(map[*stage]sendRoute),
+		errorSender: processor.processorPool.stage.pipeline.errorReceiver,
 	}
 }
 
@@ -40,21 +36,21 @@ func (sp *sendPool) isConnected() bool {
 }
 
 // addSendTo registers a stage to which the sendPool is supposed to send the msg.
-func (sp *sendPool) addSendTo(stage *stage, route string) {
+func (sp *sendPool) addSendTo(stg *stage, route string) {
 	if sp.isLocked() {
 		return
 	}
 
-	if _, ok := sp.sendRoutes[stage.id]; !ok {
-		sp.sendRoutes[stage.id] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
+	if _, ok := sp.sendRoutes[stg]; !ok {
+		sp.sendRoutes[stg] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
 	}
 }
 
-func (sp *sendPool) getChannel(stageId uint32) <-chan msgPod {
-	readPath, ok := sp.sendRoutes[stageId]
+func (sp *sendPool) getChannel(stg *stage) <-chan msgPod {
+	readPath, ok := sp.sendRoutes[stg]
 
 	if !ok {
-		panic("Trying to get ReadChannel for stage not connected")
+		panic("Trying to get ReadChannel for stg not connected")
 	}
 
 	return readPath.sendChannel
@@ -67,8 +63,8 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 	}
 
 	sent := false
-	for stageId, route := range sp.sendRoutes {
-		if sp.pipeline.GetStage(stageId).isClosed() {
+	for stg, route := range sp.sendRoutes {
+		if stg.isClosed() {
 			continue
 		}
 
@@ -85,7 +81,11 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 }
 
 func (sp *sendPool) error(code uint8, text string) {
-	sp.errorSender <- message.NewError(sp.pipeline.id, sp.stageId, sp.processorId, code, text)
+	sp.errorSender <- message.NewError(
+		sp.processor.processorPool.stage.pipeline.id,
+		sp.processor.processorPool.stage.id,
+		sp.processor.id,
+		code, text)
 }
 
 func (sp *sendPool) isClosed() bool {

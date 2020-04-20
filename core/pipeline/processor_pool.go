@@ -9,23 +9,21 @@ import (
 // Sender sendChannel so that the other receivePool can connect to the Sender
 // sendChannel. It executes all the processors that it holds.
 type processorPool struct {
-	pipeline         *Pipeline
-	stageId          uint32
-	processors       map[uint32]*Processor
-	shortCircuit     bool
-	processorFactory processorFactory
-	runLock          atomic.Value
-	closed           atomic.Value
+	stage            *stage                //
+	processors       map[uint32]*Processor //
+	shortCircuit     bool                  //
+	processorFactory processorFactory      //
+	runLock          atomic.Value          //
+	closed           atomic.Value          //
 }
 
 // newProcessorPool creates a new processorPool with default values.
-func newProcessorPool(pipeline *Pipeline, stageId uint32) processorPool {
+func newProcessorPool(stage *stage) processorPool {
 	return processorPool{
-		pipeline:         pipeline,
-		stageId:          stageId,
+		stage:            stage,
 		shortCircuit:     false,
 		processors:       make(map[uint32]*Processor),
-		processorFactory: newProcessorFactory(pipeline, stageId),
+		processorFactory: newProcessorFactory(stage),
 	}
 }
 
@@ -34,10 +32,6 @@ func (pool *processorPool) shortCircuitProcessors() {
 		return
 	}
 	pool.shortCircuit = true
-}
-
-func (pool *processorPool) getStage() *stage {
-	return pool.pipeline.GetStage(pool.stageId)
 }
 
 // add adds a Processor to the list of processors to be executed
@@ -81,7 +75,7 @@ func (pool *processorPool) execute(pod msgPod) {
 		}
 
 		if processor.executor.ExecutorType() == SOURCE {
-			pod = newMsgPod(processor.statusMessage(pool.getStage().withTrace))
+			pod = newMsgPod(processor.statusMessage(pool.stage.withTrace))
 		}
 
 		accepted := processor.process(pod)
@@ -96,7 +90,7 @@ func (pool *processorPool) execute(pod msgPod) {
 
 	if allClosed {
 		pool.close()
-		println("All processors closed, closed processorpool ", pool.getStage().name)
+		println("All processors closed, closed processorpool ", pool.stage.name)
 	}
 }
 
@@ -121,35 +115,33 @@ func (pool *processorPool) isClosed() bool {
 
 // A processorFactory represents a factory that can produce processors(s).
 type processorFactory struct {
-	pipeline *Pipeline
-	stageId  uint32
-	hwm      uint32 // hwm is used to provide id to the transforms. It is incremented each time a new transforms is created.
+	stage *stage
+	hwm   uint32 // hwm is used to provide id to the transforms. It is incremented each time a new transforms is created.
 }
 
 // newProcessorFactory creates a new transforms producing factory.
-func newProcessorFactory(pipeline *Pipeline, stageId uint32) processorFactory {
+func newProcessorFactory(stage *stage) processorFactory {
 	// Multiply by 1000 just to ensure that processorId remain different for different processors in different stages
-	return processorFactory{pipeline: pipeline, stageId: stageId, hwm: stageId * 1000}
+	return processorFactory{stage: stage, hwm: stage.id * 1000}
 }
 
 // NewExecute creates a new transforms that is to be connected to 'hub' and 'executor' as the
 // main executing entity and returns it.
 func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Processor {
 	processorId := atomic.AddUint32(&factory.hwm, 1)
-	stage := factory.pipeline.GetStage(factory.stageId)
+	stage := factory.stage
 
 	p := &Processor{
 		id:          processorId,
-		pipelineId:  factory.pipeline.Id(),
-		stageId:     stage.id,
+		processorPool: &factory.stage.processorPool,
 		executor:    executor,
 		routes:      routeMap,
-		errorSender: factory.pipeline.errorReceiver,
-		mesFactory:  message.NewFactory(factory.pipeline.id, stage.id, processorId),
+		errorSender: factory.stage.pipeline.errorReceiver,
+		mesFactory:  message.NewFactory(factory.stage.pipeline.id, stage.id, processorId),
 	}
 
 	if stage.executorType != SINK {
-		p.sendPool = newSendPool(factory.pipeline, stage.id, processorId)
+		p.sendPool = newSendPool(p)
 	}
 
 	return p

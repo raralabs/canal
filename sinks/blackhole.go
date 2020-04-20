@@ -1,6 +1,5 @@
 package sinks
 
-
 import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"

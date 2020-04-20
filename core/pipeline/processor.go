@@ -10,8 +10,7 @@ import (
 // result appropriately, and sending the result to the sendPool for further execution.
 type Processor struct {
 	id              uint32             // id of the transforms
-	pipelineId      uint32             //
-	stageId         uint32             //
+	processorPool   *processorPool     //
 	executor        Executor           // executor associated with the Processor, can have only one executor
 	routes          msgRoutes          // routes for which the Processor should process the messages
 	sendPool        sendPool           // The sendPool to fanout the messages produced by this Processor to all its listeners
@@ -68,7 +67,7 @@ func (pr *Processor) Result(msg message.Msg, content message.MsgContent) {
 	pr.processLock.Lock()
 	// If sendPool can't send the messages, then there's no point in processing, so Close
 	if !pr.sendPool.send(m, false) {
-		println("Closing processor, could not send ", pr.sendPool.pipeline.GetStage(pr.stageId).name)
+		println("Closing processor, could not send ", pr.sendPool.processor.processorPool.stage.name)
 		pr.Close()
 	}
 	pr.processLock.Unlock()
@@ -98,8 +97,8 @@ func (pr *Processor) addSendTo(stage *stage, route string) {
 	pr.sendPool.addSendTo(stage, route)
 }
 
-func (pr *Processor) channelForStageId(stageId uint32) <-chan msgPod {
-	return pr.sendPool.getChannel(stageId)
+func (pr *Processor) channelForStageId(stage *stage) <-chan msgPod {
+	return pr.sendPool.getChannel(stage)
 }
 
 func (pr *Processor) isConnected() bool {

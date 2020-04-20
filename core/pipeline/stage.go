@@ -35,7 +35,7 @@ func (s *stage) GetId() uint32 {
 // This function can't be called on a stage of type SOURCE, since a source does
 // not receive messages from any other stages.
 func (s *stage) ReceiveFrom(route string, processors ...*Processor) *stage {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() {
 		return nil
 	}
 
@@ -46,10 +46,10 @@ func (s *stage) ReceiveFrom(route string, processors ...*Processor) *stage {
 	// add all the processors from other stages to the receivePool and connect the
 	// Processor to this s
 	for _, processor := range processors {
-		if s.pipeline.id != processor.pipelineId {
+		if s.pipeline.id != processor.processorPool.stage.pipeline.id {
 			panic("Cannot connect processors of different networks.")
 		}
-		if s.id == processor.stageId {
+		if s.id == processor.processorPool.stage.id {
 			panic("Can't connect processors of the same source.")
 		}
 
@@ -67,7 +67,7 @@ func (s *stage) ReceiveFrom(route string, processors ...*Processor) *stage {
 // add creates a new Processor in a stage with the executor
 // and adds it to the processorPool of the Stage. Returns the Processor that was created.
 func (s *stage) AddProcessor(executor Executor, routes ...string) *Processor {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() {
 		panic("error")
 	}
 
@@ -91,7 +91,7 @@ func (s *stage) AddProcessor(executor Executor, routes ...string) *Processor {
 }
 
 func (s *stage) ShortCircuit() *stage {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() {
 		return nil
 	}
 
@@ -100,7 +100,7 @@ func (s *stage) ShortCircuit() *stage {
 }
 
 func (s *stage) Trace() *stage {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() {
 		return nil
 	}
 
@@ -114,7 +114,7 @@ func (s *stage) Trace() *stage {
 
 // initStage initializes the stage.
 func (s *stage) lock() {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() {
 		return
 	}
 
@@ -148,7 +148,7 @@ sourceLoop:
 // after the stage has finished execution. The stage finishes it's execution if all
 // the processors associated with the stage have emitted Close Message.
 func (s *stage) loop(ctx context.Context, onComplete func()) {
-	if s.runLock.Load().(bool) {
+	if s.isRunning() || s.isClosed() {
 		return
 	}
 
@@ -177,6 +177,11 @@ func (s *stage) isClosed() bool {
 	return s.processorPool.isClosed()
 }
 
+func (s *stage) isRunning() bool {
+	r := s.runLock.Load()
+	return r != nil && r.(bool)
+}
+
 func (s *stage) String() string {
 	return fmt.Sprintf("s{id:%d type:%s}", s.id, s.executorType.String())
 }
@@ -191,23 +196,19 @@ func newStageFactory(pipeline *Pipeline) stageFactory {
 }
 
 func (sf *stageFactory) new(name string, executorType ExecutorType) *stage {
-	stageId := atomic.AddUint32(&sf.hwm, 1)
-
 	s := &stage{
-		id:            stageId,
+		id:            atomic.AddUint32(&sf.hwm, 1),
 		name:          name,
 		pipeline:      sf.pipeline,
 		executorType:  executorType,
 		errorSender:   sf.pipeline.errorReceiver,
-		processorPool: newProcessorPool(sf.pipeline, stageId),
 		routes:        make(msgRoutes),
 		withTrace:     false,
 	}
+	s.processorPool = newProcessorPool(s)
 	if executorType != SOURCE {
-		s.receivePool = newReceiverPool(sf.pipeline, stageId)
+		s.receivePool = newReceiverPool(s)
 	}
-
-	s.runLock.Store(false)
 
 	return s
 }
