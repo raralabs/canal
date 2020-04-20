@@ -31,7 +31,7 @@ if [ "$win" = true ] || [ "$linux" = true ]
 then
         # Run the godoc and run the server
         export python="$python"
-        bash -c 'sleep 5; "$python" -mwebbrowser http://localhost:8080/pkg/github.com/n-is/canal/; exit' &
+        bash -c 'sleep 5; "$python" -mwebbrowser http://localhost:8080/pkg/github.com/raralabs/canal/; exit' &
 
         echo "Generating Documentation. Please Wait."
         "$godoc" -http=:8080

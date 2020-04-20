@@ -1,8 +1,8 @@
 package sources
 
 import (
-	"github.com/n-is/canal/core/message"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 	"strconv"
 )
 

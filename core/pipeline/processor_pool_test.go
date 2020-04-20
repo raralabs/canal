@@ -2,7 +2,7 @@ package pipeline
 
 //
 //import (
-//	"github.com/n-is/canal/core"
+//	"github.com/raralabs/canal/core"
 //	"testing"
 //)
 //

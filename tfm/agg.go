@@ -1,8 +1,8 @@
 package tfm
 
 import (
-	"github.com/n-is/canal/core/message"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 type AggTfm struct {

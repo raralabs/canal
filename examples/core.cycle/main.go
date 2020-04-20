@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/n-is/canal/core/pipeline"
-	"github.com/n-is/canal/sinks"
-	"github.com/n-is/canal/sources"
-	"github.com/n-is/canal/transforms"
+	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/sinks"
+	"github.com/raralabs/canal/sources"
+	"github.com/raralabs/canal/transforms"
 	"time"
 )
 

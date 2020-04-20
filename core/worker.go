@@ -1,6 +1,6 @@
 package core
 
-import "github.com/n-is/canal/core/pipeline"
+import "github.com/raralabs/canal/core/pipeline"
 
 // A Worker is a wrapper around host that is responsible for adding various
 // networks to a host and lock them.

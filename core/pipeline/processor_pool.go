@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"github.com/n-is/canal/core/message"
+	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
 )
 

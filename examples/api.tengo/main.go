@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/d5/tengo"
 	"github.com/d5/tengo/stdlib"
-	"github.com/n-is/canal/core/message"
+	"github.com/raralabs/canal/core/message"
 )
 
 type TMes struct {

@@ -1,6 +1,6 @@
 # canal
 
-[![Build Status](https://travis-ci.com/n-is/canal.svg?token=DW7fs8Y8ozBN3DSsN2Uo&)](https://travis-ci.com/n-is/canal)
+[![Build Status](https://travis-ci.com/raralabs/canal.svg?token=DW7fs8Y8ozBN3DSsN2Uo&)](https://travis-ci.com/raralabs/canal)
 
 A distributed stream processing platform.
 
@@ -17,4 +17,4 @@ Or you can simply run the command
 godoc -http=:8080
 ```
 
-and open <http://localhost:8080/pkg/github.com/n-is/canal> to get the reference.
+and open <http://localhost:8080/pkg/github.com/raralabs/canal> to get the reference.

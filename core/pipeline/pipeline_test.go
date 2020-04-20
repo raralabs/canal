@@ -3,7 +3,7 @@ package pipeline
 //
 //import (
 //	"context"
-//	"github.com/n-is/canal/core/message"
+//	"github.com/raralabs/canal/core/message"
 //	"reflect"
 //	"testing"
 //

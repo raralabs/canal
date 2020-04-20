@@ -1,4 +1,4 @@
-module github.com/n-is/canal
+module github.com/raralabs/canal
 
 go 1.14
 
