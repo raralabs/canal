@@ -78,6 +78,7 @@ func (rp *receivePool) loop(pool processorPool) {
 		rp.wg.Wait()
 	}
 
+	println("Receiveloop exited, closing ", pool.getStage().name)
 	pool.close()
 }
 
@@ -88,11 +89,4 @@ func (rp *receivePool) isRunning() bool {
 
 func (rp *receivePool) error(code uint8, text string) {
 	rp.errorSender <- message.NewError(rp.pipelineId, rp.stageId, 0, code, text)
-}
-
-func execLoop(readChan <-chan msgPod, pool processorPool, onDone func()) {
-	for pod := range readChan {
-		pool.execute(pod)
-	}
-	onDone()
 }

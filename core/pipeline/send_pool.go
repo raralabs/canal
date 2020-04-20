@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	_SendBufferLength uint16 = 2
+	_SendBufferLength uint16 = 0
 	_SendTimeout             = 1 * time.Second
 )
 

@@ -96,12 +96,15 @@ func (pool *processorPool) execute(pod msgPod) {
 
 	if allClosed {
 		pool.close()
+		println("All processors closed, closed processorpool ", pool.getStage().name)
 	}
 }
 
 func (pool *processorPool) close() {
 	for _, processor := range pool.processors {
-		processor.Close()
+		if !processor.isClosed() {
+			processor.Close()
+		}
 	}
 	pool.closed.Store(true)
 }

@@ -13,13 +13,13 @@ func PassFunction() pipeline.Executor {
 
 	df := func(m message.Msg, proc *pipeline.Processor) bool {
 		time.Sleep(250 * time.Millisecond)
-		for i := 0; i < 4; i++ {
+		for i := 0; i < 2; i++ {
 			proc.Result(m, m.Content())
-		}
-
-		atomic.AddInt32(&cnt, 1)
-		if cnt >= 3 {
-			//proc.Close()
+			atomic.AddInt32(&cnt, 1)
+			if cnt >= 20 {
+				//println("PassFunction Closing processor in ", proc.Id())
+				//proc.Close()
+			}
 		}
 
 		return true

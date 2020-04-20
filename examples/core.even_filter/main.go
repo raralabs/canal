@@ -13,10 +13,10 @@ func main() {
 	p := pipeline.NewPipeline(1)
 
 	src1 := p.AddSource("FirstSource")
-	sp1 := src1.AddProcessor(sources.NewInlineRange(5))
+	sp1 := src1.AddProcessor(sources.NewInlineRange(3))
 
 	src2 := p.AddSource("SecondSource")
-	sp2 := src2.AddProcessor(sources.NewInlineRange(15))
+	sp2 := src2.AddProcessor(sources.NewInlineRange(5))
 
 	filter1 := p.AddTransform("FirstPass")
 	filter1.ReceiveFrom("f1p1", sp1)
@@ -29,7 +29,7 @@ func main() {
 
 	sink := p.AddSink("Sink")
 	sink.ReceiveFrom("sink", f2)
-	sink.AddProcessor(sinks.NewBlackholeSink())
+	sink.AddProcessor(sinks.NewStdoutSink())
 
 	p.Validate()
 
