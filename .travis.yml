@@ -1,0 +1,19 @@
+os: linux
+
+language: "go"
+
+jobs:
+  include:
+    - language: go
+
+      go: "1.13.x"
+      env:
+        global:
+          GO111MODULE=off
+
+      before_install:
+        - echo Starting Building and Testing The Repository
+
+      script:
+        - go build -v ./...
+        - go test -v ./...
