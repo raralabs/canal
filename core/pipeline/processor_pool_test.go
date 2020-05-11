@@ -53,7 +53,7 @@ package pipeline
 //	//// Initialize the receivePool
 //	//rp.initStage(true)
 //	//
-//	//// process the sendPool
+//	//// process the sndPool
 //	//sp.process(msg)
 //	//
 //	//// loop the receivePool work

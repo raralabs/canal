@@ -9,18 +9,17 @@ import (
 // A receivePool pools messages from all the processors the receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
 type receivePool struct {
-	stage       *stage                //
-	receiveFrom map[uint32]*Processor //
-	errorSender chan<- message.Msg    //
-	runLock     atomic.Value          //
-	wg          sync.WaitGroup        //
+	stage       *stage             //
+	receiveFrom []*Processor       //
+	errorSender chan<- message.Msg //
+	runLock     atomic.Value       //
 }
 
 // newReceiverPool creates a new receivePool
 func newReceiverPool(stage *stage) receivePool {
 	return receivePool{
 		stage:       stage,
-		receiveFrom: make(map[uint32]*Processor),
+		receiveFrom: []*Processor{},
 		errorSender: stage.pipeline.errorReceiver,
 	}
 }
@@ -31,11 +30,13 @@ func (rp *receivePool) addReceiveFrom(processor *Processor) {
 	if rp.isRunning() {
 		return
 	}
-	if _, ok := rp.receiveFrom[processor.id]; ok {
-		panic("Added same Processor twice in the receiver.")
+	for _, proc := range rp.receiveFrom {
+		if proc == processor {
+			panic("Added same Processor twice in the receiver.")
+		}
 	}
 
-	rp.receiveFrom[processor.id] = processor
+	rp.receiveFrom = append(rp.receiveFrom, processor)
 }
 
 // initStage initializes the receiver routes if the 'isSourceStage' is false
@@ -63,17 +64,18 @@ func (rp *receivePool) loop(pool processorPool) {
 	rp.runLock.Store(true)
 
 	if len(rp.receiveFrom) > 0 {
-		rp.wg.Add(len(rp.receiveFrom))
+		wg := sync.WaitGroup{}
+		wg.Add(len(rp.receiveFrom))
 		for _, proc := range rp.receiveFrom {
 			rchan := proc.channelForStageId(rp.stage)
 			go func() {
 				for pod := range rchan {
 					pool.execute(pod)
 				}
-				rp.wg.Done()
+				wg.Done()
 			}()
 		}
-		rp.wg.Wait()
+		wg.Wait()
 	}
 
 	println("Receiveloop exited, closing ", pool.stage.name)

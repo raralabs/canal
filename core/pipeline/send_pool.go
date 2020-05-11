@@ -11,43 +11,43 @@ const (
 	_SendTimeout             = 1 * time.Second
 )
 
-// A sendPool does the Fanout of messages to all connected receivers
+// A sndPool does the Fanout of messages to all connected receivers
 type sendPool struct {
-	processor   *Processor           //
-	sendRoutes  map[*stage]sendRoute //
-	errorSender chan<- message.Msg   //
-	closed      atomic.Value         //
-	runLock     atomic.Value         //
-	lastSentMid uint64               // id of the last sent msg by the Processor
-	totalSent   uint64               //
+	proc       *Processor           //
+	sndRoutes  map[*stage]sendRoute //
+	errSender  chan<- message.Msg   //
+	lastSndMid uint64               // id of the last sent msg by the Processor
+	totalSnd   uint64               //
+	closed     atomic.Value         //
+	runLock    atomic.Value         //
 }
 
 // newSendPool creates a new receivePool
 func newSendPool(processor *Processor) sendPool {
 	return sendPool{
-		processor: processor,
-		sendRoutes:  make(map[*stage]sendRoute),
-		errorSender: processor.processorPool.stage.pipeline.errorReceiver,
+		proc:      processor,
+		sndRoutes: make(map[*stage]sendRoute),
+		errSender: processor.errSender,
 	}
 }
 
 func (sp *sendPool) isConnected() bool {
-	return len(sp.sendRoutes) > 0
+	return len(sp.sndRoutes) > 0
 }
 
-// addSendTo registers a stage to which the sendPool is supposed to send the msg.
+// addSendTo registers a stage to which the sndPool is supposed to send the msg.
 func (sp *sendPool) addSendTo(stg *stage, route string) {
 	if sp.isLocked() {
 		return
 	}
 
-	if _, ok := sp.sendRoutes[stg]; !ok {
-		sp.sendRoutes[stg] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
+	if _, ok := sp.sndRoutes[stg]; !ok {
+		sp.sndRoutes[stg] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
 	}
 }
 
 func (sp *sendPool) getChannel(stg *stage) <-chan msgPod {
-	readPath, ok := sp.sendRoutes[stg]
+	readPath, ok := sp.sndRoutes[stg]
 
 	if !ok {
 		panic("Trying to get ReadChannel for stg not connected")
@@ -56,35 +56,38 @@ func (sp *sendPool) getChannel(stg *stage) <-chan msgPod {
 	return readPath.sendChannel
 }
 
-// send queues the messages to be sent to all the routes in the sendPool.
+// send queues the messages to be sent to all the routes in the sndPool.
 func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 	if sp.isClosed() || !sp.isLocked() {
 		return false
 	}
 
 	sent := false
-	for stg, route := range sp.sendRoutes {
+	for stg, route := range sp.sndRoutes {
 		if stg.isClosed() {
 			continue
 		}
 
-		sent = sent || route.send(mes, _SendTimeout, func() bool {
-			sp.error(1, "Timeout in sending "+route.routeName)
+		onTimeout := func() bool {
+			sp.error(1, "Timeout in sending to "+route.routeName)
 			return dropOnTimeout
-		})
+		}
+		sent = sent || route.send(mes, _SendTimeout, onTimeout)
 	}
 
-	sp.lastSentMid = mes.Id()
-	sp.totalSent++
+	if sent {
+		sp.lastSndMid = mes.Id()
+		sp.totalSnd++
+	}
 
 	return sent
 }
 
 func (sp *sendPool) error(code uint8, text string) {
-	sp.errorSender <- message.NewError(
-		sp.processor.processorPool.stage.pipeline.id,
-		sp.processor.processorPool.stage.id,
-		sp.processor.id,
+	sp.errSender <- message.NewError(
+		sp.proc.procPool.stage.pipeline.id,
+		sp.proc.procPool.stage.id,
+		sp.proc.id,
 		code, text)
 }
 
@@ -105,14 +108,14 @@ func (sp *sendPool) lock() {
 	sp.runLock.Store(true)
 }
 
-// Close closes the sendPool
+// Close closes the sndPool
 func (sp *sendPool) close() {
 	if sp.isClosed() {
 		return
 	}
 
 	sp.closed.Store(true)
-	for _, sendRoute := range sp.sendRoutes {
+	for _, sendRoute := range sp.sndRoutes {
 		close(sendRoute.sendChannel)
 	}
 }

@@ -5,24 +5,24 @@ import (
 	"sync/atomic"
 )
 
-// A processorPool collects data from multiple jobs and send them to their respective
+// A procPool collects data from multiple jobs and send them to their respective
 // Sender sendChannel so that the other receivePool can connect to the Sender
 // sendChannel. It executes all the processors that it holds.
 type processorPool struct {
-	stage            *stage                //
-	processors       map[uint32]*Processor //
-	shortCircuit     bool                  //
-	processorFactory processorFactory      //
-	runLock          atomic.Value          //
-	closed           atomic.Value          //
+	stage            *stage           //
+	processors       []*Processor     //
+	shortCircuit     bool             //
+	processorFactory processorFactory //
+	runLock          atomic.Value     //
+	closed           atomic.Value     //
 }
 
-// newProcessorPool creates a new processorPool with default values.
+// newProcessorPool creates a new procPool with default values.
 func newProcessorPool(stage *stage) processorPool {
 	return processorPool{
 		stage:            stage,
 		shortCircuit:     false,
-		processors:       make(map[uint32]*Processor),
+		processors:       []*Processor{},
 		processorFactory: newProcessorFactory(stage),
 	}
 }
@@ -41,19 +41,19 @@ func (pool *processorPool) add(executor Executor, routes msgRoutes) *Processor {
 	}
 
 	processor := pool.processorFactory.new(executor, routes)
-	pool.processors[processor.id] = processor
+	pool.processors = append(pool.processors, processor)
 
 	return processor
 }
 
-// initStage initializes the processorPool and checks if all the jobs registered to the
-// processorPool has been properly connected or not.
+// initStage initializes the procPool and checks if all the jobs registered to the
+// procPool has been properly connected or not.
 func (pool *processorPool) lock(stgRoutes msgRoutes) {
 	if pool.isRunning() {
 		return
 	}
 	if len(pool.processors) == 0 {
-		panic("processorPool should have at least one Processor.")
+		panic("procPool should have at least one Processor.")
 	}
 
 	for _, processor := range pool.processors {
@@ -128,20 +128,16 @@ func newProcessorFactory(stage *stage) processorFactory {
 // NewExecute creates a new transforms that is to be connected to 'hub' and 'executor' as the
 // main executing entity and returns it.
 func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Processor {
-	processorId := atomic.AddUint32(&factory.hwm, 1)
-	stage := factory.stage
-
 	p := &Processor{
-		id:          processorId,
-		processorPool: &factory.stage.processorPool,
-		executor:    executor,
-		routes:      routeMap,
-		errorSender: factory.stage.pipeline.errorReceiver,
-		mesFactory:  message.NewFactory(factory.stage.pipeline.id, stage.id, processorId),
+		id:        atomic.AddUint32(&factory.hwm, 1),
+		procPool:  &factory.stage.processorPool,
+		executor:  executor,
+		routes:    routeMap,
+		errSender: factory.stage.pipeline.errorReceiver,
 	}
-
-	if stage.executorType != SINK {
-		p.sendPool = newSendPool(p)
+	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)
+	if factory.stage.executorType != SINK {
+		p.sndPool = newSendPool(p)
 	}
 
 	return p

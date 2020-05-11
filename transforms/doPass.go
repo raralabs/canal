@@ -18,7 +18,7 @@ func PassFunction() pipeline.Executor {
 			atomic.AddInt32(&cnt, 1)
 			if cnt >= 20 {
 				//println("PassFunction Closing processor in ", proc.Id())
-				//proc.Close()
+				proc.Close()
 			}
 		}
 

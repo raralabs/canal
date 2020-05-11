@@ -4,16 +4,16 @@ import "sync/atomic"
 
 // A MessageFactory represents a factory that can produce message(s).
 type Factory struct {
-	PipelineId  uint32 //
-	StageId     uint32 //
-	ProcessorId uint32 //
+	pipelineId  uint32 //
+	stageId     uint32 //
+	processorId uint32 //
 	HWM         uint64 // hwm is used to provide id to the message.
 }
 
 // newMessageFactory creates a new un-traceable message producing factory on the
 // basis of provided parameters.
 func NewFactory(pipelineId uint32, stageId uint32, processorId uint32) Factory {
-	return Factory{PipelineId: pipelineId, StageId: stageId, ProcessorId: processorId, HWM: 0}
+	return Factory{pipelineId: pipelineId, stageId: stageId, processorId: processorId, HWM: 0}
 }
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
@@ -21,9 +21,9 @@ func (mf *Factory) NewExecuteRoot(content MsgContent, withTrace bool) Msg {
 	traceRoot := newTraceRoot(withTrace)
 	return Msg{
 		id:          atomic.AddUint64(&mf.HWM, 1),
-		pipelineId:  mf.PipelineId,
-		stageId:     mf.StageId,
-		processorId: mf.ProcessorId,
+		pipelineId:  mf.pipelineId,
+		stageId:     mf.stageId,
+		processorId: mf.processorId,
 		mtype:       EXECUTE,
 		mcontent:    content,
 		trace:       traceRoot,
@@ -34,9 +34,9 @@ func (mf *Factory) NewExecuteRoot(content MsgContent, withTrace bool) Msg {
 func (mf *Factory) NewExecute(srcMessage Msg, content MsgContent) Msg {
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
-		pipelineId:     mf.PipelineId,
-		stageId:        mf.StageId,
-		processorId:    mf.ProcessorId,
+		pipelineId:     mf.pipelineId,
+		stageId:        mf.stageId,
+		processorId:    mf.processorId,
 		srcStageId:     srcMessage.stageId,
 		srcProcessorId: srcMessage.processorId,
 		srcMessageId:   srcMessage.id,
@@ -60,9 +60,9 @@ func (mf *Factory) NewError(srcMessage *Msg, code uint8, mes string) Msg {
 
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
-		pipelineId:     mf.PipelineId,
-		stageId:        mf.StageId,
-		processorId:    mf.ProcessorId,
+		pipelineId:     mf.pipelineId,
+		stageId:        mf.stageId,
+		processorId:    mf.processorId,
 		srcStageId:     ssId,
 		srcProcessorId: spId,
 		srcMessageId:   smId,

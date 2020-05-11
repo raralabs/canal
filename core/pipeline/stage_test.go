@@ -50,7 +50,7 @@ package pipeline
 //		jobs = append(jobs, dummyHub.AddProcessor(e))
 //	}
 //
-//	t.Run("Testing sendRoutes", func(t *testing.T) {
+//	t.Run("Testing sndRoutes", func(t *testing.T) {
 //		h := stage.ReceiveFrom("default", jobs...)
 //
 //		// addSendTo jobs of stage to dummyHub. This just creates a cycle
@@ -83,12 +83,12 @@ package pipeline
 //		msg := mf.NewExecute(nil, &message.MsgContent{"Greet": message.NewFieldValue("Nihao", message.STRING)})
 //		doneMsg := message.NewDoneMessage()
 //
-//		dummyHub.processorPool.execute(msg)
-//		dummyHub.processorPool.execute(doneMsg)
+//		dummyHub.procPool.execute(msg)
+//		dummyHub.procPool.execute(doneMsg)
 //
 //		stage.loop(context.Background(), callback)
 //
-//		//for _, job := range stage.processorPool.processors {
+//		//for _, job := range stage.procPool.processors {
 //		//
 //		//	m := <-job.Sender
 //		//	if !reflect.DeepEqual(m, msg) {

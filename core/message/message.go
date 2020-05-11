@@ -27,7 +27,6 @@ type Msg struct {
 	mtype          MsgType    // MsgType of the message
 	mcontent       MsgContent // MsgContent of the message
 	trace          trace      // trace of the message
-
 }
 
 func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {

@@ -32,11 +32,11 @@ func BenchmarkProcessor(b *testing.B) {
 	}()
 
 	proc := Processor{
-		stageId:    1,
 		executor:   newDummyExecutor(TRANSFORM),
 		mesFactory: message.NewFactory(1, 1, 1),
-		sendPool:   newSendPool(1, 1, 1, errRecv),
+		errSender:  errRecv,
 	}
+	proc.sndPool = newSendPool(&proc)
 
 	receiver := make(chan msgPod, 1000)
 	go func() {
@@ -45,11 +45,13 @@ func BenchmarkProcessor(b *testing.B) {
 		}
 	}()
 
-	proc.sendPool.sendRoutes[1] = newSendRoute(receiver, "test")
+	proc.sndPool.sndRoutes[&stage{}] = newSendRoute(receiver, "test")
 	proc.lock(nil)
-	//proc.sendPool.close()
+	proc.sndPool.close()
 
 	for i := 0; i < b.N; i++ {
 		proc.process(msgPod{})
 	}
+
+	close(errRecv)
 }
