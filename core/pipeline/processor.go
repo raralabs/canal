@@ -26,7 +26,7 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 		panic("Pipeline not configured correctly.")
 	}
 
-	for route, _ := range pr.routes {
+	for route := range pr.routes {
 		if _, ok := stgRoutes[route]; !ok {
 			panic("Subscribing messages from a non existing route.")
 		}

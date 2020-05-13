@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"testing"
 )
 
 type dummyExecutor struct {
@@ -26,10 +27,27 @@ func (dummy *dummyExecutor) ExecutorType() ExecutorType {
 	return dummy.exeType
 }
 
-func (dummy *dummyExecutor) SetName(name string) {
+func (dummy *dummyExecutor) SetName(string) {
 
 }
 
 func (dummy *dummyExecutor) Name() string {
 	return "DummySource"
+}
+
+func TestDummyExecutor(t *testing.T) {
+	pipelineId := uint32(1)
+	msgF := message.NewFactory(pipelineId, 1, 1)
+
+	content := message.MsgContent{
+		"value": message.NewFieldValue(12, message.INT)	,
+	}
+
+	msg := msgF.NewExecuteRoot(content, false)
+
+	exec := newDummyExecutor(TRANSFORM)
+
+	_ = msg
+	_ = exec
+	//_ = proc
 }
