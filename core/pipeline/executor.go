@@ -38,7 +38,7 @@ func (et *ExecutorType) String() string {
 // joiner, counter, tumbling window functions and so on and do functions like
 // compute, pass, filter and so on.
 type Executor interface {
-	Execute(message.Msg, *Processor) bool
+	Execute(message.Msg, IProcessorExecutor) bool
 	HasLocalState() bool
 	ExecutorType() ExecutorType
 	SetName(name string)
