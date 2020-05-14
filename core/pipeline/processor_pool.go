@@ -1,29 +1,48 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
 )
+
+type IProcessorPool interface {
+	Attach(...IProcessor)
+
+	Detach(...IProcessor)
+
+	Execute(pod msgPod)
+
+	Error(uint8, error)
+
+	Done()
+}
 
 // A procPool collects data from multiple jobs and send them to their respective
 // Sender sendChannel so that the other receivePool can connect to the Sender
 // sendChannel. It executes all the processors that it holds.
 type processorPool struct {
 	stage            *stage           //
-	processors       []*Processor     //
 	shortCircuit     bool             //
 	processorFactory processorFactory //
 	runLock          atomic.Value     //
 	closed           atomic.Value     //
+
+	procMsgPaths map[msgRouteParam][]IProcessor // Maps the incoming route to a list of processors that subscribe to the path
 }
 
 // newProcessorPool creates a new procPool with default values.
 func newProcessorPool(stage *stage) processorPool {
+
+	procMsgPaths := make(map[msgRouteParam][]IProcessor)
+	for path := range procMsgPaths {
+		procMsgPaths[path] = make([]IProcessor, 2)
+	}
+
 	return processorPool{
 		stage:            stage,
 		shortCircuit:     false,
-		processors:       []*Processor{},
 		processorFactory: newProcessorFactory(stage),
+
+		procMsgPaths: procMsgPaths,
 	}
 }
 
@@ -35,13 +54,13 @@ func (pool *processorPool) shortCircuitProcessors() {
 }
 
 // add adds a Processor to the list of processors to be executed
-func (pool *processorPool) add(executor Executor, routes msgRoutes) *Processor {
+func (pool *processorPool) add(executor Executor, routes msgRoutes) IProcessor {
 	if pool.isRunning() {
 		return nil
 	}
 
 	processor := pool.processorFactory.new(executor, routes)
-	pool.processors = append(pool.processors, processor)
+	pool.Attach(processor)
 
 	return processor
 }
@@ -52,52 +71,108 @@ func (pool *processorPool) lock(stgRoutes msgRoutes) {
 	if pool.isRunning() {
 		return
 	}
-	if len(pool.processors) == 0 {
+	if len(pool.procMsgPaths) == 0 {
 		panic("procPool should have at least one Processor.")
 	}
 
-	for _, processor := range pool.processors {
-		processor.lock(stgRoutes)
+	for _, procs := range pool.procMsgPaths {
+		for _, proc := range procs {
+			proc.lock(stgRoutes)
+		}
 	}
 	pool.runLock.Store(true)
 }
 
-// process executes the corresponding process on all the processors with the same msg 'm'
-func (pool *processorPool) execute(pod msgPod) {
+// Attach attaches a processor to the processor pool. It also registers the processor, so that it can receive the
+// messages from the paths it has subscribed.
+func (pool *processorPool) Attach(procs ...IProcessor) {
+
+	for _, proc := range procs {
+		procRoutes := proc.incomingRoutes()
+
+		for path := range procRoutes {
+			for _, pr := range pool.procMsgPaths[path] {
+				if proc == pr {
+					goto nextProc
+				}
+			}
+			pool.procMsgPaths[path] = append(pool.procMsgPaths[path], proc)
+		}
+	nextProc:
+	}
+}
+
+// Attach detaches a processor from the processor pool. It also un-registers the processor, so that it no longer receive
+// the messages from the paths it had subscribed before.
+func (pool *processorPool) Detach(procs ...IProcessor) {
+
+	for _, proc := range procs {
+		procRoutes := proc.incomingRoutes()
+
+		for path := range procRoutes {
+			index := -1
+			for i, pr := range pool.procMsgPaths[path] {
+				if proc == pr {
+					index = i
+					break
+				}
+			}
+			if index != -1 {
+				pool.procMsgPaths[path] = removeProc(pool.procMsgPaths[path], index)
+			}
+		}
+	}
+}
+
+func removeProc(pr []IProcessor, i int) []IProcessor {
+	pr[i] = pr[len(pr)-1]
+	return pr[:len(pr)-1]
+}
+
+// Execute executes the corresponding Execute on all the processors with the same msg 'm', that has subscribed to the
+// path of msg 'm'
+func (pool *processorPool) Execute(pod msgPod) {
 	if pool.isClosed() || !pool.isRunning() {
 		return
 	}
 
 	allClosed := true
-	for _, processor := range pool.processors {
-		if processor.isClosed() {
+
+	for path, procs := range pool.procMsgPaths {
+		if path != pod.route {
 			continue
 		}
+		for _, proc := range procs {
+			if proc.isClosed() {
+				continue
+			}
 
-		if processor.executor.ExecutorType() == SOURCE {
-			pod = newMsgPod(processor.statusMessage(pool.stage.withTrace))
-		}
+			accepted := proc.process(pod.msg)
+			if !proc.isClosed() {
+				allClosed = false
+			}
 
-		accepted := processor.process(pod)
-		if !processor.isClosed() {
-			allClosed = false
-		}
-
-		if accepted && pool.shortCircuit {
-			break
+			if accepted && pool.shortCircuit {
+				break
+			}
 		}
 	}
 
 	if allClosed {
-		pool.close()
+		pool.Done()
 		println("All processors closed, closed processorpool ", pool.stage.name)
 	}
 }
 
-func (pool *processorPool) close() {
-	for _, processor := range pool.processors {
-		if !processor.isClosed() {
-			processor.Close()
+func (pool *processorPool) Error(uint8, error) {
+}
+
+func (pool *processorPool) Done() {
+	for _, processors := range pool.procMsgPaths {
+		for _, processor := range processors {
+			if !processor.isClosed() {
+				processor.Done()
+			}
 		}
 	}
 	pool.closed.Store(true)
@@ -111,34 +186,4 @@ func (pool *processorPool) isRunning() bool {
 func (pool *processorPool) isClosed() bool {
 	c := pool.closed.Load()
 	return c != nil && c.(bool)
-}
-
-// A processorFactory represents a factory that can produce processors(s).
-type processorFactory struct {
-	stage *stage
-	hwm   uint32 // hwm is used to provide id to the transforms. It is incremented each time a new transforms is created.
-}
-
-// newProcessorFactory creates a new transforms producing factory.
-func newProcessorFactory(stage *stage) processorFactory {
-	// Multiply by 1000 just to ensure that processorId remain different for different processors in different stages
-	return processorFactory{stage: stage, hwm: stage.id * 1000}
-}
-
-// NewExecute creates a new transforms that is to be connected to 'hub' and 'executor' as the
-// main executing entity and returns it.
-func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Processor {
-	p := &Processor{
-		id:        atomic.AddUint32(&factory.hwm, 1),
-		procPool:  &factory.stage.processorPool,
-		executor:  executor,
-		routes:    routeMap,
-		errSender: factory.stage.pipeline.errorReceiver,
-	}
-	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)
-	if factory.stage.executorType != SINK {
-		p.sndPool = newSendPool(p)
-	}
-
-	return p
 }

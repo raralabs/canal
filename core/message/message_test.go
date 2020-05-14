@@ -228,7 +228,7 @@ package message
 //	}{
 //		// TODO: add test cases.
 //		{"Empty Msg - No Pass", &Msg{}, false},
-//		{"Close Msg - Pass", &Msg{mtype: DONE}, true},
+//		{"Done Msg - Pass", &Msg{mtype: DONE}, true},
 //		{"Checkpoint Msg - Pass", &Msg{checkpointFlag: true}, true},
 //		{"Other Msg - No Pass", &Msg{id: 2}, false},
 //	}
@@ -281,12 +281,12 @@ package message
 //
 //			doneMsg := mf.NewDone()
 //			if got := doneMsg.IsDone(); got != true {
-//				t.Errorf("Close Msg should have doneFlag = %v, got = %v", true, got)
+//				t.Errorf("Done Msg should have doneFlag = %v, got = %v", true, got)
 //			}
 //
 //			doneMsg = mf.NewDone()
 //			if got := doneMsg.IsDone(); got != true {
-//				t.Errorf("Close Msg should have doneFlag = %v, got = %v", true, got)
+//				t.Errorf("Done Msg should have doneFlag = %v, got = %v", true, got)
 //			}
 //		})
 //	}
