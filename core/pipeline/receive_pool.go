@@ -70,7 +70,7 @@ func (rp *receivePool) loop(pool processorPool) {
 			rchan := proc.channelForStageId(rp.stage)
 			go func() {
 				for pod := range rchan {
-					pool.execute(pod)
+					pool.Execute(pod)
 				}
 				wg.Done()
 			}()
@@ -79,7 +79,7 @@ func (rp *receivePool) loop(pool processorPool) {
 	}
 
 	println("Receiveloop exited, closing ", pool.stage.name)
-	pool.close()
+	pool.Done()
 }
 
 func (rp *receivePool) isRunning() bool {

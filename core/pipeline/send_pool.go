@@ -36,7 +36,7 @@ func (sp *sendPool) isConnected() bool {
 }
 
 // addSendTo registers a stage to which the sndPool is supposed to send the msg.
-func (sp *sendPool) addSendTo(stg *stage, route string) {
+func (sp *sendPool) addSendTo(stg *stage, route msgRouteParam) {
 	if sp.isLocked() {
 		return
 	}
@@ -69,7 +69,7 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 		}
 
 		onTimeout := func() bool {
-			sp.error(1, "Timeout in sending to "+route.routeName)
+			sp.error(1, "Timeout in sending to "+string(route.route))
 			return dropOnTimeout
 		}
 		sent = sent || route.send(mes, _SendTimeout, onTimeout)
@@ -108,7 +108,7 @@ func (sp *sendPool) lock() {
 	sp.runLock.Store(true)
 }
 
-// Close closes the sndPool
+// Done closes the sndPool
 func (sp *sendPool) close() {
 	if sp.isClosed() {
 		return

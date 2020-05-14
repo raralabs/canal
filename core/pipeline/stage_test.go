@@ -83,8 +83,8 @@ package pipeline
 //		msg := mf.NewExecute(nil, &message.MsgContent{"Greet": message.NewFieldValue("Nihao", message.STRING)})
 //		doneMsg := message.NewDoneMessage()
 //
-//		dummyHub.procPool.execute(msg)
-//		dummyHub.procPool.execute(doneMsg)
+//		dummyHub.procPool.Execute(msg)
+//		dummyHub.procPool.Execute(doneMsg)
 //
 //		stage.loop(context.Background(), callback)
 //

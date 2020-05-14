@@ -42,9 +42,9 @@ package pipeline
 //	//
 //	//// Pass the msg through the transforms so there is data at the
 //	//// Sender sendChannel of the transforms
-//	//transform1.process(msg)
-//	//transform2.process(msg)
-//	//transform3.process(msg)
+//	//transform1.Execute(msg)
+//	//transform2.Execute(msg)
+//	//transform3.Execute(msg)
 //	//
 //	//// loop the receivePool work
 //	//count := 0
