@@ -6,27 +6,51 @@ import (
 	"sync/atomic"
 )
 
+type IProcessorForReceiver interface {
+	IProcessorCommon
+
+	IProcessorSender
+}
+
+type IReceivePool interface {
+	// addReceiveFrom registers a Processor as a sendChannel from which messages is to be received.
+	addReceiveFrom(processor IProcessorForReceiver)
+
+	// lock ...
+	lock()
+
+	// loop starts the collection of messages from various processors that have been registered to the receivePool and
+	//streams the messages to the processor pool.
+	loop(pool IProcessorPool)
+
+	// isRunning ...
+	isRunning() bool
+
+	// error ...
+	error(code uint8, text string)
+}
+
 // A receivePool pools messages from all the processors the receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
 type receivePool struct {
-	stage       *stage             //
-	receiveFrom []*Processor       //
-	errorSender chan<- message.Msg //
-	runLock     atomic.Value       //
+	stage       *stage                  //
+	receiveFrom []IProcessorForReceiver //
+	errorSender chan<- message.Msg      //
+	runLock     atomic.Value            //
 }
 
 // newReceiverPool creates a new receivePool
-func newReceiverPool(stage *stage) receivePool {
-	return receivePool{
+func newReceiverPool(stage *stage) *receivePool {
+	return &receivePool{
 		stage:       stage,
-		receiveFrom: []*Processor{},
+		receiveFrom: []IProcessorForReceiver{},
 		errorSender: stage.pipeline.errorReceiver,
 	}
 }
 
 // addReceiveFrom registers a Processor as a sendChannel from which messages is to be
 // received.
-func (rp *receivePool) addReceiveFrom(processor *Processor) {
+func (rp *receivePool) addReceiveFrom(processor IProcessorForReceiver) {
 	if rp.isRunning() {
 		return
 	}
@@ -57,7 +81,7 @@ func (rp *receivePool) lock() {
 
 // loop starts the collection of messages from various processors that have
 // been registered to the receivePool and streams the messages to Receiver.
-func (rp *receivePool) loop(pool processorPool) {
+func (rp *receivePool) loop(pool IProcessorPool) {
 	if rp.isRunning() {
 		return
 	}
@@ -70,7 +94,7 @@ func (rp *receivePool) loop(pool processorPool) {
 			rchan := proc.channelForStageId(rp.stage)
 			go func() {
 				for pod := range rchan {
-					pool.Execute(pod)
+					pool.execute(pod)
 				}
 				wg.Done()
 			}()
@@ -78,8 +102,8 @@ func (rp *receivePool) loop(pool processorPool) {
 		wg.Wait()
 	}
 
-	println("Receiveloop exited, closing ", pool.stage.name)
-	pool.Done()
+	//println("Receiveloop exited, closing ", rp.stage.name)
+	pool.done()
 }
 
 func (rp *receivePool) isRunning() bool {
