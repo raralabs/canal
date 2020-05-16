@@ -31,12 +31,12 @@ package pipeline
 //		assert.Zero(t, len(pipeline.stages), "No hubs have been added")
 //	})
 //
-//	var srcHub *stage
+//	var srcHub *stg
 //	t.Run("Testing AddSource", func(t *testing.T) {
 //		pipeline.AddSource()
 //		assert.Equal(t, 1, len(pipeline.stages), "Only one hub added to pipeline")
 //		srcHub = pipeline.stages[0]
-//		assert.Equal(t, SOURCE, srcHub.executorType, "stage is a source")
+//		assert.Equal(t, SOURCE, srcHub.executorType, "stg is a source")
 //
 //		// add source job(transforms) to the hub
 //		//exec := core.newDummySource(numMsgs)
@@ -47,7 +47,7 @@ package pipeline
 //		pipeline.AddTransform()
 //		assert.Equal(t, 2, len(pipeline.stages), "Two hubs added to pipeline")
 //		prcHub := pipeline.stages[1]
-//		assert.Equal(t, TRANSFORM, prcHub.executorType, "stage is a source")
+//		assert.Equal(t, TRANSFORM, prcHub.executorType, "stg is a source")
 //
 //		// add transforms job(transforms) to the hub
 //		//exec := core.newDummyExecutor()
@@ -62,7 +62,7 @@ package pipeline
 //		pipeline.AddSink()
 //		assert.Equal(t, 3, len(pipeline.stages), "Three hubs added to pipeline")
 //		snkHub := pipeline.stages[2]
-//		assert.Equal(t, SINK, snkHub.executorType, "stage is a source")
+//		assert.Equal(t, SINK, snkHub.executorType, "stg is a source")
 //
 //		// add transforms job(transforms) to the hub
 //		//snkExec = core.newDummySink()

@@ -21,7 +21,7 @@ func TestProcessorPool(t *testing.T) {
 		}
 		msg := msgF.NewExecuteRoot(content, false)
 
-		// Create pipeline and stage
+		// Create pipeline and stg
 		pipeline := NewPipeline(pipelineId)
 		stgFactory := newStageFactory(pipeline)
 
@@ -38,8 +38,9 @@ func TestProcessorPool(t *testing.T) {
 		pr := procPool.add(newDummyExecutor(TRANSFORM), route)
 
 		// Add a channel where the processor can dump it's output
-		receiver := make(chan msgPod, 1000)
-		pr.AddSendRoute(&stage{}, newSendRoute(receiver, "test"))
+		stg := stgFactory.new("Second Node", TRANSFORM)
+		pr.addSendTo(stg, "test")
+		receiver := pr.channelForStageId(stg)
 
 		procPool.lock(route)
 
@@ -49,7 +50,7 @@ func TestProcessorPool(t *testing.T) {
 				route: routeParam,
 			}
 
-			procPool.Execute(msgPack)
+			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
 				m := rcvd.msg
@@ -67,7 +68,7 @@ func TestProcessorPool(t *testing.T) {
 				route: routeParam,
 			}
 
-			procPool.Execute(msgPack)
+			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
 				m := rcvd.msg
@@ -85,7 +86,7 @@ func TestProcessorPool(t *testing.T) {
 				route: routeParam,
 			}
 
-			procPool.Execute(msgPack)
+			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
 				m := rcvd.msg
@@ -96,7 +97,7 @@ func TestProcessorPool(t *testing.T) {
 			}
 		})
 
-		procPool.Done()
+		procPool.done()
 	})
 
 	t.Run("Processor Pool with Two Dummy Processors", func(t *testing.T) {
@@ -109,7 +110,7 @@ func TestProcessorPool(t *testing.T) {
 		}
 		msg := msgF.NewExecuteRoot(content, false)
 
-		// Create pipeline and stage
+		// Create pipeline and stg
 		pipeline := NewPipeline(pipelineId)
 		stgFactory := newStageFactory(pipeline)
 
@@ -126,23 +127,25 @@ func TestProcessorPool(t *testing.T) {
 		pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route)
 		pr2 := newDummyProcessor(newDummyExecutor(TRANSFORM), route)
 
-		pr1Receiver := make(chan msgPod, 100)
-		pr2Receiver := make(chan msgPod, 100)
+		stg1 := &stage{}
+		pr1.addSendTo(stg1, "test1")
+		pr1Receiver := pr1.channelForStageId(stg1)
 
-		pr1.AddSendRoute(&stage{}, newSendRoute(pr1Receiver, "test1"))
-		pr2.AddSendRoute(&stage{}, newSendRoute(pr2Receiver, "test2"))
+		stg2 := &stage{}
+		pr2.addSendTo(stg2, "test2")
+		pr2Receiver := pr2.channelForStageId(stg2)
 
 		msgPack := msgPod{
 			msg:   msg,
 			route: routeParam,
 		}
 
-		procPool.Attach(pr1, pr2)
+		procPool.attach(pr1, pr2)
 		procPool.lock(route)
 
 		t.Run("With Both Processors", func(t *testing.T) {
 
-			procPool.Execute(msgPack)
+			procPool.execute(msgPack)
 			time.Sleep(1 * time.Microsecond)
 
 			t.Run("Check First", func(t *testing.T) {
@@ -168,9 +171,9 @@ func TestProcessorPool(t *testing.T) {
 
 			t.Run("-First", func(t *testing.T) {
 
-				procPool.Attach(pr1, pr2)
-				procPool.Detach(pr1)
-				procPool.Execute(msgPack)
+				procPool.attach(pr1, pr2)
+				procPool.detach(pr1)
+				procPool.execute(msgPack)
 				time.Sleep(1 * time.Microsecond)
 
 				rcvd := <-pr2Receiver
@@ -185,9 +188,9 @@ func TestProcessorPool(t *testing.T) {
 
 			t.Run("-Second", func(t *testing.T) {
 
-				procPool.Attach(pr1, pr2)
-				procPool.Detach(pr2)
-				procPool.Execute(msgPack)
+				procPool.attach(pr1, pr2)
+				procPool.detach(pr2)
+				procPool.execute(msgPack)
 				time.Sleep(1 * time.Microsecond)
 
 				rcvd := <-pr1Receiver
@@ -201,47 +204,49 @@ func TestProcessorPool(t *testing.T) {
 			})
 		})
 
-		close(pr1Receiver)
-		close(pr2Receiver)
 	})
 }
 
 func BenchmarkProcessorPool(b *testing.B) {
-	b.ReportAllocs()
 
-	pipelineId := uint32(1)
+	b.Run("Simple Processor Pool Bench", func(b *testing.B) {
+		b.ReportAllocs()
 
-	msgF := message.NewFactory(pipelineId, 1, 1)
-	content := message.MsgContent{
-		"value": message.NewFieldValue(12, message.INT),
-	}
-	msg := msgF.NewExecuteRoot(content, false)
+		pipelineId := uint32(1)
 
-	pipeline := NewPipeline(pipelineId)
-	stgFactory := newStageFactory(pipeline)
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := message.MsgContent{
+			"value": message.NewFieldValue(12, message.INT),
+		}
+		msg := msgF.NewExecuteRoot(content, false)
 
-	tStage := stgFactory.new("First Node", TRANSFORM)
-	procPool := newProcessorPool(tStage)
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
 
-	routeParam := msgRouteParam("path1")
-	route := msgRoutes{
-		routeParam: struct{}{},
-	}
+		tStage := stgFactory.new("First Node", TRANSFORM)
+		procPool := newProcessorPool(tStage)
 
-	pr := procPool.add(newDummyExecutor(TRANSFORM), route)
+		routeParam := msgRouteParam("path1")
+		route := msgRoutes{
+			routeParam: struct{}{},
+		}
 
-	receiver := make(chan msgPod, 1000)
-	pr.AddSendRoute(&stage{}, newSendRoute(receiver, "test"))
+		pr := procPool.add(newDummyExecutor(TRANSFORM), route)
 
-	procPool.lock(route)
+		stg := stgFactory.new("Second Node", TRANSFORM)
+		pr.addSendTo(stg, "test")
+		//receiver := pr.channelForStageId(stg)
 
-	msgPack := msgPod{
-		msg:   msg,
-		route: routeParam,
-	}
+		procPool.lock(route)
 
-	for i := 0; i < b.N; i++ {
-		procPool.Execute(msgPack)
-		procPool.Done()
-	}
+		msgPack := msgPod{
+			msg:   msg,
+			route: routeParam,
+		}
+
+		for i := 0; i < b.N; i++ {
+			procPool.execute(msgPack)
+			procPool.done()
+		}
+	})
 }

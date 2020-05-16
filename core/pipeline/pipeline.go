@@ -36,7 +36,7 @@ func (pl *Pipeline) Id() uint32 {
 	return pl.id
 }
 
-// AddSource adds a SOURCE stage to the network.
+// AddSource adds a SOURCE stg to the network.
 func (pl *Pipeline) AddSource(name string) *stage {
 	if pl.runLock.Load().(bool) {
 		return nil
@@ -47,7 +47,7 @@ func (pl *Pipeline) AddSource(name string) *stage {
 	return stg
 }
 
-// AddTransform adds a TRANSFORM stage to the network.
+// AddTransform adds a TRANSFORM stg to the network.
 func (pl *Pipeline) AddTransform(name string) *stage {
 	if pl.runLock.Load().(bool) {
 		return nil
@@ -58,7 +58,7 @@ func (pl *Pipeline) AddTransform(name string) *stage {
 	return stg
 }
 
-// AddSink adds a SINK stage to the network
+// AddSink adds a SINK stg to the network
 func (pl *Pipeline) AddSink(name string) *stage {
 	if pl.runLock.Load().(bool) {
 		return nil
@@ -96,7 +96,7 @@ func (pl *Pipeline) Start(ctx context.Context, done func()) {
 		}
 	}()
 
-	// Every stage runs its own goroutine, we should wait for all to finish
+	// Every stg runs its own goroutine, we should wait for all to finish
 	pl.wg.Add(len(pl.stages))
 	for _, stage := range pl.stages {
 		go stage.loop(ctx, pl.wg.Done)
