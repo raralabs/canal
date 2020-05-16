@@ -14,7 +14,7 @@ func newDummyExecutor(typ ExecutorType) Executor {
 	return &dummyExecutor{exeType: typ}
 }
 
-func (dummy *dummyExecutor) Execute(m message.Msg, proc IProcessorExecutor) bool {
+func (dummy *dummyExecutor) Execute(m message.Msg, proc IProcessorForExecutor) bool {
 	proc.Result(m, m.Content())
 	//proc.Done()
 	return true
