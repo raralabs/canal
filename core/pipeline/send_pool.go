@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	_SendBufferLength uint16 = 0
+	_SendBufferLength uint16 = 4
 	_SendTimeout             = 1 * time.Second
 )
 
@@ -35,7 +35,7 @@ func (sp *sendPool) isConnected() bool {
 	return len(sp.sndRoutes) > 0
 }
 
-// addSendTo registers a stage to which the sndPool is supposed to send the msg.
+// addSendTo registers a stg to which the sndPool is supposed to send the msg.
 func (sp *sendPool) addSendTo(stg *stage, route msgRouteParam) {
 	if sp.isLocked() {
 		return
@@ -85,8 +85,8 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 
 func (sp *sendPool) error(code uint8, text string) {
 	sp.errSender <- message.NewError(
-		sp.proc.procPool.stage.pipeline.id,
-		sp.proc.procPool.stage.id,
+		sp.proc.procPool.stage().pipeline.id,
+		sp.proc.procPool.stage().id,
 		sp.proc.id,
 		code, text)
 }

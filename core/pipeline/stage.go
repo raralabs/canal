@@ -11,21 +11,21 @@ type msgRouteParam string
 
 type msgRoutes map[msgRouteParam]struct{}
 
-// A stage represents an entity that is responsible for collecting messages from
+// A stg represents an entity that is responsible for collecting messages from
 // multiple other hubs and send the msg to the procPool. It is also
-// responsible for creating new jobs. A stage can be thought up as a complete
+// responsible for creating new jobs. A stg can be thought up as a complete
 // node of a graph of the stream or the network.
 type stage struct {
-	id            uint32             // id of the stage
+	id            uint32             // id of the stg
 	name          string             //
-	pipeline      *Pipeline          // id of the pipeline that the stage lies in
+	pipeline      *Pipeline          // id of the pipeline that the stg lies in
 	executorType  ExecutorType       // ValueType of transforms held by the hub
 	errorSender   chan<- message.Msg //
-	receivePool   receivePool        // receivePool associated with the hub
-	processorPool processorPool      // procPool associated with the hub
-	routes        msgRoutes          // The incoming msg routes for the stage
-	withTrace     bool               // If the messages originating from this stage should have trace enabled
-	runLock       atomic.Value       // If the stage is runLock now
+	receivePool   IReceivePool       // receivePool associated with the hub
+	processorPool IProcessorPool     // procPool associated with the hub
+	routes        msgRoutes          // The incoming msg routes for the stg
+	withTrace     bool               // If the messages originating from this stg should have trace enabled
+	runLock       atomic.Value       // If the stg is runLock now
 }
 
 func (stg *stage) GetId() uint32 {
@@ -33,10 +33,10 @@ func (stg *stage) GetId() uint32 {
 }
 
 // ReceiveFrom associates the processors from other stages with the
-// receivePool of this stage. Returns the stage after associating it with the Processor.
-// This function can't be called on a stage of type SOURCE, since a source does
+// receivePool of this stg. Returns the stg after associating it with the Processor.
+// This function can't be called on a stg of type SOURCE, since a source does
 // not receive messages from any other stages.
-func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...*Processor) *stage {
+func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...IProcessor) *stage {
 	if stg.isRunning() {
 		return nil
 	}
@@ -48,10 +48,10 @@ func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...*Processor) *st
 	// add all the processors from other stages to the receivePool and connect the
 	// Processor to this stg
 	for _, processor := range processors {
-		if stg.pipeline != processor.procPool.stage.pipeline {
+		if stg.pipeline != processor.processorPool().stage().pipeline {
 			panic("Cannot connect processors of different networks.")
 		}
-		if stg == processor.procPool.stage {
+		if stg == processor.processorPool().stage() {
 			panic("Can't connect processors of the same source.")
 		}
 
@@ -66,7 +66,7 @@ func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...*Processor) *st
 	return stg
 }
 
-// add creates a new Processor in a stage with the executor
+// add creates a new Processor in a stg with the executor
 // and adds it to the procPool of the Stage. Returns the Processor that was created.
 func (stg *stage) AddProcessor(executor Executor, routes ...msgRouteParam) IProcessor {
 	if stg.isRunning() {
@@ -114,7 +114,7 @@ func (stg *stage) Trace() *stage {
 	return stg
 }
 
-// initStage initializes the stage.
+// initStage initializes the stg.
 func (stg *stage) lock() {
 	if stg.isRunning() {
 		return
@@ -129,8 +129,8 @@ func (stg *stage) lock() {
 
 // In case of SOURCE nodes, since it does not have any receivePool, we will have to run
 // an infinite loop. It returns if the context timeouts or if the procPool return true
-// in its Execute function, which signifies that all the processors are DONE sending the msg
-func (stg *stage) srcLoop(c context.Context, pool processorPool) {
+// in its execute function, which signifies that all the processors are DONE sending the msg
+func (stg *stage) srcLoop(c context.Context, pool IProcessorPool) {
 sourceLoop:
 	for {
 		select {
@@ -138,7 +138,7 @@ sourceLoop:
 			stg.error(1, "Source Timeout")
 			break sourceLoop
 		default:
-			pool.Execute(msgPod{})
+			pool.execute(msgPod{})
 			if pool.isClosed() {
 				break sourceLoop
 			}
@@ -146,9 +146,9 @@ sourceLoop:
 	}
 }
 
-// loop starts the execution of the stage. The 'doneCallback' function is called
-// after the stage has finished execution. The stage finishes it's execution if all
-// the processors associated with the stage have emitted Done Message.
+// loop starts the execution of the stg. The 'doneCallback' function is called
+// after the stg has finished execution. The stg finishes it's execution if all
+// the processors associated with the stg have emitted Done Message.
 func (stg *stage) loop(ctx context.Context, onComplete func()) {
 	if stg.isRunning() || stg.isClosed() {
 		return
@@ -160,7 +160,7 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 		// If its a source Stage, run srcLoop. Context sent only to source, it will cascade.
 		stg.srcLoop(ctx, stg.processorPool)
 	} else {
-		// Else runs receivePool.loop to receive and Execute new messages
+		// Else runs receivePool.loop to receive and execute new messages
 		stg.receivePool.loop(stg.processorPool)
 	}
 
@@ -168,7 +168,7 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 	if onComplete != nil {
 		onComplete()
 	}
-	println("Closed stage ", stg.name)
+	println("Closed stg ", stg.name)
 }
 
 func (stg *stage) error(code uint8, text string) {
