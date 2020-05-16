@@ -4,46 +4,68 @@ import (
 	"sync/atomic"
 )
 
+type IProcessorForPool interface {
+	IProcessorCommon
+
+	IProcessorReceiver
+}
+
 type IProcessorPool interface {
-	Attach(...IProcessor)
+	add(executor Executor, routes msgRoutes) IProcessor
 
-	Detach(...IProcessor)
+	shortCircuitProcessors()
 
-	Execute(pod msgPod)
+	lock(stgRoutes msgRoutes)
 
-	Error(uint8, error)
+	isClosed() bool
 
-	Done()
+	isRunning() bool
+
+	stage() *stage
+
+	attach(...IProcessorForPool)
+
+	detach(...IProcessorForPool)
+
+	execute(pod msgPod)
+
+	error(uint8, error)
+
+	done()
 }
 
 // A procPool collects data from multiple jobs and send them to their respective
 // Sender sendChannel so that the other receivePool can connect to the Sender
 // sendChannel. It executes all the processors that it holds.
 type processorPool struct {
-	stage            *stage           //
+	stg              *stage           //
 	shortCircuit     bool             //
 	processorFactory processorFactory //
 	runLock          atomic.Value     //
 	closed           atomic.Value     //
 
-	procMsgPaths map[msgRouteParam][]IProcessor // Maps the incoming route to a list of processors that subscribe to the path
+	procMsgPaths map[msgRouteParam][]IProcessorForPool // Maps the incoming route to a list of processors that subscribe to the path
 }
 
 // newProcessorPool creates a new procPool with default values.
-func newProcessorPool(stage *stage) processorPool {
+func newProcessorPool(stage *stage) *processorPool {
 
-	procMsgPaths := make(map[msgRouteParam][]IProcessor)
+	procMsgPaths := make(map[msgRouteParam][]IProcessorForPool)
 	for path := range procMsgPaths {
-		procMsgPaths[path] = make([]IProcessor, 2)
+		procMsgPaths[path] = make([]IProcessorForPool, 2)
 	}
 
-	return processorPool{
-		stage:            stage,
+	return &processorPool{
+		stg:              stage,
 		shortCircuit:     false,
 		processorFactory: newProcessorFactory(stage),
 
 		procMsgPaths: procMsgPaths,
 	}
+}
+
+func (pool *processorPool) stage() *stage {
+	return pool.stg
 }
 
 func (pool *processorPool) shortCircuitProcessors() {
@@ -60,7 +82,7 @@ func (pool *processorPool) add(executor Executor, routes msgRoutes) IProcessor {
 	}
 
 	processor := pool.processorFactory.new(executor, routes)
-	pool.Attach(processor)
+	pool.attach(processor)
 
 	return processor
 }
@@ -83,9 +105,9 @@ func (pool *processorPool) lock(stgRoutes msgRoutes) {
 	pool.runLock.Store(true)
 }
 
-// Attach attaches a processor to the processor pool. It also registers the processor, so that it can receive the
+// attach attaches a processor to the processor pool. It also registers the processor, so that it can receive the
 // messages from the paths it has subscribed.
-func (pool *processorPool) Attach(procs ...IProcessor) {
+func (pool *processorPool) attach(procs ...IProcessorForPool) {
 
 	for _, proc := range procs {
 		procRoutes := proc.incomingRoutes()
@@ -102,9 +124,9 @@ func (pool *processorPool) Attach(procs ...IProcessor) {
 	}
 }
 
-// Attach detaches a processor from the processor pool. It also un-registers the processor, so that it no longer receive
+// attach detaches a processor from the processor pool. It also un-registers the processor, so that it no longer receive
 // the messages from the paths it had subscribed before.
-func (pool *processorPool) Detach(procs ...IProcessor) {
+func (pool *processorPool) detach(procs ...IProcessorForPool) {
 
 	for _, proc := range procs {
 		procRoutes := proc.incomingRoutes()
@@ -118,20 +140,20 @@ func (pool *processorPool) Detach(procs ...IProcessor) {
 				}
 			}
 			if index != -1 {
-				pool.procMsgPaths[path] = removeProc(pool.procMsgPaths[path], index)
+				pool.procMsgPaths[path] = removeProcRecv(pool.procMsgPaths[path], index)
 			}
 		}
 	}
 }
 
-func removeProc(pr []IProcessor, i int) []IProcessor {
+func removeProcRecv(pr []IProcessorForPool, i int) []IProcessorForPool {
 	pr[i] = pr[len(pr)-1]
 	return pr[:len(pr)-1]
 }
 
-// Execute executes the corresponding Execute on all the processors with the same msg 'm', that has subscribed to the
+// execute executes the corresponding execute on all the processors with the same msg 'm', that has subscribed to the
 // path of msg 'm'
-func (pool *processorPool) Execute(pod msgPod) {
+func (pool *processorPool) execute(pod msgPod) {
 	if pool.isClosed() || !pool.isRunning() {
 		return
 	}
@@ -159,15 +181,15 @@ func (pool *processorPool) Execute(pod msgPod) {
 	}
 
 	if allClosed {
-		pool.Done()
-		println("All processors closed, closed processorpool ", pool.stage.name)
+		pool.done()
+		println("All processors closed, closed processorpool ", pool.stg.name)
 	}
 }
 
-func (pool *processorPool) Error(uint8, error) {
+func (pool *processorPool) error(uint8, error) {
 }
 
-func (pool *processorPool) Done() {
+func (pool *processorPool) done() {
 	for _, processors := range pool.procMsgPaths {
 		for _, processor := range processors {
 			if !processor.isClosed() {
