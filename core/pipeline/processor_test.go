@@ -61,9 +61,6 @@ func (d *dummyProcessor) incomingRoutes() msgRoutes {
 func (d *dummyProcessor) lock(msgRoutes) {
 	return
 }
-func (d *dummyProcessor) AddSendRoute(s *stage, route sendRoute) {
-	d.outRoute = route
-}
 func (d *dummyProcessor) isClosed() bool {
 
 	if d.exec.ExecutorType() == SINK {
@@ -71,6 +68,22 @@ func (d *dummyProcessor) isClosed() bool {
 	}
 	return d.closed
 }
+
+func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
+	sendChannel:= make(chan msgPod, _SendBufferLength)
+	d.outRoute = newSendRoute(sendChannel, route)
+}
+func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
+	return d.outRoute.sendChannel
+}
+
+func (d *dummyProcessor) isConnected() bool {
+	if d.exec.ExecutorType() == SINK {
+		return true
+	}
+	return d.outRoute.sendChannel != nil
+}
+
 
 func ExpectPanic(t *testing.T) {
 	if r := recover(); r == nil {
@@ -105,14 +118,10 @@ func BenchmarkProcessor(b *testing.B) {
 	}
 	proc.sndPool = newSendPool(&proc)
 
-	receiver := make(chan msgPod, 1000)
-	go func() {
-		for pod := range receiver {
-			pod.msg.Id()
-		}
-	}()
+	stg := &stage{}
+	proc.addSendTo(stg, "test")
+	//receiver := pr.channelForStageId(stg)
 
-	proc.AddSendRoute(&stage{}, newSendRoute(receiver, "test"))
 	proc.lock(nil)
 	proc.sndPool.close()
 
