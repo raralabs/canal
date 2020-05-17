@@ -73,7 +73,6 @@ func TestStage(t *testing.T) {
 			})
 		})
 
-
 		t.Run("TRANSFORM", func(t *testing.T) {
 
 			stg := &stage{
@@ -118,7 +117,6 @@ func TestStage(t *testing.T) {
 			sendStg.lock()
 			go stg.loop(ctx, func() {
 			})
-
 
 			msgF := message.NewFactory(pipelineId, 3, 1)
 			content := message.MsgContent{

@@ -26,9 +26,8 @@ func (d *dummyProcessorForReceiver) isConnected() bool {
 	return d.sendChannel != nil
 }
 
-
 type dummyReceivePool struct {
-	stg *stage
+	stg         *stage
 	receiveFrom []IProcessorForReceiver
 }
 
@@ -68,7 +67,6 @@ func (drp *dummyReceivePool) isRunning() bool {
 
 func (drp *dummyReceivePool) error(code uint8, text string) {
 }
-
 
 func TestReceivePool(t *testing.T) {
 
