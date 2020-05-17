@@ -29,13 +29,15 @@ type dummyProcessor struct {
 	routes   msgRoutes
 	closed   bool
 	outRoute sendRoute
+	prPool   IProcessorPool
 }
 
-func newDummyProcessor(exec Executor, routes msgRoutes) *dummyProcessor {
+func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *dummyProcessor {
 	return &dummyProcessor{
 		exec:   exec,
 		routes: routes,
 		closed: false,
+		prPool: prPool,
 	}
 }
 func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
@@ -47,9 +49,9 @@ func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
 	d.outRoute.sendChannel <- msgPack
 }
 func (d *dummyProcessor) Error(uint8, error) {
-	panic("implement me")
 }
 func (d *dummyProcessor) Done() {
+	close(d.outRoute.sendChannel)
 	d.closed = true
 }
 func (d *dummyProcessor) process(msg message.Msg) bool {
@@ -70,7 +72,7 @@ func (d *dummyProcessor) isClosed() bool {
 }
 
 func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
-	sendChannel:= make(chan msgPod, _SendBufferLength)
+	sendChannel := make(chan msgPod, _SendBufferLength)
 	d.outRoute = newSendRoute(sendChannel, route)
 }
 func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
@@ -83,7 +85,9 @@ func (d *dummyProcessor) isConnected() bool {
 	}
 	return d.outRoute.sendChannel != nil
 }
-
+func (d *dummyProcessor) processorPool() IProcessorPool {
+	return d.prPool
+}
 
 func ExpectPanic(t *testing.T) {
 	if r := recover(); r == nil {

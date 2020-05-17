@@ -51,9 +51,6 @@ type processorPool struct {
 func newProcessorPool(stage *stage) *processorPool {
 
 	procMsgPaths := make(map[msgRouteParam][]IProcessorForPool)
-	for path := range procMsgPaths {
-		procMsgPaths[path] = make([]IProcessorForPool, 2)
-	}
 
 	return &processorPool{
 		stg:              stage,

@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -58,4 +59,16 @@ func TestDummyExecutor(t *testing.T) {
 	_ = msg
 	_ = exec
 	_ = proc
+}
+
+func TestExecutorType_String(t *testing.T) {
+	et := SOURCE
+	assert.Equal(t, "SOURCE", et.String())
+	et = TRANSFORM
+	assert.Equal(t, "TRANSFORM", et.String())
+	et = SINK
+	assert.Equal(t, "SINK", et.String())
+
+	et = ExecutorType(255)
+	assert.Equal(t, "UNKNOWN", et.String())
 }

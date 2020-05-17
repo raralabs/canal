@@ -3,6 +3,7 @@ package pipeline
 import (
 	"github.com/raralabs/canal/core/message"
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -25,45 +26,49 @@ func (d *dummyProcessorForReceiver) isConnected() bool {
 	return d.sendChannel != nil
 }
 
-// This dummy struct mocks a Processor Pool from the perspective of a receive pool. So we will only implement following:
-// execute(), done()
-type dummyProcessorPool struct {
-	outRoute chan msgPod
+
+type dummyReceivePool struct {
+	stg *stage
+	receiveFrom []IProcessorForReceiver
 }
 
-func newDummyProcessorPool(route msgRouteParam) *dummyProcessorPool {
-	sendChannel := make(chan msgPod, _SendBufferLength)
-	return &dummyProcessorPool{
-		outRoute: sendChannel,
+func newDummyReceivePool(s *stage) *dummyReceivePool {
+	return &dummyReceivePool{
+		stg: s,
 	}
 }
-func (d *dummyProcessorPool) add(exec Executor, routes msgRoutes) IProcessor {
-	return nil
+
+func (drp *dummyReceivePool) addReceiveFrom(processor IProcessorForReceiver) {
+	drp.receiveFrom = append(drp.receiveFrom, processor)
 }
-func (d *dummyProcessorPool) shortCircuitProcessors() {
+
+func (drp *dummyReceivePool) lock() {
 }
-func (d *dummyProcessorPool) lock(stgRoutes msgRoutes) {
+
+func (drp *dummyReceivePool) loop(pool IProcessorPool) {
+	if len(drp.receiveFrom) > 0 {
+		wg := sync.WaitGroup{}
+		wg.Add(len(drp.receiveFrom))
+		for _, proc := range drp.receiveFrom {
+			rchan := proc.channelForStageId(drp.stg)
+			go func() {
+				for pod := range rchan {
+					pool.execute(pod)
+				}
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+	}
 }
-func (d *dummyProcessorPool) isClosed() bool {
-	return false
-}
-func (d *dummyProcessorPool) isRunning() bool {
+
+func (drp *dummyReceivePool) isRunning() bool {
 	return true
 }
-func (d *dummyProcessorPool) stage() *stage {
-	return nil
+
+func (drp *dummyReceivePool) error(code uint8, text string) {
 }
-func (d *dummyProcessorPool) attach(pool ...IProcessorForPool) {
-}
-func (d *dummyProcessorPool) detach(pool ...IProcessorForPool) {
-}
-func (d *dummyProcessorPool) execute(pod msgPod) {
-	d.outRoute <- pod
-}
-func (d *dummyProcessorPool) error(u uint8, err error) {
-}
-func (d *dummyProcessorPool) done() {
-}
+
 
 func TestReceivePool(t *testing.T) {
 
@@ -86,19 +91,19 @@ func TestReceivePool(t *testing.T) {
 		pipeline := NewPipeline(pipelineId)
 		stgFactory := newStageFactory(pipeline)
 
-		// Create a stage that sends messages
-		sendStage := stgFactory.new("First Node", TRANSFORM)
-		pr := &dummyProcessorForReceiver{}
-		pr.addSendTo(sendStage, routeParam)
-
 		// Create a stage that receives messages
 		rcvStage := stgFactory.new("Second Node", TRANSFORM)
-		rcvPool := newReceiverPool(rcvStage)
+		rcvPool := rcvStage.receivePool
+
+		// Create a processor that sends messages
+		pr := &dummyProcessorForReceiver{}
+		pr.addSendTo(rcvStage, routeParam)
+
 		rcvPool.addReceiveFrom(pr)
 		rcvPool.lock()
 
 		// Create a dummy processor pool to intercept message sent by receiver
-		dummyPP := newDummyProcessorPool("path2")
+		dummyPP := newDummyProcessorPool("path2", nil)
 
 		// Run receiver pool in a separate thread. It blocks till all the receiving channels are closed.
 		go rcvPool.loop(dummyPP)
@@ -115,7 +120,6 @@ func TestReceivePool(t *testing.T) {
 		}
 
 		close(pr.sendChannel)
-		close(dummyPP.outRoute)
 	})
 
 }
@@ -154,7 +158,7 @@ func BenchmarkReceivePool(b *testing.B) {
 		rcvPool.lock()
 
 		// Create a dummy processor pool to intercept message sent by receiver
-		dummyPP := newDummyProcessorPool("path2")
+		dummyPP := newDummyProcessorPool("path2", nil)
 
 		for i := 0; i < b.N; i++ {
 			// Run receiver pool in a separate thread. It blocks till all the receiving channels are closed.

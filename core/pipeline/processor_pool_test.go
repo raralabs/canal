@@ -4,9 +4,78 @@ import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/stretchr/testify/assert"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
+
+// This dummy struct mocks a Processor Pool from the perspective of a receive pool. So we will only implement following:
+// execute(), done()
+type dummyProcessorPool struct {
+	routeMu    *sync.Mutex
+	outRoute   chan msgPod
+	chanClosed bool
+	stg        *stage
+}
+
+func newDummyProcessorPool(route msgRouteParam, stg *stage) *dummyProcessorPool {
+	sendChannel := make(chan msgPod, _SendBufferLength)
+	return &dummyProcessorPool{
+		outRoute:   sendChannel,
+		chanClosed: false,
+		routeMu:    &sync.Mutex{},
+		stg:        stg,
+	}
+}
+func (d *dummyProcessorPool) add(exec Executor, routes msgRoutes) IProcessor {
+	return nil
+}
+func (d *dummyProcessorPool) shortCircuitProcessors() {
+}
+func (d *dummyProcessorPool) lock(stgRoutes msgRoutes) {
+}
+func (d *dummyProcessorPool) isClosed() bool {
+	d.routeMu.Lock()
+	defer d.routeMu.Unlock()
+
+	return d.chanClosed
+}
+func (d *dummyProcessorPool) isRunning() bool {
+	d.routeMu.Lock()
+	defer d.routeMu.Unlock()
+
+	return !d.chanClosed
+}
+func (d *dummyProcessorPool) stage() *stage {
+	return d.stg
+}
+func (d *dummyProcessorPool) attach(pool ...IProcessorForPool) {
+}
+func (d *dummyProcessorPool) detach(pool ...IProcessorForPool) {
+}
+func (d *dummyProcessorPool) execute(pod msgPod) {
+	//if d.isClosed() {
+	//	return
+	//}
+
+	d.routeMu.Lock()
+	defer d.routeMu.Unlock()
+
+	if d.chanClosed {
+		return
+	}
+
+	d.outRoute <- pod
+}
+func (d *dummyProcessorPool) error(u uint8, err error) {
+}
+func (d *dummyProcessorPool) done() {
+	d.routeMu.Lock()
+	defer d.routeMu.Unlock()
+
+	close(d.outRoute)
+	d.chanClosed = true
+}
 
 func TestProcessorPool(t *testing.T) {
 
@@ -124,8 +193,8 @@ func TestProcessorPool(t *testing.T) {
 		}
 
 		// Create Processors
-		pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route)
-		pr2 := newDummyProcessor(newDummyExecutor(TRANSFORM), route)
+		pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
+		pr2 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
 
 		stg1 := &stage{}
 		pr1.addSendTo(stg1, "test1")
