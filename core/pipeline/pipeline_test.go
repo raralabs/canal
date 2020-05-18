@@ -119,3 +119,49 @@ func TestPipeline(t *testing.T) {
 
 	cancel()
 }
+
+func BenchmarkPipeline(b *testing.B) {
+	b.ReportAllocs()
+
+	pipelineId := uint32(1)
+
+	pipeline := NewPipeline(pipelineId)
+
+	srcStg := pipeline.AddSource("Generator")
+	trnStg := pipeline.AddTransform("Filter")
+	snkStg := pipeline.AddSink("BlackHole")
+
+	src := srcStg.AddProcessor(newNumberGenerator(100))
+
+	trnStg.ReceiveFrom("path1", src)
+	tr := trnStg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+
+	snkCh := make(chan message.Msg, 100)
+	snkStg.ReceiveFrom("path2", tr)
+	snkStg.AddProcessor(newSink(snkCh), "")
+
+	pipeline.Validate()
+
+	bckGnd := context.Background()
+	d := time.Now().Add(10 * time.Millisecond)
+	ctx, cancel := context.WithDeadline(bckGnd, d)
+
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for {
+				_, ok := <-snkCh
+				if !ok {
+					break
+				}
+			}
+		}()
+
+		testAfterCompletion := func() {
+			close(snkCh)
+		}
+
+		pipeline.Start(ctx, testAfterCompletion)
+	}
+
+	cancel()
+}
