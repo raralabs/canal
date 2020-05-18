@@ -176,7 +176,6 @@ func BenchmarkReceivePool(b *testing.B) {
 
 		}
 		close(pr.sendChannel)
-		close(dummyPP.outRoute)
 	})
 
 }
