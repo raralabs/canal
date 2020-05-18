@@ -6,12 +6,17 @@ import (
 	"sync/atomic"
 )
 
+// An IProcessorForReceiver is a lite version of IProcessor that is designed for the IReceivePool. IProcessor can also
+// be passed, wherever IProcessorForReceiver can be passed, to achieve the same result.
 type IProcessorForReceiver interface {
 	IProcessorCommon
 
 	IProcessorSender
 }
 
+// IReceivePool defines the interface for a receive pool in a stage. A receive pool is responsible for collecting
+// messages from various processors and passing it to the processor pool. The receive pool collects message, along with
+// their route information.
 type IReceivePool interface {
 	// addReceiveFrom registers a Processor as a sendChannel from which messages is to be received.
 	addReceiveFrom(processor IProcessorForReceiver)
@@ -23,19 +28,20 @@ type IReceivePool interface {
 	//streams the messages to the processor pool.
 	loop(pool IProcessorPool)
 
-	// isRunning ...
+	// isRunning checks if a receive pool is running.
 	isRunning() bool
 
-	// error ...
+	// error sends the errors produced during the execution to appropriate channels.
 	error(code uint8, text string)
 }
 
 // A receivePool pools messages from all the processors the receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
+// It implements the IReceivePool interface.
 type receivePool struct {
-	stage       *stage                  //
-	receiveFrom []IProcessorForReceiver //
-	errorSender chan<- message.Msg      //
+	stage       *stage                  // Stage that the receive pool belongs to
+	receiveFrom []IProcessorForReceiver // processors from which messages is to be collected
+	errorSender chan<- message.Msg      // error channel
 	runLock     atomic.Value            //
 }
 

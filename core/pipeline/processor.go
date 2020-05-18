@@ -9,6 +9,7 @@ import (
 // A Processor represents an entity that wraps up a executor and handles
 // things like providing messages to the executor for execution, returning the
 // result appropriately, and sending the result to the sndPool for further execution.
+// It implements the IProcessor interface.
 type Processor struct {
 	id         uint32             // id of the transforms
 	procPool   IProcessorPool     //
