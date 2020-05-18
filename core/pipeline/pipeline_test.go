@@ -75,6 +75,7 @@ func TestPipeline(t *testing.T) {
 	pipelineId := uint32(1)
 
 	pipeline := NewPipeline(pipelineId)
+	assert.Equal(t, pipelineId, pipeline.Id())
 
 	srcStg := pipeline.AddSource("Generator")
 	trnStg := pipeline.AddTransform("Filter")
@@ -107,7 +108,7 @@ func TestPipeline(t *testing.T) {
 		}
 
 		for i := range receivedMsgs {
-			assert.Contains(t, receivedMsgs, (i+1))
+			assert.Contains(t, receivedMsgs, uint64(i+1))
 		}
 	}()
 
