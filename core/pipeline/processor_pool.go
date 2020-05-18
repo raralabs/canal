@@ -158,9 +158,10 @@ func (pool *processorPool) execute(pod msgPod) {
 	allClosed := true
 
 	for path, procs := range pool.procMsgPaths {
-		if path != pod.route {
+		if path != msgRouteParam("") && path != pod.route {
 			continue
 		}
+
 		for _, proc := range procs {
 			if proc.isClosed() {
 				continue
