@@ -81,12 +81,16 @@ func (stg *stage) AddProcessor(executor Executor, routes ...msgRouteParam) IProc
 	}
 
 	routeMap := make(msgRoutes)
-	for _, route := range routes {
-		if _, ok := routeMap[route]; ok {
-			panic("Duplicate 'route' for Executor")
-		}
+	if stg.executorType == SOURCE {
+		routeMap[""] = struct{}{}
+	} else {
+		for _, route := range routes {
+			if _, ok := routeMap[route]; ok {
+				panic("Duplicate 'route' for Executor")
+			}
 
-		routeMap[route] = struct{}{}
+			routeMap[route] = struct{}{}
+		}
 	}
 
 	return stg.processorPool.add(executor, routeMap)
@@ -120,6 +124,9 @@ func (stg *stage) lock() {
 		return
 	}
 
+	// Add empty topic
+	stg.routes[""] = struct{}{}
+
 	stg.processorPool.lock(stg.routes)
 
 	if stg.executorType != SOURCE {
@@ -138,7 +145,7 @@ sourceLoop:
 			stg.error(1, "Source Timeout")
 			break sourceLoop
 		default:
-			pool.execute(msgPod{})
+			pool.execute(msgPod{route: ""})
 			if pool.isClosed() {
 				break sourceLoop
 			}
