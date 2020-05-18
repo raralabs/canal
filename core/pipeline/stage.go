@@ -168,7 +168,7 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 	if onComplete != nil {
 		onComplete()
 	}
-	println("Closed stg ", stg.name)
+	//println("Closed stg ", stg.name)
 }
 
 func (stg *stage) error(code uint8, text string) {
