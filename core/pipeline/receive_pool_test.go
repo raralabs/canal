@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 // This dummy struct mocks a Processor from the perspective of a receive pool in the next stage
@@ -108,14 +109,22 @@ func TestReceivePool(t *testing.T) {
 
 		// Send a message
 		pr.sendChannel <- msgPack
+		pr.sendChannel <- msgPack
 
-		select {
-		case rcvd := <-dummyPP.outRoute:
-			m := rcvd.msg
-			if !reflect.DeepEqual(m.Content(), msg.Content()) {
-				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+		go func() {
+			for {
+				rcvd, ok := <-dummyPP.outRoute
+				if !ok {
+					break
+				}
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
 			}
-		}
+		}()
+
+		time.Sleep(10*time.Millisecond)
 
 		close(pr.sendChannel)
 	})
