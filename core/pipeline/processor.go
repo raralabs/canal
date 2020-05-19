@@ -21,6 +21,8 @@ type Processor struct {
 	lastRcvMid uint64             // id of the last received msg by the Processor
 	totalRcv   uint64             //
 	procLock   sync.Mutex         //
+	metaMu     *sync.Mutex        //
+	meta       *metadata           // Metadata produced by the processor
 }
 
 func (pr *Processor) lock(stgRoutes msgRoutes) {
@@ -127,6 +129,10 @@ func (pr *Processor) statusMessage(withTrace bool) message.Msg {
 	return mes
 }
 
+func (pr *Processor) metadata() *metadata {
+	return pr.meta
+}
+
 // A processorFactory represents a factory that can produce processors(s).
 type processorFactory struct {
 	stage *stage
@@ -148,6 +154,8 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 		executor:  executor,
 		routes:    routeMap,
 		errSender: factory.stage.pipeline.errorReceiver,
+		metaMu:    &sync.Mutex{},
+		meta:      newMetadata(),
 	}
 	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)
 	if factory.stage.executorType != SINK {

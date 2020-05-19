@@ -2,6 +2,7 @@ package pipeline
 
 import "github.com/raralabs/canal/core/message"
 
+
 // IProcessorCommon defines the basic interface for a processor
 type IProcessorCommon interface {
 	// Error sends the errors produced during execution to the processor.
@@ -65,6 +66,9 @@ type IProcessor interface {
 
 	IProcessorSender
 
-	// Returns the processor pool, to which the IProcessor is attached to.
+	// processorPool returns the processor pool, to which the IProcessor is attached to.
 	processorPool() IProcessorPool
+
+	// metadata gives the metadata produced during the execution of processor.
+	metadata() *metadata
 }

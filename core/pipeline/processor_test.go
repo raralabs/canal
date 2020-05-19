@@ -30,6 +30,7 @@ type dummyProcessor struct {
 	closed   bool
 	outRoute sendRoute
 	prPool   IProcessorPool
+	meta     *metadata
 }
 
 func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *dummyProcessor {
@@ -38,6 +39,7 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 		routes: routes,
 		closed: false,
 		prPool: prPool,
+		meta:   newMetadata(),
 	}
 }
 func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
@@ -70,7 +72,6 @@ func (d *dummyProcessor) isClosed() bool {
 	}
 	return d.closed
 }
-
 func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	d.outRoute = newSendRoute(sendChannel, route)
@@ -78,7 +79,6 @@ func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
 func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
 	return d.outRoute.sendChannel
 }
-
 func (d *dummyProcessor) isConnected() bool {
 	if d.exec.ExecutorType() == SINK {
 		return true
@@ -87,6 +87,9 @@ func (d *dummyProcessor) isConnected() bool {
 }
 func (d *dummyProcessor) processorPool() IProcessorPool {
 	return d.prPool
+}
+func (d *dummyProcessor) metadata() *metadata {
+	return d.meta
 }
 
 func ExpectPanic(t *testing.T) {
