@@ -14,25 +14,20 @@ type dummyExecutor struct {
 func newDummyExecutor(typ ExecutorType) Executor {
 	return &dummyExecutor{exeType: typ}
 }
-
 func (dummy *dummyExecutor) Execute(m message.Msg, proc IProcessorForExecutor) bool {
 	proc.Result(m, m.Content())
 	//proc.Done()
 	return true
 }
-
 func (dummy *dummyExecutor) HasLocalState() bool {
 	return false
 }
-
 func (dummy *dummyExecutor) ExecutorType() ExecutorType {
 	return dummy.exeType
 }
-
 func (dummy *dummyExecutor) SetName(string) {
 
 }
-
 func (dummy *dummyExecutor) Name() string {
 	return "DummySource"
 }

@@ -81,6 +81,8 @@ func TestPipeline(t *testing.T) {
 	trnStg := pipeline.AddTransform("Filter")
 	snkStg := pipeline.AddSink("BlackHole")
 
+	assert.Equal(t, uint32(1), srcStg.GetId())
+
 	src := srcStg.AddProcessor(newNumberGenerator(100))
 
 	trnStg.ReceiveFrom("path1", src)
