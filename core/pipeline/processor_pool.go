@@ -110,7 +110,7 @@ func (pool *processorPool) lock(stgRoutes msgRoutes) {
 		return
 	}
 	if len(pool.procMsgPaths) == 0 {
-		panic("procPool should have at least one Processor.")
+		panic("procPool: " + pool.stage().name + " should have at least one Processor.")
 	}
 
 	for _, procs := range pool.procMsgPaths {

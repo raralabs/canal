@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"log"
 	"sync"
 	"sync/atomic"
 )
@@ -69,7 +70,7 @@ func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
 	pr.procLock.Lock()
 	// If sndPool can't send the messages, then there's no point in processing, so Done
 	if !pr.sndPool.send(m, false) {
-		println("Closing proc, could not send ", pr.sndPool.proc.procPool.stage().name)
+		log.Printf("Closing proc, Id: %v Stage: %v. Could not send.", pr.id, pr.processorPool().stage().name)
 		pr.Done()
 	}
 	pr.procLock.Unlock()

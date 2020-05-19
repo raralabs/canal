@@ -7,14 +7,14 @@ import (
 
 type DoOperator struct {
 	name   string
-	doFunc func(message.Msg, *pipeline.Processor) bool
+	doFunc func(message.Msg, pipeline.IProcessorForExecutor) bool
 }
 
-func NewDoOperator(df func(message.Msg, *pipeline.Processor) bool) pipeline.Executor {
+func NewDoOperator(df func(message.Msg, pipeline.IProcessorForExecutor) bool) pipeline.Executor {
 	return &DoOperator{doFunc: df}
 }
 
-func (df *DoOperator) Execute(m message.Msg, proc *pipeline.Processor) bool {
+func (df *DoOperator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 	return df.doFunc(m, proc)
 }
 
