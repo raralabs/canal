@@ -47,11 +47,11 @@ func NewFieldValue(value interface{}, valueType FieldValueType) MsgFieldValue {
 	return m
 }
 
-func (mfv *MsgFieldValue) Value() interface{} {
+func (mfv MsgFieldValue) Value() interface{} {
 	return mfv.Val
 }
 
-func (mfv *MsgFieldValue) ValueType() FieldValueType {
+func (mfv MsgFieldValue) ValueType() FieldValueType {
 	return mfv.ValType
 }
 
