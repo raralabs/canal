@@ -19,10 +19,7 @@ type Processor struct {
 	sndPool    sendPool           // The sndPool to fanout the messages produced by this Processor to all its listeners
 	errSender  chan<- message.Msg //
 	mesFactory message.Factory    // Msg Factory associated with the Processor. Helps in generating new messages.
-	lastRcvMid uint64             // id of the last received msg by the Processor
-	totalRcv   uint64             //
 	procLock   sync.Mutex         //
-	metaMu     *sync.Mutex        //
 	meta       *metadata           // Metadata produced by the processor
 }
 
@@ -40,6 +37,8 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 	if pr.executor.ExecutorType() != SINK {
 		pr.sndPool.lock()
 	}
+
+	pr.meta.lock()
 }
 
 // process executes the corresponding executor of the execute on the passed
@@ -52,8 +51,7 @@ func (pr *Processor) process(msg message.Msg) bool {
 	}
 
 	pr.procLock.Lock()
-	pr.lastRcvMid = msg.Id()
-	pr.totalRcv++
+	pr.meta.ping(msg)
 	pr.procLock.Unlock()
 
 	return pr.executor.Execute(msg, pr)
@@ -89,6 +87,7 @@ func (pr *Processor) Done() {
 	if pr.executor.ExecutorType() != SINK {
 		pr.sndPool.close()
 	}
+	pr.meta.done()
 }
 
 func (pr *Processor) isClosed() bool {
@@ -122,11 +121,7 @@ func (pr *Processor) processorPool() IProcessorPool {
 // statusMessage creates a new msg with certain variables of interest.
 func (pr *Processor) statusMessage(withTrace bool) message.Msg {
 	status := make(message.MsgContent)
-	status.AddMessageValue("lastSndMid", message.NewFieldValue(pr.sndPool.lastSndMid, message.INT))
-	status.AddMessageValue("lastRcvMid", message.NewFieldValue(pr.lastRcvMid, message.INT))
-
 	mes := pr.mesFactory.NewExecuteRoot(status, withTrace)
-
 	return mes
 }
 
@@ -155,7 +150,6 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 		executor:  executor,
 		routes:    routeMap,
 		errSender: factory.stage.pipeline.errorReceiver,
-		metaMu:    &sync.Mutex{},
 		meta:      newMetadata(),
 	}
 	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)

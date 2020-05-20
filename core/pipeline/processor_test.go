@@ -102,6 +102,7 @@ func TestTransformFactory(t *testing.T) {
 	proc := Processor{
 		executor:   newDummyExecutor(SINK),
 		mesFactory: message.NewFactory(1, 1, 1),
+		meta: newMetadata(),
 	}
 
 	proc.lock(nil)
