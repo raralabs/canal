@@ -16,6 +16,14 @@ func newMetadata() *metadata {
 	}
 }
 
+// newMetadataFromMap creates a new metadata with provided map as data and returns it.
+func newMetadataFromMap(m map[string]interface{}) *metadata {
+	return &metadata{
+		dataMu: &sync.Mutex{},
+		data: m,
+	}
+}
+
 // add adds a key, value pair to the metadata.
 func (m *metadata) add(key string, value interface{}) {
 	m.dataMu.Lock()
