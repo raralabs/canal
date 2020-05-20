@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"log"
 	"sync/atomic"
 )
 
@@ -110,7 +111,7 @@ func (pool *processorPool) lock(stgRoutes msgRoutes) {
 		return
 	}
 	if len(pool.procMsgPaths) == 0 {
-		panic("procPool: " + pool.stage().name + " should have at least one Processor.")
+		panic("Processor Pool: " + pool.stage().name + " should have at least one Processor.")
 	}
 
 	for _, procs := range pool.procMsgPaths {
@@ -199,7 +200,7 @@ func (pool *processorPool) execute(pod msgPod) {
 
 	if allClosed {
 		pool.done()
-		println("All processors closed, closed processorpool ", pool.stg.name)
+		log.Println("All processors closed, closed processorpool ", pool.stg.name)
 	}
 }
 
