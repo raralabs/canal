@@ -3,19 +3,19 @@ package network
 import (
 	"errors"
 	"fmt"
-	"github.com/n-is/canal/core/message"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 	"log"
 
-	"github.com/n-is/canal/transforms/join/table"
+	"github.com/raralabs/canal/transforms/join/table"
 
-	"github.com/n-is/canal/transforms/agg"
+	"github.com/raralabs/canal/transforms/agg"
 
-	"github.com/n-is/canal/transforms/event/poll"
+	"github.com/raralabs/canal/transforms/event/poll"
 
 	"github.com/Knetic/govaluate"
-	"github.com/n-is/canal/core"
-	"github.com/n-is/canal/transforms"
+	"github.com/raralabs/canal/core"
+	"github.com/raralabs/canal/transforms"
 )
 
 // executorType represents the type of the node

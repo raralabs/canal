@@ -2,11 +2,11 @@ package api
 
 import (
 	"errors"
-	"github.com/n-is/canal/core/message"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 
 	"github.com/Knetic/govaluate"
-	"github.com/n-is/canal/transforms"
+	"github.com/raralabs/canal/transforms"
 )
 
 type Edge struct {

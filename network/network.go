@@ -1,8 +1,8 @@
 package network
 
 import (
-	"github.com/n-is/canal/core"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 const genesisNodeId = uint(1)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Knetic/govaluate"
-	"github.com/n-is/canal/network/builder/utils"
+	"github.com/raralabs/canal/network/builder/utils"
 )
 
 var triggerOperatorMap = map[string]string{

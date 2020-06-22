@@ -18,8 +18,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/n-is/canal/network/builder/utils"
-	"github.com/n-is/canal/transforms/event/poll"
+	"github.com/raralabs/canal/network/builder/utils"
+	"github.com/raralabs/canal/transforms/event/poll"
 )
 
 var g = &grammar{

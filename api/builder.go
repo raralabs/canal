@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/n-is/canal/core"
-	pipeline2 "github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core"
+	pipeline2 "github.com/raralabs/canal/core/pipeline"
 )
 
 type LocalWorker struct {

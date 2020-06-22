@@ -18,7 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Knetic/govaluate"
-	"github.com/n-is/canal/network/builder/utils"
+	"github.com/raralabs/canal/network/builder/utils"
 )
 
 // A Filter represents a function that takes valueMap of the message and

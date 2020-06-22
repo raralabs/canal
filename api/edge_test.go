@@ -1,11 +1,11 @@
 package api
 
 import (
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 	"testing"
 
-	"github.com/n-is/canal/sinks"
-	"github.com/n-is/canal/sources"
+	"github.com/raralabs/canal/sinks"
+	"github.com/raralabs/canal/sources"
 )
 
 func TestEdge_To(t *testing.T) {

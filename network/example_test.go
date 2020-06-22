@@ -1,12 +1,12 @@
 package network
 
 import (
-	"github.com/n-is/canal/sinks"
+	"github.com/raralabs/canal/sinks"
 
-	"github.com/n-is/canal/transforms/agg"
+	"github.com/raralabs/canal/transforms/agg"
 
-	"github.com/n-is/canal/sources"
-	"github.com/n-is/canal/transforms/event/poll"
+	"github.com/raralabs/canal/sources"
+	"github.com/raralabs/canal/transforms/event/poll"
 )
 
 func ExampleNode_Aggregator() {

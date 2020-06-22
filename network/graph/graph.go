@@ -2,9 +2,9 @@ package graph
 
 import (
 	"fmt"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 
-	"github.com/n-is/canal/network"
+	"github.com/raralabs/canal/network"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding"
 	"gonum.org/v1/gonum/graph/encoding/dot"

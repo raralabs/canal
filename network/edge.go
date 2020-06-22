@@ -1,7 +1,7 @@
 package network
 
 import (
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 // A nodeTransform represents the corresponding transforms in a node.

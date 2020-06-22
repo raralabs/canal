@@ -1,13 +1,13 @@
 package api
 
 import (
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 	"reflect"
 	"testing"
 
-	"github.com/n-is/canal/sinks"
-	"github.com/n-is/canal/sources"
-	"github.com/n-is/canal/transforms"
+	"github.com/raralabs/canal/sinks"
+	"github.com/raralabs/canal/sources"
+	"github.com/raralabs/canal/transforms"
 )
 
 func ExpectPanic(t *testing.T, f func()) {

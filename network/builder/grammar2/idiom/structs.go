@@ -1,7 +1,7 @@
 package idiom
 
 import (
-	"github.com/n-is/canal/transforms/event/poll"
+	"github.com/raralabs/canal/transforms/event/poll"
 )
 
 type From struct {

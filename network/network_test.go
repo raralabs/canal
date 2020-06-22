@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/n-is/canal/sinks"
-	"github.com/n-is/canal/sources"
+	"github.com/raralabs/canal/sinks"
+	"github.com/raralabs/canal/sources"
 )
 
 func TestNetwork(t *testing.T) {

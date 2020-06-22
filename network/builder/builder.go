@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/n-is/canal/sinks"
+	"github.com/raralabs/canal/sinks"
 
-	"github.com/n-is/canal/network/builder/grammar/job/filter"
-	"github.com/n-is/canal/network/builder/utils"
+	"github.com/raralabs/canal/network/builder/grammar/job/filter"
+	"github.com/raralabs/canal/network/builder/utils"
 
-	"github.com/n-is/canal/network"
-	"github.com/n-is/canal/network/builder/grammar/node"
+	"github.com/raralabs/canal/network"
+	"github.com/raralabs/canal/network/builder/grammar/node"
 )
 
 // A Builder builds a network, on the basis of our DSL(Domain Specific Language).

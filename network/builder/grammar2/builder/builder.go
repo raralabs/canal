@@ -2,15 +2,15 @@ package builder
 
 import (
 	"fmt"
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 	"log"
 
-	"github.com/n-is/canal/core"
-	"github.com/n-is/canal/network"
-	"github.com/n-is/canal/network/builder/grammar2/idiom"
-	"github.com/n-is/canal/sinks"
-	"github.com/n-is/canal/transforms/agg"
-	"github.com/n-is/canal/transforms/join/table"
+	"github.com/raralabs/canal/core"
+	"github.com/raralabs/canal/network"
+	"github.com/raralabs/canal/network/builder/grammar2/idiom"
+	"github.com/raralabs/canal/sinks"
+	"github.com/raralabs/canal/transforms/agg"
+	"github.com/raralabs/canal/transforms/join/table"
 )
 
 // A Builder builds a network, on the basis of our DSL(Domain Specific Language).

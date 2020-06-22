@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/n-is/canal/core/pipeline"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 type NodeType int8

@@ -2,9 +2,9 @@
 package count
 
 import (
-        "github.com/n-is/canal/network/builder/utils"
-        "github.com/n-is/canal/network/builder/grammar/job/filter"
-        "github.com/n-is/canal/transforms/event/poll"
+        "github.com/raralabs/canal/network/builder/utils"
+        "github.com/raralabs/canal/network/builder/grammar/job/filter"
+        "github.com/raralabs/canal/transforms/event/poll"
 )
 
 var operatorMap = map[string]string {
