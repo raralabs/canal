@@ -1,11 +1,12 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 // This dummy struct mocks a Processor from the perspective of a receive pool in the next stage
@@ -25,6 +26,10 @@ func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan msgPod 
 }
 func (d *dummyProcessorForReceiver) isConnected() bool {
 	return d.sendChannel != nil
+}
+
+func (*dummyProcessorForReceiver) IsClosed() bool {
+	return false
 }
 
 type dummyReceivePool struct {
@@ -124,7 +129,7 @@ func TestReceivePool(t *testing.T) {
 			}
 		}()
 
-		time.Sleep(10*time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		close(pr.sendChannel)
 	})

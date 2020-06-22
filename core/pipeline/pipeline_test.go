@@ -2,10 +2,11 @@ package pipeline
 
 import (
 	"context"
-	"github.com/raralabs/canal/core/message"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
 )
 
 type numberGenerator struct {

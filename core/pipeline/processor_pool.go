@@ -26,7 +26,7 @@ type IProcessorPool interface {
 	// lock ...
 	lock(stgRoutes msgRoutes)
 
-	// isClosed checks if the processor pool is fully closed.
+	// IsClosed checks if the processor pool is fully closed.
 	// A processor pool is fully closed when all the processors attached to it are closed.
 	isClosed() bool
 
@@ -49,7 +49,7 @@ type IProcessorPool interface {
 	error(uint8, error)
 
 	// done closes all the processors that are attached to the processor pool.
-	// isClosed() should return true after a call is made to this method.
+	// IsClosed() should return true after a call is made to this method.
 	done()
 }
 
@@ -183,12 +183,12 @@ func (pool *processorPool) execute(pod msgPod) {
 		}
 
 		for _, proc := range procs {
-			if proc.isClosed() {
+			if proc.IsClosed() {
 				continue
 			}
 
 			accepted := proc.process(pod.msg)
-			if !proc.isClosed() {
+			if !proc.IsClosed() {
 				allClosed = false
 			}
 
@@ -210,7 +210,7 @@ func (pool *processorPool) error(uint8, error) {
 func (pool *processorPool) done() {
 	for _, processors := range pool.procMsgPaths {
 		for _, processor := range processors {
-			if !processor.isClosed() {
+			if !processor.IsClosed() {
 				processor.Done()
 			}
 		}

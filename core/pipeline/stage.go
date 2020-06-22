@@ -3,8 +3,9 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 type msgRouteParam string

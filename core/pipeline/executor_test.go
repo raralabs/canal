@@ -1,10 +1,11 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
 )
 
 type dummyExecutor struct {

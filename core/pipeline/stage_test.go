@@ -2,11 +2,12 @@ package pipeline
 
 import (
 	"context"
-	"github.com/raralabs/canal/core/message"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStage(t *testing.T) {

@@ -1,12 +1,13 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/utils/dstr"
-	"github.com/raralabs/canal/utils/timer"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/utils/dstr"
+	"github.com/raralabs/canal/utils/timer"
 )
 
 // metadata is a data holder that is used to store information generated during execution.
@@ -28,7 +29,7 @@ type metadata struct {
 // newMetadata creates a new metadata and returns it.
 func newMetadata() *metadata {
 	m := &metadata{
-		dataMu:    &sync.Mutex{},
+		dataMu: &sync.Mutex{},
 
 		msgPerSec: newMessageRate(1*time.Second, 30),
 		msgPerMin: newMessageRate(1*time.Minute, 15),

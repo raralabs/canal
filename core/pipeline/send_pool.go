@@ -1,9 +1,10 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 const (

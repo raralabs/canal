@@ -1,9 +1,10 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 // An IProcessorForReceiver is a lite version of IProcessor that is designed for the IReceivePool. IProcessor can also

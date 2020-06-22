@@ -1,8 +1,9 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"testing"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 type dummyProcessorExecutor struct {
@@ -23,6 +24,9 @@ func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content message.Msg
 }
 func (*dummyProcessorExecutor) Error(uint8, error) {}
 func (*dummyProcessorExecutor) Done()              {}
+func (*dummyProcessorExecutor) IsClosed() bool {
+	return false
+}
 
 type dummyProcessor struct {
 	exec     Executor
@@ -65,7 +69,7 @@ func (d *dummyProcessor) incomingRoutes() msgRoutes {
 func (d *dummyProcessor) lock(msgRoutes) {
 	return
 }
-func (d *dummyProcessor) isClosed() bool {
+func (d *dummyProcessor) IsClosed() bool {
 
 	if d.exec.ExecutorType() == SINK {
 		return false
@@ -102,7 +106,7 @@ func TestTransformFactory(t *testing.T) {
 	proc := Processor{
 		executor:   newDummyExecutor(SINK),
 		mesFactory: message.NewFactory(1, 1, 1),
-		meta: newMetadata(),
+		meta:       newMetadata(),
 	}
 
 	proc.lock(nil)

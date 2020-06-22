@@ -3,9 +3,10 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"github.com/raralabs/canal/core/message"
 	"sync"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 // A Pipeline represents a group of stages that are connected among themselves

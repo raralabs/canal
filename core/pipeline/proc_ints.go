@@ -2,7 +2,6 @@ package pipeline
 
 import "github.com/raralabs/canal/core/message"
 
-
 // IProcessorCommon defines the basic interface for a processor
 type IProcessorCommon interface {
 	// Error sends the errors produced during execution to the processor.
@@ -12,6 +11,9 @@ type IProcessorCommon interface {
 	// Done tells the processor that all the execution is done and it should be stopped.
 	// It checks if the processor is already closed, and if it is not closed, closes it.
 	Done()
+
+	// Checks if a processor is closed.
+	IsClosed() bool
 }
 
 // IProcessorExecutor defines the interface for a processor from the perspective of an Executor.
@@ -31,9 +33,6 @@ type IProcessorReceiver interface {
 
 	// lock ...
 	lock(msgRoutes)
-
-	// Checks if a processor is closed.
-	isClosed() bool
 }
 
 // IProcessorSender defines the interface for a processor from the perspective of Receiver in the next stg
