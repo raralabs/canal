@@ -1,12 +1,13 @@
 language: "go"
 
-os: linux
+os:
+  - linux
+  - windows
+
 dist: bionic
 
 jobs:
   include:
-
-    - os: windows
 
     - language: go
 
