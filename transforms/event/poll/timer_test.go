@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/raralabs/tengo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTimerEvent(t *testing.T) {
