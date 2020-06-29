@@ -1,4 +1,5 @@
 language: "go"
+go: "1.13.x"
 
 os:
   - linux
@@ -9,9 +10,6 @@ dist: bionic
 jobs:
   include:
 
-    - language: go
-
-      go: "1.13.x"
       env:
         global:
           GO111MODULE=auto
