@@ -1,16 +1,17 @@
 package sources
 
 import (
+	"strconv"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"strconv"
 )
 
 type MapValue struct {
 	name string // The name of the source
 
 	values message.MsgContent // The values to be passed
-	times  int                  // The number of times the values should be passed
+	times  int                // The number of times the values should be passed
 }
 
 func getValType(v interface{}) (interface{}, message.FieldValueType) {
@@ -79,7 +80,7 @@ func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 		if times > 0 {
 
 			// Decrement times counter
-			if mv.times != -1{
+			if mv.times != -1 {
 				mv.times--
 			}
 

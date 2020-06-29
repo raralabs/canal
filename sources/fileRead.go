@@ -2,10 +2,11 @@ package sources
 
 import (
 	"bufio"
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/core/pipeline"
 	"log"
 	"os"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 type FileReader struct {
@@ -24,9 +25,9 @@ func NewFileReader(path, key string, maxLines int) pipeline.Executor {
 
 	scn := bufio.NewScanner(buf)
 	return &FileReader{name: "FileReader",
-		key: key,
-		buf: buf,
-		scanner: scn,
+		key:      key,
+		buf:      buf,
+		scanner:  scn,
 		maxLines: maxLines,
 	}
 }
