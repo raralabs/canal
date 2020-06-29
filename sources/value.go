@@ -9,10 +9,8 @@ import (
 type MapValue struct {
 	name string // The name of the source
 
-	values []message.MsgContent // The values to be passed
+	values message.MsgContent // The values to be passed
 	times  int                  // The number of times the values should be passed
-
-	currIndex int // The current index of value to be passed
 }
 
 func getValType(v interface{}) (interface{}, message.FieldValueType) {
@@ -51,51 +49,48 @@ func preprocess(m map[string]interface{}) message.MsgContent {
 	return mVal
 }
 
-//func NewMapValueSource(vals []map[string]interface{}, times int) core.executor {
-//
-//	mv := &MapValue{}
-//	mv.values = make([]core.messageContent, len(vals))
-//
-//	for i, val := range vals {
-//		processedVal := preprocess(val)
-//		mv.values[i] = processedVal
-//	}
-//
-//	mv.times = times
-//
-//	return mv
-//}
+func NewMapValueSource(val map[string]interface{}, times int) pipeline.Executor {
+
+	mv := &MapValue{}
+	mv.values = make(message.MsgContent)
+
+	for k, v := range val {
+		value, valType := getValType(v)
+		mv.values.AddMessageValue(k, message.NewFieldValue(value, valType))
+	}
+
+	mv.times = times
+
+	return mv
+}
 
 func (mv *MapValue) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SOURCE
 }
 
-//func (mv *MapValue) execute(m *core.Msg) ([]*core.messageContent, bool, error) {
-//
-//	if mv.times != 0 && len(mv.values) > 0 {
-//		times := mv.times
-//		if mv.times == -1 {
-//			times = 1
-//		}
-//
-//		if times > 0 {
-//			mes := mf.NewExecute(mv.values[mv.currIndex])
-//
-//			mv.currIndex++
-//
-//			// Decrement times counter
-//			if mv.times != -1 && mv.currIndex == len(mv.values) {
-//				mv.times--
-//			}
-//
-//			mv.currIndex = mv.currIndex % len(mv.values)
-//
-//			return []*core.Msg{mes}, true, nil
-//		}
-//	}
-//
-//	return []*core.Msg{mf.NewDoneMessage()}, true, nil
-//}
+func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+
+	if mv.times != 0 {
+		times := mv.times
+		if mv.times == -1 {
+			times = 1
+		}
+
+		if times > 0 {
+
+			// Decrement times counter
+			if mv.times != -1{
+				mv.times--
+			}
+
+			proc.Result(m, mv.values)
+		}
+	} else {
+		proc.Done()
+	}
+
+	return true
+}
 
 func (mv *MapValue) HasLocalState() bool {
 	return false

@@ -28,7 +28,7 @@ package base_transforms
 //	}
 //}
 //
-//func (af *AggOperator) Execute(m message.Msg) pipeline.ExeResp {
+//func (af *AggOperator) execute(m message.Msg) pipeline.ExeResp {
 //	//res, err := af.aggFunc(m, af.state)
 //	//
 //	//if err != nil || !af.trigger(af.state) {

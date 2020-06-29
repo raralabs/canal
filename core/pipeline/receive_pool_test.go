@@ -1,59 +1,186 @@
 package pipeline
 
-//
-//import (
-//	"github.com/raralabs/canal/core"
-//	"testing"
-//)
-//
-//func TestReceiverPool(t *testing.T) {
-//
-//	networkId := uint(1)
-//	stageId := uint(1)
-//
-//	jf := newProcessorFactory(stageId)
-//	task := NewPipeline(networkId)
-//	hub := NewStage(stageId, task, TRANSFORM)
-//
-//	executor := core.newDummyExecutor()
-//	transform1 := jf.new(hub, executor)
-//	transform1.addSendTo(hub)
-//
-//	executor = core.newDummyExecutor()
-//	transform2 := jf.new(hub, executor)
-//	transform2.addSendTo(hub)
-//
-//	executor = core.newDummyExecutor()
-//	transform3 := jf.new(hub, executor)
-//	transform3.addSendTo(hub)
-//
-//	//msg := &Message{pipelineId: networkId, stageId: stageId, processorId: transform1.id,
-//	//	mcontent: map[string]MessageAttr{"Greet": NewMsgValue("Moshi Moshi", STRING)}}
-//	//
-//	//rp := newReceiverPool(stageId)
-//
-//	//// add the jobs to the receivePool at first
-//	//rp.addReceiveFrom(transform1)
-//	//rp.addReceiveFrom(transform2)
-//	//rp.addReceiveFrom(transform3)
-//	//
-//	//// Initialize the receivePool
-//	//rp.initStage(true)
-//	//
-//	//// Pass the msg through the transforms so there is data at the
-//	//// Sender sendChannel of the transforms
-//	//transform1.process(msg)
-//	//transform2.process(msg)
-//	//transform3.process(msg)
-//	//
-//	//// loop the receivePool work
-//	//count := 0
-//	//numJobs := 3
-//	//rp.loop(func(m *Message) bool {
-//	//	count++
-//	//	if !reflect.DeepEqual(msg, m) {
-//	//		t.Errorf("Message: got = %#v, want = %#v", m, msg)
-//	//	}
-//	//	return count == numJobs
-//	//})
-//}
+import (
+	"reflect"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/raralabs/canal/core/message"
+)
+
+// This dummy struct mocks a Processor from the perspective of a receive pool in the next stage
+type dummyProcessorForReceiver struct {
+	sendChannel chan msgPod
+}
+
+func (d *dummyProcessorForReceiver) Error(u uint8, err error) {
+}
+func (d *dummyProcessorForReceiver) Done() {
+}
+func (d *dummyProcessorForReceiver) addSendTo(stg *stage, route msgRouteParam) {
+	d.sendChannel = make(chan msgPod, _SendBufferLength)
+}
+func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan msgPod {
+	return d.sendChannel
+}
+func (d *dummyProcessorForReceiver) isConnected() bool {
+	return d.sendChannel != nil
+}
+
+func (*dummyProcessorForReceiver) IsClosed() bool {
+	return false
+}
+
+type dummyReceivePool struct {
+	stg         *stage
+	receiveFrom []IProcessorForReceiver
+}
+
+func newDummyReceivePool(s *stage) *dummyReceivePool {
+	return &dummyReceivePool{
+		stg: s,
+	}
+}
+
+func (drp *dummyReceivePool) addReceiveFrom(processor IProcessorForReceiver) {
+	drp.receiveFrom = append(drp.receiveFrom, processor)
+}
+
+func (drp *dummyReceivePool) lock() {
+}
+
+func (drp *dummyReceivePool) loop(pool IProcessorPool) {
+	if len(drp.receiveFrom) > 0 {
+		wg := sync.WaitGroup{}
+		wg.Add(len(drp.receiveFrom))
+		for _, proc := range drp.receiveFrom {
+			rchan := proc.channelForStageId(drp.stg)
+			go func() {
+				for pod := range rchan {
+					pool.execute(pod)
+				}
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func (drp *dummyReceivePool) isRunning() bool {
+	return true
+}
+
+func (drp *dummyReceivePool) error(code uint8, text string) {
+}
+
+func TestReceivePool(t *testing.T) {
+
+	t.Run("Simple Tests", func(t *testing.T) {
+
+		pipelineId := uint32(1)
+
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := message.MsgContent{
+			"value": message.NewFieldValue(12, message.INT),
+		}
+		msg := msgF.NewExecuteRoot(content, false)
+
+		routeParam := msgRouteParam("path1")
+		msgPack := msgPod{
+			msg:   msg,
+			route: routeParam,
+		}
+
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
+
+		// Create a stage that receives messages
+		rcvStage := stgFactory.new("Second Node", TRANSFORM)
+		rcvPool := rcvStage.receivePool
+
+		// Create a processor that sends messages
+		pr := &dummyProcessorForReceiver{}
+		pr.addSendTo(rcvStage, routeParam)
+
+		rcvPool.addReceiveFrom(pr)
+		rcvPool.lock()
+
+		// Create a dummy processor pool to intercept message sent by receiver
+		dummyPP := newDummyProcessorPool("path2", nil)
+
+		// Run receiver pool in a separate thread. It blocks till all the receiving channels are closed.
+		go rcvPool.loop(dummyPP)
+
+		// Send a message
+		pr.sendChannel <- msgPack
+		pr.sendChannel <- msgPack
+
+		go func() {
+			for {
+				rcvd, ok := <-dummyPP.outRoute
+				if !ok {
+					break
+				}
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+			}
+		}()
+
+		time.Sleep(10 * time.Millisecond)
+
+		close(pr.sendChannel)
+	})
+
+}
+
+func BenchmarkReceivePool(b *testing.B) {
+
+	b.Run("Simple Bench", func(b *testing.B) {
+		b.ReportAllocs()
+
+		pipelineId := uint32(1)
+
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := message.MsgContent{
+			"value": message.NewFieldValue(12, message.INT),
+		}
+		msg := msgF.NewExecuteRoot(content, false)
+
+		routeParam := msgRouteParam("path1")
+		msgPack := msgPod{
+			msg:   msg,
+			route: routeParam,
+		}
+
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
+
+		// Create a stage that sends messages
+		sendStage := stgFactory.new("First Node", TRANSFORM)
+		pr := &dummyProcessorForReceiver{}
+		pr.addSendTo(sendStage, routeParam)
+
+		// Create a stage that receives messages
+		rcvStage := stgFactory.new("Second Node", TRANSFORM)
+		rcvPool := newReceiverPool(rcvStage)
+		rcvPool.addReceiveFrom(pr)
+		rcvPool.lock()
+
+		// Create a dummy processor pool to intercept message sent by receiver
+		dummyPP := newDummyProcessorPool("path2", nil)
+
+		for i := 0; i < b.N; i++ {
+			// Run receiver pool in a separate thread. It blocks till all the receiving channels are closed.
+			go rcvPool.loop(dummyPP)
+
+			pr.sendChannel <- msgPack
+			<-dummyPP.outRoute
+
+		}
+		close(pr.sendChannel)
+	})
+
+}

@@ -1,9 +1,100 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"testing"
+
+	"github.com/raralabs/canal/core/message"
 )
+
+type dummyProcessorExecutor struct {
+	exec       Executor
+	resSrcMsg  message.Msg
+	resContent message.MsgContent
+}
+
+func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
+	return &dummyProcessorExecutor{exec: exec}
+}
+func (dp *dummyProcessorExecutor) process(msg message.Msg) bool {
+	return dp.exec.Execute(msg, dp)
+}
+func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content message.MsgContent) {
+	dp.resSrcMsg = srcMsg
+	dp.resContent = content
+}
+func (*dummyProcessorExecutor) Error(uint8, error) {}
+func (*dummyProcessorExecutor) Done()              {}
+func (*dummyProcessorExecutor) IsClosed() bool {
+	return false
+}
+
+type dummyProcessor struct {
+	exec     Executor
+	routes   msgRoutes
+	closed   bool
+	outRoute sendRoute
+	prPool   IProcessorPool
+	meta     *metadata
+}
+
+func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *dummyProcessor {
+	return &dummyProcessor{
+		exec:   exec,
+		routes: routes,
+		closed: false,
+		prPool: prPool,
+		meta:   newMetadata(),
+	}
+}
+func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
+	msgPack := msgPod{
+		msg:   msg,
+		route: d.outRoute.route,
+	}
+
+	d.outRoute.sendChannel <- msgPack
+}
+func (d *dummyProcessor) Error(uint8, error) {
+}
+func (d *dummyProcessor) Done() {
+	close(d.outRoute.sendChannel)
+	d.closed = true
+}
+func (d *dummyProcessor) process(msg message.Msg) bool {
+	return d.exec.Execute(msg, d)
+}
+func (d *dummyProcessor) incomingRoutes() msgRoutes {
+	return d.routes
+}
+func (d *dummyProcessor) lock(msgRoutes) {
+	return
+}
+func (d *dummyProcessor) IsClosed() bool {
+
+	if d.exec.ExecutorType() == SINK {
+		return false
+	}
+	return d.closed
+}
+func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
+	sendChannel := make(chan msgPod, _SendBufferLength)
+	d.outRoute = newSendRoute(sendChannel, route)
+}
+func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
+	return d.outRoute.sendChannel
+}
+func (d *dummyProcessor) isConnected() bool {
+	if d.exec.ExecutorType() == SINK {
+		return true
+	}
+	return d.outRoute.sendChannel != nil
+}
+func (d *dummyProcessor) processorPool() IProcessorPool {
+	return d.prPool
+}
+func (d *dummyProcessor) metadata() *metadata {
+	return d.meta
+}
 
 func ExpectPanic(t *testing.T) {
 	if r := recover(); r == nil {
@@ -15,10 +106,11 @@ func TestTransformFactory(t *testing.T) {
 	proc := Processor{
 		executor:   newDummyExecutor(SINK),
 		mesFactory: message.NewFactory(1, 1, 1),
+		meta:       newMetadata(),
 	}
 
 	proc.lock(nil)
-	proc.process(msgPod{})
+	proc.process(proc.mesFactory.NewExecuteRoot(nil, false))
 }
 
 func BenchmarkProcessor(b *testing.B) {
@@ -38,19 +130,15 @@ func BenchmarkProcessor(b *testing.B) {
 	}
 	proc.sndPool = newSendPool(&proc)
 
-	receiver := make(chan msgPod, 1000)
-	go func() {
-		for pod := range receiver {
-			pod.msg.Id()
-		}
-	}()
+	stg := &stage{}
+	proc.addSendTo(stg, "test")
+	//receiver := pr.channelForStageId(stg)
 
-	proc.sndPool.sndRoutes[&stage{}] = newSendRoute(receiver, "test")
 	proc.lock(nil)
 	proc.sndPool.close()
 
 	for i := 0; i < b.N; i++ {
-		proc.process(msgPod{})
+		proc.process(proc.mesFactory.NewExecuteRoot(nil, false))
 	}
 
 	close(errRecv)

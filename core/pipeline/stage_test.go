@@ -1,104 +1,152 @@
 package pipeline
 
-//
-//import (
-//	"context"
-//	"github.com/raralabs/canal/core"
-//	"github.com/raralabs/canal/core/message"
-//	"reflect"
-//	"testing"
-//
-//	"github.com/stretchr/testify/assert"
-//)
-//
-//func TestHub(t *testing.T) {
-//
-//	// Setup
-//	pipelineId := uint(1)
-//	stageId := uint32(1)
-//
-//	pipeline := NewPipeline(pipelineId)
-//	stage := pipeline.AddTransform()
-//
-//	var stageProcessors []*Processor
-//
-//	t.Run("Testing add", func(t *testing.T) {
-//		exec1 := core.newDummyExecutor()
-//		exec2 := core.newDummyExecutor()
-//		exec3 := core.newDummyExecutor()
-//
-//		stageProcessors = []*Processor{stage.AddProcessor(exec1), stage.AddProcessor(exec2), stage.AddProcessor(exec3)}
-//
-//		f := func() {
-//			exec := core.newDummySource(1)
-//			stage.AddProcessor(exec)
-//		}
-//		assert.Panics(t, f, "Should have panicked")
-//
-//		for i, j := range stageProcessors {
-//			assert.Equal(t, uint(i+1), j.id, "Jobs id should match")
-//			assert.Equal(t, pipelineId, j.stage.pipeline.id, "Pipeline id should be same")
-//			assert.Equal(t, stageId, j.stage.id, "stage id should be same")
-//		}
-//	})
-//
-//	dummyHub := pipeline.AddTransform()
-//	execs := []Executor{core.newDummyExecutor()}
-//
-//	var jobs []*Processor
-//	for _, e := range execs {
-//		jobs = append(jobs, dummyHub.AddProcessor(e))
-//	}
-//
-//	t.Run("Testing sndRoutes", func(t *testing.T) {
-//		h := stage.ReceiveFrom("default", jobs...)
-//
-//		// addSendTo jobs of stage to dummyHub. This just creates a cycle
-//		dummyHub.ReceiveFrom("default", stageProcessors...)
-//
-//		assert.Equal(t, h.Id(), stage.Id(), "stage id should match")
-//
-//		for i, job := range h.receivePool.receiveFrom {
-//			if !reflect.DeepEqual(job, jobs[i]) {
-//				t.Errorf("Msg: got = %#v, want = %#v", job, jobs[i])
-//			}
-//
-//			assert.True(t, job.isConnected(), "Job should have been connected to stage")
-//		}
-//
-//		stage = h
-//	})
-//
-//	t.Run("Testing initStage", func(t *testing.T) {
-//		stage.lock()
-//		assert.Equal(t, 1, len(stage.receivePool.receiveFrom), "1 job have been provided to stage")
-//	})
-//
-//	t.Run("Testing loop", func(t *testing.T) {
-//		callback := func() {
-//
-//		}
-//
-//		mf := message.NewFactory(pipelineId, stageId, uint32(0))
-//		msg := mf.NewExecute(nil, &message.MsgContent{"Greet": message.NewFieldValue("Nihao", message.STRING)})
-//		doneMsg := message.NewDoneMessage()
-//
-//		dummyHub.procPool.execute(msg)
-//		dummyHub.procPool.execute(doneMsg)
-//
-//		stage.loop(context.Background(), callback)
-//
-//		//for _, job := range stage.procPool.processors {
-//		//
-//		//	m := <-job.Sender
-//		//	if !reflect.DeepEqual(m, msg) {
-//		//		t.Errorf("Msg: got = %#v, want = %#v", m, msg)
-//		//	}
-//		//
-//		//	m = <-job.Sender
-//		//	if !reflect.DeepEqual(m, doneMsg) {
-//		//		t.Errorf("Msg: got = %#v, want = %#v", m, doneMsg)
-//		//	}
-//		//}
-//	})
-//}
+import (
+	"context"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestStage(t *testing.T) {
+
+	t.Run("Simple Tests", func(t *testing.T) {
+		pipelineId := uint32(1)
+
+		// Create pipeline and stg
+		pipeline := NewPipeline(pipelineId)
+
+		t.Run("Source", func(t *testing.T) {
+
+			stg := &stage{
+				id:           1,
+				name:         "First Node",
+				pipeline:     pipeline,
+				executorType: SOURCE,
+				errorSender:  pipeline.errorReceiver,
+				routes:       make(msgRoutes),
+				withTrace:    false,
+			}
+
+			prPool := newDummyProcessorPool("path1", stg)
+			stg.processorPool = prPool
+			stg.AddProcessor(newDummyExecutor(SOURCE))
+
+			bckGnd := context.Background()
+			d := time.Now().Add(10 * time.Millisecond)
+			ctx, cancel := context.WithDeadline(bckGnd, d)
+
+			stg.lock()
+			go stg.loop(ctx, func() {
+
+			})
+
+			go func() {
+			rcvLoop:
+				for {
+					rcvd, ok := <-prPool.outRoute
+					if !ok {
+						break rcvLoop
+					}
+					m := msgPod{}
+					if rcvd.route != m.route {
+						t.Errorf("Want: %v\nGot: %v\n", m.route, rcvd.route)
+					}
+				}
+			}()
+
+			time.Sleep(1 * time.Millisecond)
+
+			assert.Panics(t, func() {
+				stg.AddProcessor(newDummyExecutor(SOURCE))
+			})
+
+			prPool.done()
+			cancel()
+
+			assert.Panics(t, func() {
+				stg.AddProcessor(newDummyExecutor(TRANSFORM))
+			})
+			assert.Panics(t, func() {
+				stg.AddProcessor(newDummyExecutor(SOURCE), "path1", "path2")
+			})
+		})
+
+		t.Run("TRANSFORM", func(t *testing.T) {
+
+			stg := &stage{
+				id:           1,
+				name:         "First Node",
+				pipeline:     pipeline,
+				executorType: TRANSFORM,
+				errorSender:  pipeline.errorReceiver,
+				routes:       make(msgRoutes),
+				withTrace:    false,
+			}
+
+			prPool := newDummyProcessorPool("path1", stg)
+			rcvPool := newDummyReceivePool(stg)
+
+			stg.processorPool = prPool
+			stg.receivePool = rcvPool
+			stg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+
+			sendStg := &stage{
+				id:           2,
+				name:         "Genesis Node",
+				pipeline:     pipeline,
+				executorType: TRANSFORM,
+				errorSender:  pipeline.errorReceiver,
+				routes:       make(msgRoutes),
+				withTrace:    false,
+			}
+			sendPrPool := newDummyProcessorPool("path2", sendStg)
+			sendStg.processorPool = sendPrPool
+			sendStg.receivePool = newDummyReceivePool(sendStg)
+			route := msgRoutes{
+				"path2": struct{}{},
+			}
+			pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, sendPrPool)
+			pr1.addSendTo(stg, "path")
+
+			stg.ReceiveFrom("path", pr1)
+
+			ctx := context.Background()
+			stg.lock()
+			sendStg.lock()
+			go stg.loop(ctx, func() {
+			})
+
+			msgF := message.NewFactory(pipelineId, 3, 1)
+			content := message.MsgContent{
+				"value": message.NewFieldValue(12, message.INT),
+			}
+			msg := msgF.NewExecuteRoot(content, false)
+
+			pr1.process(msg)
+
+			go func() {
+			rcvLoop:
+				for {
+					rcvd, ok := <-prPool.outRoute
+					if !ok {
+						break rcvLoop
+					}
+					m := msg
+					if !reflect.DeepEqual(rcvd.msg.Content(), m.Content()) {
+						t.Errorf("Want: %v\nGot: %v\n", m.Content(), rcvd.msg.Content())
+					}
+				}
+			}()
+
+			time.Sleep(1 * time.Millisecond)
+
+			prPool.done()
+
+		})
+
+	})
+
+}

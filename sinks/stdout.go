@@ -18,7 +18,7 @@ func (s *StdoutSink) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
 
-func (s *StdoutSink) Execute(m message.Msg, _ *pipeline.Processor) bool {
+func (s *StdoutSink) Execute(m message.Msg, _ pipeline.IProcessorForExecutor) bool {
 	var trace string
 	if m.Trace() != nil {
 		trace = m.Trace().String()

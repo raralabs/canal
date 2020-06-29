@@ -1,32 +1,63 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/core/message"
 )
+
+// An IProcessorForReceiver is a lite version of IProcessor that is designed for the IReceivePool. IProcessor can also
+// be passed, wherever IProcessorForReceiver can be passed, to achieve the same result.
+type IProcessorForReceiver interface {
+	IProcessorCommon
+
+	IProcessorSender
+}
+
+// IReceivePool defines the interface for a receive pool in a stage. A receive pool is responsible for collecting
+// messages from various processors and passing it to the processor pool. The receive pool collects message, along with
+// their route information.
+type IReceivePool interface {
+	// addReceiveFrom registers a Processor as a sendChannel from which messages is to be received.
+	addReceiveFrom(processor IProcessorForReceiver)
+
+	// lock ...
+	lock()
+
+	// loop starts the collection of messages from various processors that have been registered to the receivePool and
+	//streams the messages to the processor pool.
+	loop(pool IProcessorPool)
+
+	// isRunning checks if a receive pool is running.
+	isRunning() bool
+
+	// error sends the errors produced during the execution to appropriate channels.
+	error(code uint8, text string)
+}
 
 // A receivePool pools messages from all the processors the receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
+// It implements the IReceivePool interface.
 type receivePool struct {
-	stage       *stage             //
-	receiveFrom []*Processor       //
-	errorSender chan<- message.Msg //
-	runLock     atomic.Value       //
+	stage       *stage                  // Stage that the receive pool belongs to
+	receiveFrom []IProcessorForReceiver // processors from which messages is to be collected
+	errorSender chan<- message.Msg      // error channel
+	runLock     atomic.Value            //
 }
 
 // newReceiverPool creates a new receivePool
-func newReceiverPool(stage *stage) receivePool {
-	return receivePool{
+func newReceiverPool(stage *stage) *receivePool {
+	return &receivePool{
 		stage:       stage,
-		receiveFrom: []*Processor{},
+		receiveFrom: []IProcessorForReceiver{},
 		errorSender: stage.pipeline.errorReceiver,
 	}
 }
 
 // addReceiveFrom registers a Processor as a sendChannel from which messages is to be
 // received.
-func (rp *receivePool) addReceiveFrom(processor *Processor) {
+func (rp *receivePool) addReceiveFrom(processor IProcessorForReceiver) {
 	if rp.isRunning() {
 		return
 	}
@@ -57,7 +88,7 @@ func (rp *receivePool) lock() {
 
 // loop starts the collection of messages from various processors that have
 // been registered to the receivePool and streams the messages to Receiver.
-func (rp *receivePool) loop(pool processorPool) {
+func (rp *receivePool) loop(pool IProcessorPool) {
 	if rp.isRunning() {
 		return
 	}
@@ -78,8 +109,8 @@ func (rp *receivePool) loop(pool processorPool) {
 		wg.Wait()
 	}
 
-	println("Receiveloop exited, closing ", pool.stage.name)
-	pool.close()
+	//println("Receiveloop exited, closing ", rp.stage.name)
+	pool.done()
 }
 
 func (rp *receivePool) isRunning() bool {

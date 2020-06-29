@@ -1,13 +1,14 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 const (
-	_SendBufferLength uint16 = 0
+	_SendBufferLength uint16 = 4
 	_SendTimeout             = 1 * time.Second
 )
 
@@ -35,8 +36,8 @@ func (sp *sendPool) isConnected() bool {
 	return len(sp.sndRoutes) > 0
 }
 
-// addSendTo registers a stage to which the sndPool is supposed to send the msg.
-func (sp *sendPool) addSendTo(stg *stage, route string) {
+// addSendTo registers a stg to which the sndPool is supposed to send the msg.
+func (sp *sendPool) addSendTo(stg *stage, route msgRouteParam) {
 	if sp.isLocked() {
 		return
 	}
@@ -69,10 +70,11 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 		}
 
 		onTimeout := func() bool {
-			sp.error(1, "Timeout in sending to "+route.routeName)
+			sp.error(1, "Timeout in sending to "+string(route.route))
 			return dropOnTimeout
 		}
-		sent = sent || route.send(mes, _SendTimeout, onTimeout)
+		snt := route.send(mes, _SendTimeout, onTimeout)
+		sent = sent || snt
 	}
 
 	if sent {
@@ -85,8 +87,8 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 
 func (sp *sendPool) error(code uint8, text string) {
 	sp.errSender <- message.NewError(
-		sp.proc.procPool.stage.pipeline.id,
-		sp.proc.procPool.stage.id,
+		sp.proc.procPool.stage().pipeline.id,
+		sp.proc.procPool.stage().id,
 		sp.proc.id,
 		code, text)
 }
@@ -108,7 +110,7 @@ func (sp *sendPool) lock() {
 	sp.runLock.Store(true)
 }
 
-// Close closes the sndPool
+// Done closes the sndPool
 func (sp *sendPool) close() {
 	if sp.isClosed() {
 		return
