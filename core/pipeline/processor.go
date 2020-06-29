@@ -68,6 +68,11 @@ func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
 	}
 }
 
+//! Not yet implemented
+func (pr *Processor) Persistor() IPersistor {
+	return nil
+}
+
 func (pr *Processor) incomingRoutes() msgRoutes {
 	return pr.routes
 }

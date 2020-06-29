@@ -22,6 +22,9 @@ func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content message.Msg
 	dp.resSrcMsg = srcMsg
 	dp.resContent = content
 }
+func (dp *dummyProcessorExecutor) Persistor() IPersistor {
+	return nil
+}
 func (*dummyProcessorExecutor) Error(uint8, error) {}
 func (*dummyProcessorExecutor) Done()              {}
 func (*dummyProcessorExecutor) IsClosed() bool {
@@ -53,6 +56,9 @@ func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
 	}
 
 	d.outRoute.sendChannel <- msgPack
+}
+func (d *dummyProcessor) Persistor() IPersistor {
+	return nil
 }
 func (d *dummyProcessor) Error(uint8, error) {
 }
