@@ -32,11 +32,11 @@ func NewBadger(path string) *Badger {
 }
 
 func (b *Badger) Store(key string, value []byte) error {
-	return b.StoreWithTTL(key, value, config.DEFAULT_TTL)
+	return b.StoreWithTTL(key, value, config.DefaultTTL)
 }
 
 func (b *Badger) StoreMap(m map[string][]byte) error {
-	return b.StoreMapWithTTL(m, config.DEFAULT_TTL)
+	return b.StoreMapWithTTL(m, config.DefaultTTL)
 }
 
 func (b *Badger) StoreWithTTL(key string, value []byte, ttl time.Duration) error {

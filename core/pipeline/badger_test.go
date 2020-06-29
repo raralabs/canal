@@ -19,7 +19,7 @@ func TestBadger(t *testing.T) {
 	}
 	fmt.Println(dir)
 
-	dbPath := config.DB_ROOT + "test/"
+	dbPath := config.DbRoot + "test/"
 
 	m := map[string][]byte{
 		"A": []byte("1"),
