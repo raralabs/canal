@@ -18,7 +18,7 @@ func main() {
 	}
 	fmt.Println(dir)
 
-	dbPath := config.DB_ROOT + "test/"
+	dbPath := config.DbRoot + "test/"
 
 	badger := pipeline.NewBadger(dbPath)
 	defer func() {
@@ -35,6 +35,11 @@ func main() {
 
 	for k, v := range m {
 		badger.Store(k, v)
+	}
+
+	val, err := badger.Get("E")
+	if err == nil {
+		fmt.Println(val)
 	}
 
 	for k, v := range m {
