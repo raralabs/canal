@@ -163,7 +163,7 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 	// Add Persistor for the processor
 	stg := p.processorPool().stage()
 	ppln := stg.pipeline
-	path := fmt.Sprintf("%s%v/%s/", config.DbRoot, ppln.Id(), stg.name)
+	path := fmt.Sprintf("%s%v/%s/%v/", config.DbRoot, ppln.Id(), stg.name, p.id)
 	p.persistor = NewBadger(path)
 
 	return p
