@@ -2,10 +2,11 @@ package sinks
 
 import (
 	"fmt"
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/core/pipeline"
 	"log"
 	"os"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 type FileWriter struct {

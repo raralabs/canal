@@ -1,6 +1,8 @@
 package pipeline
 
 import (
+	"fmt"
+	"github.com/raralabs/canal/config"
 	"log"
 	"sync/atomic"
 
@@ -20,6 +22,7 @@ type Processor struct {
 	errSender  chan<- message.Msg //
 	mesFactory message.Factory    // Msg Factory associated with the Processor. Helps in generating new messages.
 	meta       *metadata          // Metadata produced by the processor
+	persistor  IPersistor         // Persists the processor's data
 }
 
 func (pr *Processor) lock(stgRoutes msgRoutes) {
@@ -70,7 +73,7 @@ func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
 
 //! Not yet implemented
 func (pr *Processor) Persistor() IPersistor {
-	return nil
+	return pr.persistor
 }
 
 func (pr *Processor) incomingRoutes() msgRoutes {
@@ -87,6 +90,7 @@ func (pr *Processor) Done() {
 		pr.sndPool.close()
 	}
 	pr.meta.done()
+	pr.persistor.Close()
 }
 
 func (pr *Processor) IsClosed() bool {
@@ -155,6 +159,12 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 	if factory.stage.executorType != SINK {
 		p.sndPool = newSendPool(p)
 	}
+
+	// Add Persistor for the processor
+	stg := p.processorPool().stage()
+	ppln := stg.pipeline
+	path := fmt.Sprintf("%s%v/%s/%v/", config.DbRoot, ppln.Id(), stg.name, p.id)
+	p.persistor = NewBadger(path)
 
 	return p
 }
