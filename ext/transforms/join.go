@@ -25,11 +25,11 @@ package transforms
 //	condition func(msg1, msg2 *message.MsgContent) bool) *Join {
 //
 //	if len(desc) != 3 {
-//		log.Fatalf("Need exactly 3 tables for join, got: %v", len(desc))
+//		log.Panicf("Need exactly 3 tables for join, got: %v", len(desc))
 //		return nil
 //	}
 //	if len(fromId) != 2 {
-//		log.Fatalf("Need exactly 2 fromIds for join, got: %v", len(fromId))
+//		log.Panicf("Need exactly 2 fromIds for join, got: %v", len(fromId))
 //		return nil
 //	}
 //

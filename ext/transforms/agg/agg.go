@@ -14,14 +14,14 @@ type Aggregator interface {
 
 	// Aggregate aggregates the data based on the current value and the current
 	// message
-	Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) message.MsgFieldValue
+	Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue
 
 	// InitValue gives the initialization value for the aggregator
-	InitValue() message.MsgFieldValue
+	InitValue() *message.MsgFieldValue
 
 	// InitMsgValue gives the initialization value for the aggregator based
 	// on the message
-	InitMsgValue(msg *message.MsgContent) message.MsgFieldValue
+	InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue
 
 	// Reset resets the aggregator functions' inner states
 	Reset()

@@ -110,7 +110,7 @@ func (ce *CompositeEvent) processTriggers(trgs []bool) bool {
 		}
 		return out
 	default:
-		log.Fatalf("Unsupported Operator: %v", ce.operator)
+		log.Panicf("Unsupported Operator: %v", ce.operator)
 	}
 
 	return false

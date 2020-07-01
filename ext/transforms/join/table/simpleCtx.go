@@ -50,7 +50,7 @@ package table
 //		} else if v, ok := ctx.defaultValue[fld]; ok {
 //			data[fld] = v
 //		} else {
-//			log.Fatalf("Table could not be filled for: %v", fld)
+//			log.Panicf("Table could not be filled for: %v", fld)
 //			return false
 //		}
 //	}
@@ -104,7 +104,7 @@ package table
 //		} else if v, ok := ctx.defaultValue[fld]; ok {
 //			data[fld] = v
 //		} else {
-//			log.Fatalf("Table could not be filled for: %v", fld)
+//			log.Panicf("Table could not be filled for: %v", fld)
 //			return
 //		}
 //	}

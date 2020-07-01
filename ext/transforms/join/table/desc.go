@@ -23,7 +23,7 @@ package table
 //		tbl := NewMemTable(desc.Alias, desc.Ctx, desc.Fields...)
 //		return tbl
 //	default:
-//		log.Fatalf("Unsupported type of table: %s", t)
+//		log.Panicf("Unsupported type of table: %s", t)
 //	}
 //
 //	return nil

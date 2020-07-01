@@ -19,7 +19,7 @@ func NewFileWriter(path, key string) pipeline.Executor {
 	// Create a file for writing
 	f, err := os.Create(path)
 	if err != nil {
-		log.Fatalf("Couldn't open file for writing. Error: %v", err)
+		log.Panicf("Couldn't open file for writing. Error: %v", err)
 	}
 
 	//w := bufio.NewWriter(f)

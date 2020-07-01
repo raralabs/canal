@@ -1,10 +1,11 @@
 package transforms
 
 import (
+	"time"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/transforms/base_transforms"
-	"time"
+	"github.com/raralabs/canal/ext/transforms/base_transforms"
 )
 
 func DelayFunction(delay time.Duration) pipeline.Executor {

@@ -23,7 +23,7 @@ package join
 //func NewJoiner(table1, table2, joined table.Table, condition func(msg1, msg2 *message.MsgContent) bool) *Joiner {
 //
 //	if table1.Alias() == table2.Alias() {
-//		log.Fatalf("Both tables have same alias: %s", table1.Alias())
+//		log.Panicf("Both tables have same alias: %s", table1.Alias())
 //		return nil
 //	}
 //
@@ -54,7 +54,7 @@ package join
 //		t2Msg = msgVal
 //
 //	} else {
-//		log.Fatalf("No table with alias = %s", tableName)
+//		log.Panicf("No table with alias = %s", tableName)
 //		return
 //	}
 //

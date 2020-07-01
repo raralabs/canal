@@ -85,7 +85,7 @@ package table
 //func (tbl *MemTable) Append(vals []message.MsgFieldValue) {
 //
 //	if len(vals) != len(tbl.fields) {
-//		log.Fatalln("Can only append if the length of values and fields match")
+//		log.Panicln("Can only append if the length of values and fields match")
 //		return
 //	}
 //

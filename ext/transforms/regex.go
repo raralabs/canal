@@ -1,11 +1,12 @@
 package transforms
 
 import (
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/transforms/base_transforms"
 	"log"
 	"regexp"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/ext/transforms/base_transforms"
 )
 
 func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Executor {
@@ -13,7 +14,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 	reg, err := regexp.Compile(exp)
 
 	if err != nil {
-		log.Fatalf("Could not parse regular expression: %s", exp)
+		log.Panicf("Could not parse regular expression: %s", exp)
 	}
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
@@ -21,13 +22,20 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 		content := m.Content()
 		types := m.Types()
 
+		if v, ok := content["eof"]; ok {
+			if v.Val == true {
+				proc.Result(m, content)
+				return true
+			}
+		}
+
 		str := content[key]
 
 		if types[key] != message.STRING {
-			log.Fatalf("Could not parse non-string values: %v", str)
+			log.Panicf("Could not parse non-string values: %v", str)
 		}
 
-		st,_ := str.Val.(string)
+		st, _ := str.Val.(string)
 
 		if reg.MatchString(st) {
 			s := f(reg, st)

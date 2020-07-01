@@ -20,7 +20,11 @@ type FileReader struct {
 func NewFileReader(path, key string, maxLines int) pipeline.Executor {
 	buf, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
+	}
+
+	if key == "eof" {
+		log.Panic("Key can't be eof")
 	}
 
 	scn := bufio.NewScanner(buf)
@@ -49,6 +53,10 @@ func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 		content.AddMessageValue(fr.key, message.NewFieldValue(line, message.STRING))
 		proc.Result(m, content)
 	} else {
+		content := make(message.MsgContent)
+		content.AddMessageValue("eof", message.NewFieldValue(true, message.BOOL))
+		proc.Result(m, content)
+
 		proc.Done()
 		fr.close()
 	}
@@ -74,6 +82,6 @@ func (fr *FileReader) Name() string {
 
 func (fr *FileReader) close() {
 	if err := fr.buf.Close(); err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 }
