@@ -73,14 +73,15 @@ func (c *Min) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the Min based
 // on the message
-func (c *Min) InitMsgValue(msg message.MsgContent) *message.MsgFieldValue {
+func (c *Min) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {
 			return c.InitValue()
 		}
 	}
-	return msg[c.field]
+	m := *msg
+	return m[c.field]
 }
 
 func (c *Min) Reset() {

@@ -11,8 +11,8 @@ type Count struct {
 }
 
 // NewCount creates a Count with the provided condition and returns it.
-func NewCount(alias string, f func(map[string]interface{}) bool) *Count {
-	return &Count{alias: alias, filt: f}
+func NewCount(alias string, condition func(map[string]interface{}) bool) *Count {
+	return &Count{alias: alias, filt: condition}
 }
 
 // Name returns the name of the Counter
@@ -50,7 +50,7 @@ func (c *Count) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the counter based
 // on the message
-func (c *Count) InitMsgValue(msg message.MsgContent) *message.MsgFieldValue {
+func (c *Count) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {

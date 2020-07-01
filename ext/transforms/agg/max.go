@@ -72,14 +72,15 @@ func (c *Max) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the max based
 // on the message
-func (c *Max) InitMsgValue(msg message.MsgContent) *message.MsgFieldValue {
+func (c *Max) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {
 			return c.InitValue()
 		}
 	}
-	return msg[c.field]
+	m := *msg
+	return m[c.field]
 }
 
 func (c *Max) Reset() {

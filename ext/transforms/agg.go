@@ -9,15 +9,18 @@ import (
 )
 
 type Aggregator struct {
-	table *agg.Table           // The table that holds all the aggregator's info
-	ev    *poll.CompositeEvent // The event that triggers the aggregator output
+	table *agg.Table             // The table that holds all the aggregator's info
+	ev    *poll.CompositeEvent   // The event that triggers the aggregator output
+	after func(message.Msg, pipeline.IProcessorForExecutor) bool // This function is called after execute on each message is called
 }
 
 // NewAggregator creates a new aggregator with the provided events, aggregators
 // and the groups and returns it.
-func NewAggregator(event poll.Event, aggs []agg.Aggregator, groupBy ...string) *Aggregator {
+func NewAggregator(event poll.Event, aggs []agg.Aggregator, after func(message.Msg, pipeline.IProcessorForExecutor) bool, groupBy ...string) *Aggregator {
 
-	ag := &Aggregator{}
+	ag := &Aggregator{
+		after: after,
+	}
 
 	if ev, ok := event.(*poll.CompositeEvent); ok {
 		ag.ev = ev
@@ -75,5 +78,5 @@ func (ag *Aggregator) aggFunc(m message.Msg, s *struct{}) (bool, error) {
 
 func (ag *Aggregator) Function() pipeline.Executor {
 	var s struct{}
-	return base_transforms.NewAggOperator(s, ag.toMessage, ag.aggFunc)
+	return base_transforms.NewAggOperator(s, ag.toMessage, ag.aggFunc, ag.after)
 }
