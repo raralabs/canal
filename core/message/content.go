@@ -39,19 +39,27 @@ type MsgFieldValue struct {
 }
 
 // Creates a new MsgFieldValue and returns it.
-func NewFieldValue(value interface{}, valueType FieldValueType) MsgFieldValue {
-	m := MsgFieldValue{}
+func NewFieldValue(value interface{}, valueType FieldValueType) *MsgFieldValue {
+	m := &MsgFieldValue{}
 	m.SetValue(value)
 	m.SetType(valueType)
 
 	return m
 }
 
-func (mfv MsgFieldValue) Value() interface{} {
+//func (mfv MsgFieldValue) Value() interface{} {
+//	return mfv.Val
+//}
+//
+//func (mfv MsgFieldValue) ValueType() FieldValueType {
+//	return mfv.ValType
+//}
+
+func (mfv *MsgFieldValue) Value() interface{} {
 	return mfv.Val
 }
 
-func (mfv MsgFieldValue) ValueType() FieldValueType {
+func (mfv *MsgFieldValue) ValueType() FieldValueType {
 	return mfv.ValType
 }
 
@@ -68,10 +76,10 @@ func (mfv *MsgFieldValue) String() string {
 }
 
 // A MsgContent is the actual data stored by the message.
-type MsgContent map[string]MsgFieldValue
+type MsgContent map[string]*MsgFieldValue
 
 // AddMessageValue adds a value with given key and type to the MessageContent.
-func (content MsgContent) AddMessageValue(key string, value MsgFieldValue) {
+func (content MsgContent) AddMessageValue(key string, value *MsgFieldValue) {
 	content[key] = value
 }
 
