@@ -32,7 +32,7 @@ func TestStage(t *testing.T) {
 
 			prPool := newDummyProcessorPool("path1", stg)
 			stg.processorPool = prPool
-			stg.AddProcessor(newDummyExecutor(SOURCE))
+			stg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(SOURCE))
 
 			bckGnd := context.Background()
 			d := time.Now().Add(10 * time.Millisecond)
@@ -60,17 +60,17 @@ func TestStage(t *testing.T) {
 			time.Sleep(1 * time.Millisecond)
 
 			assert.Panics(t, func() {
-				stg.AddProcessor(newDummyExecutor(SOURCE))
+				stg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(SOURCE))
 			})
 
 			prPool.done()
 			cancel()
 
 			assert.Panics(t, func() {
-				stg.AddProcessor(newDummyExecutor(TRANSFORM))
+				stg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(TRANSFORM))
 			})
 			assert.Panics(t, func() {
-				stg.AddProcessor(newDummyExecutor(SOURCE), "path1", "path2")
+				stg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(SOURCE), "path1", "path2")
 			})
 		})
 
@@ -91,7 +91,7 @@ func TestStage(t *testing.T) {
 
 			stg.processorPool = prPool
 			stg.receivePool = rcvPool
-			stg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+			stg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), "path1")
 
 			sendStg := &stage{
 				id:           2,

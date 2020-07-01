@@ -18,7 +18,7 @@ type IProcessorForPool interface {
 // that notifies processors about messages properly, each time it receives a message.
 type IProcessorPool interface {
 	// add creates an IProcessor with passed parameter and attaches it to the Processor pool.
-	add(executor Executor, routes msgRoutes) IProcessor
+	add(opts ProcessorOptions, executor Executor, routes msgRoutes) IProcessor
 
 	// shortCircuitProcessors ...
 	shortCircuitProcessors()
@@ -93,12 +93,12 @@ func (pool *processorPool) shortCircuitProcessors() {
 }
 
 // add adds a Processor to the list of processors to be executed
-func (pool *processorPool) add(executor Executor, routes msgRoutes) IProcessor {
+func (pool *processorPool) add(opts ProcessorOptions, executor Executor, routes msgRoutes) IProcessor {
 	if pool.isRunning() {
 		return nil
 	}
 
-	processor := pool.processorFactory.new(executor, routes)
+	processor := pool.processorFactory.new(opts, executor, routes)
 	pool.attach(processor)
 
 	return processor

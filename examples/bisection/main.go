@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/sinks"
-	"github.com/raralabs/canal/sources"
-	"github.com/raralabs/canal/transforms/base_transforms"
-	"github.com/raralabs/canal/utils/cast"
 	"math"
 	"sync/atomic"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/ext/sinks"
+	"github.com/raralabs/canal/ext/sources"
+	"github.com/raralabs/canal/ext/transforms/base_transforms"
+	"github.com/raralabs/canal/utils/cast"
 )
 
 func main() {
@@ -21,14 +22,14 @@ func main() {
 	reqmt := map[string]interface{}{
 		"lowerEnd": 0,
 		"upperEnd": 12,
-		"tol": 1e-10,
+		"tol":      1e-10,
 		"maxIters": uint64(100),
 	}
 
 	p := pipeline.NewPipeline(1)
 
 	src := p.AddSource("Source")
-	sp := src.AddProcessor(sources.NewMapValueSource(reqmt, 1))
+	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewMapValueSource(reqmt, 1))
 
 	pf := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		time.Sleep(200 * time.Millisecond)
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	pass1 := p.AddTransform("FirstPass")
-	p1 := pass1.AddProcessor(base_transforms.NewDoOperator(pf), "path1")
+	p1 := pass1.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(pf), "path1")
 
 	iter := uint64(0)
 	bisect := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
@@ -48,9 +49,9 @@ func main() {
 		b := content["upperEnd"].Value()
 		t := content["tol"].Value()
 
-		af,_ := cast.TryFloat(a)
-		bf,_ := cast.TryFloat(b)
-		tol,_ := cast.TryFloat(t)
+		af, _ := cast.TryFloat(a)
+		bf, _ := cast.TryFloat(b)
+		tol, _ := cast.TryFloat(t)
 
 		fa := f(af)
 		fb := f(bf)
@@ -92,14 +93,14 @@ func main() {
 	}
 
 	bisector := p.AddTransform("Bisector")
-	bs := bisector.AddProcessor(base_transforms.NewDoOperator(bisect), "path")
+	bs := bisector.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(bisect), "path")
 
 	filter := p.AddTransform("Filter Info")
-	f1 := filter.AddProcessor(base_transforms.NewDoOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
+	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		msgContent := msg.Content()
 		content := make(message.MsgContent)
 
-		uniqueInfo := []string {
+		uniqueInfo := []string{
 			"root", "error", "bestRoot",
 		}
 
@@ -117,7 +118,7 @@ func main() {
 	}), "infoPath")
 
 	sink := p.AddSink("Sink")
-	sink.AddProcessor(sinks.NewStdoutSink(), "sink")
+	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 
 	pass1.ReceiveFrom("path1", sp, bs)
 	bisector.ReceiveFrom("path", p1)

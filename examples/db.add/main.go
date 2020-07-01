@@ -3,13 +3,15 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"log"
+	"time"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/sinks"
-	"github.com/raralabs/canal/sources"
-	"github.com/raralabs/canal/transforms"
-	"github.com/raralabs/canal/transforms/base_transforms"
-	"time"
+	"github.com/raralabs/canal/ext/sinks"
+	"github.com/raralabs/canal/ext/sources"
+	"github.com/raralabs/canal/ext/transforms"
+	"github.com/raralabs/canal/ext/transforms/base_transforms"
 )
 
 func main() {
@@ -17,10 +19,10 @@ func main() {
 	p := pipeline.NewPipeline(1)
 
 	src := p.AddSource("Source")
-	sp := src.AddProcessor(sources.NewInlineRange(100))
+	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewInlineRange(100))
 
 	delay := p.AddTransform("Delay")
-	del := delay.AddProcessor(transforms.DelayFunction(100*time.Millisecond), "path1")
+	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
 
 	bucket := 10
 	count := 0
@@ -31,6 +33,9 @@ func main() {
 		sum, _ := v.(uint64)
 
 		db := proc.Persistor()
+		if db == nil {
+			log.Panic("Need persistor but none available!!")
+		}
 		val, err := db.Get("sum")
 		if err == nil {
 			sum += binary.BigEndian.Uint64(val)
@@ -52,10 +57,12 @@ func main() {
 	}
 
 	adder := p.AddTransform("Adder")
-	ad := adder.AddProcessor(base_transforms.NewDoOperator(add), "path")
+	opts := pipeline.DefaultProcessorOptions
+	opts.Persistor = true
+	ad := adder.AddProcessor(opts, base_transforms.NewDoOperator(add), "path")
 
 	sink := p.AddSink("Sink")
-	sink.AddProcessor(sinks.NewStdoutSink(), "sink")
+	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 
 	delay.ReceiveFrom("path1", sp)
 	adder.ReceiveFrom("path", del)

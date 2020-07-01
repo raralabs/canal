@@ -84,14 +84,14 @@ func TestPipeline(t *testing.T) {
 
 	assert.Equal(t, uint32(1), srcStg.GetId())
 
-	src := srcStg.AddProcessor(newNumberGenerator(100))
+	src := srcStg.AddProcessor(DefaultProcessorOptions, newNumberGenerator(100))
 
 	trnStg.ReceiveFrom("path1", src)
-	tr := trnStg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+	tr := trnStg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), "path1")
 
 	snkCh := make(chan message.Msg, 100)
 	snkStg.ReceiveFrom("path2", tr)
-	snkStg.AddProcessor(newSink(snkCh), "")
+	snkStg.AddProcessor(DefaultProcessorOptions, newSink(snkCh), "")
 
 	pipeline.Validate()
 
@@ -135,14 +135,14 @@ func BenchmarkPipeline(b *testing.B) {
 	trnStg := pipeline.AddTransform("Filter")
 	snkStg := pipeline.AddSink("BlackHole")
 
-	src := srcStg.AddProcessor(newNumberGenerator(100))
+	src := srcStg.AddProcessor(DefaultProcessorOptions, newNumberGenerator(100))
 
 	trnStg.ReceiveFrom("path1", src)
-	tr := trnStg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+	tr := trnStg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), "path1")
 
 	snkCh := make(chan message.Msg, 100)
 	snkStg.ReceiveFrom("path2", tr)
-	snkStg.AddProcessor(newSink(snkCh), "")
+	snkStg.AddProcessor(DefaultProcessorOptions, newSink(snkCh), "")
 
 	pipeline.Validate()
 
