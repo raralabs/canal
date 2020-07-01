@@ -1,115 +1,171 @@
 package pipeline
 
-//
-//import (
-//	"context"
-//	"github.com/raralabs/canal/core/message"
-//	"reflect"
-//	"testing"
-//
-//	"github.com/stretchr/testify/assert"
-//)
-//
-//func TestNetwork(t *testing.T) {
-//
-//	// Setup
-//	pipelineId := uint(1)
-//	srcHubId := uint32(1)
-//	prcHubId := uint32(2)
-//
-//	numMsgs := int64(3)
-//
-//	var pipeline *Pipeline
-//
-//	var srcJob, prcJob *Processor
-//
-//	t.Run("Testing pipeline Creation", func(t *testing.T) {
-//		pipeline = NewPipeline(pipelineId)
-//
-//		assert.NotNil(t, pipeline, "pipeline should have been created")
-//		assert.Equal(t, pipelineId, pipeline.id, "id should be equal")
-//		assert.Zero(t, len(pipeline.stages), "No hubs have been added")
-//	})
-//
-//	var srcHub *stg
-//	t.Run("Testing AddSource", func(t *testing.T) {
-//		pipeline.AddSource()
-//		assert.Equal(t, 1, len(pipeline.stages), "Only one hub added to pipeline")
-//		srcHub = pipeline.stages[0]
-//		assert.Equal(t, SOURCE, srcHub.executorType, "stg is a source")
-//
-//		// add source job(transforms) to the hub
-//		//exec := core.newDummySource(numMsgs)
-//		//srcJob = pipeline.stages[0].AddProcessor(exec)
-//	})
-//
-//	t.Run("Testing AddTransform", func(t *testing.T) {
-//		pipeline.AddTransform()
-//		assert.Equal(t, 2, len(pipeline.stages), "Two hubs added to pipeline")
-//		prcHub := pipeline.stages[1]
-//		assert.Equal(t, TRANSFORM, prcHub.executorType, "stg is a source")
-//
-//		// add transforms job(transforms) to the hub
-//		//exec := core.newDummyExecutor()
-//		//prcJob = pipeline.stages[1].AddProcessor(exec)
-//		//
-//		//pipeline.stages[1].ReceiveFrom("default", srcJob)
-//	})
-//
-//	var snkExec Executor
-//
-//	t.Run("Testing AddSink", func(t *testing.T) {
-//		pipeline.AddSink()
-//		assert.Equal(t, 3, len(pipeline.stages), "Three hubs added to pipeline")
-//		snkHub := pipeline.stages[2]
-//		assert.Equal(t, SINK, snkHub.executorType, "stg is a source")
-//
-//		// add transforms job(transforms) to the hub
-//		//snkExec = core.newDummySink()
-//		//pipeline.stages[2].AddProcessor(snkExec)
-//		//
-//		//pipeline.stages[2].ReceiveFrom("default", prcJob)
-//	})
-//
-//	t.Run("Testing loop and Wait", func(t *testing.T) {
-//
-//		f := func() {
-//
-//			mf := message.NewFactory(pipelineId, prcHubId, prcJob.id)
-//			msg := mf.NewExecute(nil, &message.MsgContent{"Greet": message.NewFieldValue("Nihao", message.STRING)})
-//
-//			for i := int64(0); i < numMsgs; i++ {
-//				// Correct msg Ids
-//				//msg.id = uint64(2 * (i + 1))
-//				//if s, ok := snkExec.(*core.dummySink); ok {
-//				//	m := <-s.sunk
-//				//	if !reflect.DeepEqual(m, msg) {
-//				//		t.Errorf("Msg: got = %#v, want = %#v", m, msg)
-//				//	}
-//				//}
-//			}
-//		}
-//
-//		pipeline.Start(context.Background(), f)
-//	})
-//
-//	t.Run("Testing Dummy pipeline Filler and Checker", func(t *testing.T) {
-//		//n := NewPipeline(uint(1))
-//		//
-//		//mf := msg.NewFactory(pipelineId, prcHubId, prcJob.id)
-//		//msg := mf.NewExecute(nil, &msg.MsgContent{"Greet": msg.NewFieldValue("Nihao", msg.STRING)})
-//
-//		//snkExec := core.fillDummyNetwork(n, 3)
-//		//core.startVerifyNetwork(t, n, numMsgs, msg, snkExec)
-//	})
-//
-//	t.Run("Testing GetStage and RemoveLastNodes", func(t *testing.T) {
-//		hub := pipeline.GetStage(srcHubId)
-//		if !reflect.DeepEqual(hub, srcHub) {
-//			t.Errorf("Msg: got = %#v, want = %#v", hub, srcHub)
-//		}
-//
-//		pipeline.RemoveLastNodes(1)
-//		assert.Equal(t, 2, len(pipeline.stages), "One node removed")
-//	})
-//}
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
+)
+
+type numberGenerator struct {
+	name   string
+	curVal uint64
+	maxVal uint64
+}
+
+func newNumberGenerator(maxVal uint64) Executor {
+	return &numberGenerator{name: "Inline", curVal: 0, maxVal: maxVal}
+}
+func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) bool {
+	if s.curVal >= s.maxVal {
+		proc.Done()
+		return true
+	}
+
+	s.curVal++
+	content := make(message.MsgContent)
+	content.AddMessageValue("value", message.NewFieldValue(s.curVal, message.INT))
+	proc.Result(m, content)
+	return false
+}
+func (s *numberGenerator) ExecutorType() ExecutorType {
+	return SOURCE
+}
+func (s *numberGenerator) HasLocalState() bool {
+	return false
+}
+func (s *numberGenerator) SetName(name string) {
+	s.name = name
+}
+func (s *numberGenerator) Name() string {
+	return s.name
+}
+
+type channelSink struct {
+	channel chan message.Msg
+	name    string
+}
+
+func newSink(ch chan message.Msg) Executor {
+	return &channelSink{
+		name:    "BlackHole",
+		channel: ch,
+	}
+}
+func (s *channelSink) ExecutorType() ExecutorType {
+	return SINK
+}
+func (s *channelSink) Execute(m message.Msg, pr IProcessorForExecutor) bool {
+	s.channel <- m
+	return true
+}
+func (s *channelSink) HasLocalState() bool {
+	return false
+}
+func (s *channelSink) SetName(name string) {
+	s.name = name
+}
+func (s *channelSink) Name() string {
+	return s.name
+}
+
+func TestPipeline(t *testing.T) {
+
+	pipelineId := uint32(1)
+
+	pipeline := NewPipeline(pipelineId)
+	assert.Equal(t, pipelineId, pipeline.Id())
+
+	srcStg := pipeline.AddSource("Generator")
+	trnStg := pipeline.AddTransform("Filter")
+	snkStg := pipeline.AddSink("BlackHole")
+
+	assert.Equal(t, uint32(1), srcStg.GetId())
+
+	src := srcStg.AddProcessor(newNumberGenerator(100))
+
+	trnStg.ReceiveFrom("path1", src)
+	tr := trnStg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+
+	snkCh := make(chan message.Msg, 100)
+	snkStg.ReceiveFrom("path2", tr)
+	snkStg.AddProcessor(newSink(snkCh), "")
+
+	pipeline.Validate()
+
+	bckGnd := context.Background()
+	d := time.Now().Add(10 * time.Millisecond)
+	ctx, cancel := context.WithDeadline(bckGnd, d)
+
+	go func() {
+		var receivedMsgs []interface{}
+
+		for {
+			rcvd, ok := <-snkCh
+			if !ok {
+				break
+			}
+			receivedMsgs = append(receivedMsgs, rcvd.Content()["value"].Val)
+		}
+
+		for i := range receivedMsgs {
+			assert.Contains(t, receivedMsgs, uint64(i+1))
+		}
+	}()
+
+	testAfterCompletion := func() {
+		close(snkCh)
+	}
+
+	pipeline.Start(ctx, testAfterCompletion)
+
+	cancel()
+}
+
+func BenchmarkPipeline(b *testing.B) {
+	b.ReportAllocs()
+
+	pipelineId := uint32(1)
+
+	pipeline := NewPipeline(pipelineId)
+
+	srcStg := pipeline.AddSource("Generator")
+	trnStg := pipeline.AddTransform("Filter")
+	snkStg := pipeline.AddSink("BlackHole")
+
+	src := srcStg.AddProcessor(newNumberGenerator(100))
+
+	trnStg.ReceiveFrom("path1", src)
+	tr := trnStg.AddProcessor(newDummyExecutor(TRANSFORM), "path1")
+
+	snkCh := make(chan message.Msg, 100)
+	snkStg.ReceiveFrom("path2", tr)
+	snkStg.AddProcessor(newSink(snkCh), "")
+
+	pipeline.Validate()
+
+	bckGnd := context.Background()
+	d := time.Now().Add(10 * time.Millisecond)
+	ctx, cancel := context.WithDeadline(bckGnd, d)
+
+	for i := 0; i < b.N; i++ {
+		go func() {
+			for {
+				_, ok := <-snkCh
+				if !ok {
+					break
+				}
+			}
+		}()
+
+		testAfterCompletion := func() {
+			close(snkCh)
+		}
+
+		pipeline.Start(ctx, testAfterCompletion)
+	}
+
+	cancel()
+}

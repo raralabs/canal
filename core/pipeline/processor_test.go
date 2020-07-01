@@ -1,8 +1,9 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"testing"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 type dummyProcessorExecutor struct {
@@ -21,8 +22,14 @@ func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content message.Msg
 	dp.resSrcMsg = srcMsg
 	dp.resContent = content
 }
+func (dp *dummyProcessorExecutor) Persistor() IPersistor {
+	return nil
+}
 func (*dummyProcessorExecutor) Error(uint8, error) {}
 func (*dummyProcessorExecutor) Done()              {}
+func (*dummyProcessorExecutor) IsClosed() bool {
+	return false
+}
 
 type dummyProcessor struct {
 	exec     Executor
@@ -30,6 +37,7 @@ type dummyProcessor struct {
 	closed   bool
 	outRoute sendRoute
 	prPool   IProcessorPool
+	meta     *metadata
 }
 
 func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *dummyProcessor {
@@ -38,6 +46,7 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 		routes: routes,
 		closed: false,
 		prPool: prPool,
+		meta:   newMetadata(),
 	}
 }
 func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
@@ -47,6 +56,9 @@ func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
 	}
 
 	d.outRoute.sendChannel <- msgPack
+}
+func (d *dummyProcessor) Persistor() IPersistor {
+	return nil
 }
 func (d *dummyProcessor) Error(uint8, error) {
 }
@@ -63,14 +75,13 @@ func (d *dummyProcessor) incomingRoutes() msgRoutes {
 func (d *dummyProcessor) lock(msgRoutes) {
 	return
 }
-func (d *dummyProcessor) isClosed() bool {
+func (d *dummyProcessor) IsClosed() bool {
 
 	if d.exec.ExecutorType() == SINK {
 		return false
 	}
 	return d.closed
 }
-
 func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	d.outRoute = newSendRoute(sendChannel, route)
@@ -78,7 +89,6 @@ func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
 func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
 	return d.outRoute.sendChannel
 }
-
 func (d *dummyProcessor) isConnected() bool {
 	if d.exec.ExecutorType() == SINK {
 		return true
@@ -87,6 +97,9 @@ func (d *dummyProcessor) isConnected() bool {
 }
 func (d *dummyProcessor) processorPool() IProcessorPool {
 	return d.prPool
+}
+func (d *dummyProcessor) metadata() *metadata {
+	return d.meta
 }
 
 func ExpectPanic(t *testing.T) {
@@ -99,6 +112,7 @@ func TestTransformFactory(t *testing.T) {
 	proc := Processor{
 		executor:   newDummyExecutor(SINK),
 		mesFactory: message.NewFactory(1, 1, 1),
+		meta:       newMetadata(),
 	}
 
 	proc.lock(nil)

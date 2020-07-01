@@ -2,31 +2,32 @@ package core
 
 import (
 	"context"
-	"github.com/raralabs/canal/core/pipeline"
 	"sync"
+
+	"github.com/raralabs/canal/core/pipeline"
 )
 
 // A Host hosts a number of networks with different network ids. It can host
 // different networks and run them concurrently. When a network completes it's
 // tasks, the host no longer tracks the network.
 type Host struct {
-	Id        uint                        // id of the host
-	Pipelines map[uint]*pipeline.Pipeline // Pipelines stored by the host
-	mutex     sync.Mutex                  //
-	wg        sync.WaitGroup              //
+	Id        uint                          // id of the host
+	Pipelines map[uint32]*pipeline.Pipeline // Pipelines stored by the host
+	mutex     sync.Mutex                    //
+	wg        sync.WaitGroup                //
 }
 
 // NewHost creates a new host with given id.
 func NewHost(id uint) *Host {
 	return &Host{
 		Id:        id,
-		Pipelines: make(map[uint]*pipeline.Pipeline),
+		Pipelines: make(map[uint32]*pipeline.Pipeline),
 	}
 }
 
 // AddPipeline adds a pipeline with given id to the host.
 // Returns the created network.
-func (w *Host) AddPipeline(id uint) *pipeline.Pipeline {
+func (w *Host) AddPipeline(id uint32) *pipeline.Pipeline {
 	w.Pipelines[id] = pipeline.NewPipeline(id)
 	return w.Pipelines[id]
 }

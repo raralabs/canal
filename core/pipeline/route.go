@@ -1,8 +1,9 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 type msgPod struct {

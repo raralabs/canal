@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/raralabs/tengo/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterEvent(t *testing.T) {

@@ -12,23 +12,23 @@ import (
 func main() {
 	p := pipeline.NewPipeline(1)
 
-	src := p.AddSource("FirstSource").Trace()
-	sp := src.AddProcessor(sources.NewInlineRange(1))
+	src := p.AddSource("FirstSource")
+	sp := src.AddProcessor(sources.NewInlineRange(2))
 
 	filter1 := p.AddTransform("FirstPass")
 	f1 := filter1.AddProcessor(transforms.PassFunction(), "path1")
 
 	filter2 := p.AddTransform("SecondPass")
-	f2 := filter2.AddProcessor(transforms.PassFunction())
+	f2 := filter2.AddProcessor(transforms.PassFunction(), "path2")
 
 	sink := p.AddSink("Sink")
-	sink.AddProcessor(sinks.NewStdoutSink())
+	sink.AddProcessor(sinks.NewStdoutSink(), "sink")
 
 	filter1.ReceiveFrom("path1", sp, f2)
-	filter2.ReceiveFrom("path1", f1)
+	filter2.ReceiveFrom("path2", f1)
 	sink.ReceiveFrom("sink", f2)
 
-	c, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	p.Validate()
 	p.Start(c, cancel)
 }

@@ -18,7 +18,7 @@ func NewWorker(id uint) *Worker {
 // AddPipeline adds a new network with the given id to the host.
 // Returns the created network.
 func (w *Worker) AddPipeline(id uint) *pipeline.Pipeline {
-	return w.host.AddPipeline(id)
+	return w.host.AddPipeline(uint32(id))
 }
 
 // loop starts the host. If 'asService' is true, the host runs as a service.

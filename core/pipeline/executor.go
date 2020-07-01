@@ -20,6 +20,7 @@ const (
 	SINK
 )
 
+// Returns the string form of the ExecutorType
 func (et *ExecutorType) String() string {
 	switch *et {
 	case SOURCE:
@@ -33,6 +34,8 @@ func (et *ExecutorType) String() string {
 	return "UNKNOWN"
 }
 
+// An IProcessorForExecutor is a lite version of IProcessor that is designed for the Executor. IProcessor can also be
+// passed, wherever IProcessorForExecutor can be passed, to achieve the same result.
 type IProcessorForExecutor interface {
 	IProcessorCommon
 

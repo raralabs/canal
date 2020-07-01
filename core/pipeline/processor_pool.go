@@ -1,42 +1,62 @@
 package pipeline
 
 import (
+	"log"
 	"sync/atomic"
 )
 
+// An IProcessorForPool is a lite version of IProcessor that is designed for the IProcessorPool. IProcessor can also be
+// passed, wherever IProcessorForPool can be passed, to achieve the same result.
 type IProcessorForPool interface {
 	IProcessorCommon
 
 	IProcessorReceiver
 }
 
+// IProcessorPool defines the interface for a processor pool. It is responsible for collecting messages from the
+// receiver and routing it properly to the processors that has subscribed to the message's path. It acts as a 'Subject'
+// that notifies processors about messages properly, each time it receives a message.
 type IProcessorPool interface {
+	// add creates an IProcessor with passed parameter and attaches it to the Processor pool.
 	add(executor Executor, routes msgRoutes) IProcessor
 
+	// shortCircuitProcessors ...
 	shortCircuitProcessors()
 
+	// lock ...
 	lock(stgRoutes msgRoutes)
 
+	// IsClosed checks if the processor pool is fully closed.
+	// A processor pool is fully closed when all the processors attached to it are closed.
 	isClosed() bool
 
+	// isRunning checks if the processor pool is running, i.e. it is passing the messages to the processors.
 	isRunning() bool
 
+	// stage returns the stage that the processor pool belongs to.
 	stage() *stage
 
+	// attach attaches a processor to the processor pool.
 	attach(...IProcessorForPool)
 
+	// detach detaches a processor to the processor pool.
 	detach(...IProcessorForPool)
 
+	// execute routes the msgPod to the processors that has subscribed to it.
 	execute(pod msgPod)
 
+	// error sends the errors produced during the execution to appropriate channels.
 	error(uint8, error)
 
+	// done closes all the processors that are attached to the processor pool.
+	// IsClosed() should return true after a call is made to this method.
 	done()
 }
 
 // A procPool collects data from multiple jobs and send them to their respective
 // Sender sendChannel so that the other receivePool can connect to the Sender
 // sendChannel. It executes all the processors that it holds.
+// It implements the IProcessorPool interface.
 type processorPool struct {
 	stg              *stage           //
 	shortCircuit     bool             //
@@ -91,7 +111,7 @@ func (pool *processorPool) lock(stgRoutes msgRoutes) {
 		return
 	}
 	if len(pool.procMsgPaths) == 0 {
-		panic("procPool should have at least one Processor.")
+		panic("Processor Pool: " + pool.stage().name + " should have at least one Processor.")
 	}
 
 	for _, procs := range pool.procMsgPaths {
@@ -158,16 +178,17 @@ func (pool *processorPool) execute(pod msgPod) {
 	allClosed := true
 
 	for path, procs := range pool.procMsgPaths {
-		if path != pod.route {
+		if path != msgRouteParam("") && path != pod.route {
 			continue
 		}
+
 		for _, proc := range procs {
-			if proc.isClosed() {
+			if proc.IsClosed() {
 				continue
 			}
 
 			accepted := proc.process(pod.msg)
-			if !proc.isClosed() {
+			if !proc.IsClosed() {
 				allClosed = false
 			}
 
@@ -179,7 +200,7 @@ func (pool *processorPool) execute(pod msgPod) {
 
 	if allClosed {
 		pool.done()
-		println("All processors closed, closed processorpool ", pool.stg.name)
+		log.Println("All processors closed, closed processorpool ", pool.stg.name)
 	}
 }
 
@@ -189,7 +210,7 @@ func (pool *processorPool) error(uint8, error) {
 func (pool *processorPool) done() {
 	for _, processors := range pool.procMsgPaths {
 		for _, processor := range processors {
-			if !processor.isClosed() {
+			if !processor.IsClosed() {
 				processor.Done()
 			}
 		}

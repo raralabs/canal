@@ -1,12 +1,13 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
+	"github.com/stretchr/testify/assert"
 )
 
 // This dummy struct mocks a Processor Pool from the perspective of a receive pool. So we will only implement following:
@@ -54,7 +55,7 @@ func (d *dummyProcessorPool) attach(pool ...IProcessorForPool) {
 func (d *dummyProcessorPool) detach(pool ...IProcessorForPool) {
 }
 func (d *dummyProcessorPool) execute(pod msgPod) {
-	//if d.isClosed() {
+	//if d.IsClosed() {
 	//	return
 	//}
 

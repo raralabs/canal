@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/sinks"
 	"github.com/raralabs/canal/sources"
 	"github.com/raralabs/canal/transforms"
+	"github.com/raralabs/canal/transforms/base_transforms"
 	"sync"
 )
 
@@ -21,15 +23,28 @@ func main() {
 	filter1 := p.AddTransform("FirstPass")
 	filter1.ReceiveFrom("f1p1", sp1)
 	filter1.ReceiveFrom("f1p2", sp2)
-	f1 := filter1.AddProcessor(transforms.PassFunction())
+	f1 := filter1.AddProcessor(transforms.PassFunction(), "")
+
+	ef := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+
+		val := m.Content()["value"]
+		if val.ValType == message.INT {
+			v := val.Val.(uint64)
+			if v%2 == 0 {
+				proc.Result(m, m.Content())
+			}
+		}
+
+		return true
+	}
 
 	filter2 := p.AddTransform("SecondPass")
 	filter2.ReceiveFrom("f2p1", f1)
-	f2 := filter2.AddProcessor(transforms.PassFunction())
+	f2 := filter2.AddProcessor(base_transforms.NewDoOperator(ef), "")
 
 	sink := p.AddSink("Sink")
 	sink.ReceiveFrom("sink", f2)
-	sink.AddProcessor(sinks.NewStdoutSink())
+	sink.AddProcessor(sinks.NewStdoutSink(), "")
 
 	p.Validate()
 

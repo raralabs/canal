@@ -15,7 +15,7 @@ func NewInlineRange(maxVal uint64) pipeline.Executor {
 	return &InlineRange{name: "Inline", curVal: 0, maxVal: maxVal}
 }
 
-func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorExecutor) bool {
+func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 	if s.curVal >= s.maxVal {
 		proc.Done()
 		return true

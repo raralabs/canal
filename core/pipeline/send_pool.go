@@ -1,9 +1,10 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"sync/atomic"
 	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 const (
@@ -72,7 +73,8 @@ func (sp *sendPool) send(mes message.Msg, dropOnTimeout bool) bool {
 			sp.error(1, "Timeout in sending to "+string(route.route))
 			return dropOnTimeout
 		}
-		sent = sent || route.send(mes, _SendTimeout, onTimeout)
+		snt := route.send(mes, _SendTimeout, onTimeout)
+		sent = sent || snt
 	}
 
 	if sent {

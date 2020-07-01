@@ -1,10 +1,12 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"reflect"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 // This dummy struct mocks a Processor from the perspective of a receive pool in the next stage
@@ -24,6 +26,10 @@ func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan msgPod 
 }
 func (d *dummyProcessorForReceiver) isConnected() bool {
 	return d.sendChannel != nil
+}
+
+func (*dummyProcessorForReceiver) IsClosed() bool {
+	return false
 }
 
 type dummyReceivePool struct {
@@ -108,14 +114,22 @@ func TestReceivePool(t *testing.T) {
 
 		// Send a message
 		pr.sendChannel <- msgPack
+		pr.sendChannel <- msgPack
 
-		select {
-		case rcvd := <-dummyPP.outRoute:
-			m := rcvd.msg
-			if !reflect.DeepEqual(m.Content(), msg.Content()) {
-				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+		go func() {
+			for {
+				rcvd, ok := <-dummyPP.outRoute
+				if !ok {
+					break
+				}
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
 			}
-		}
+		}()
+
+		time.Sleep(10 * time.Millisecond)
 
 		close(pr.sendChannel)
 	})
@@ -167,7 +181,6 @@ func BenchmarkReceivePool(b *testing.B) {
 
 		}
 		close(pr.sendChannel)
-		close(dummyPP.outRoute)
 	})
 
 }

@@ -1,14 +1,18 @@
 package pipeline
 
 import (
-	"github.com/raralabs/canal/core/message"
-	"sync"
+	"fmt"
+	"github.com/raralabs/canal/config"
+	"log"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 // A Processor represents an entity that wraps up a executor and handles
 // things like providing messages to the executor for execution, returning the
 // result appropriately, and sending the result to the sndPool for further execution.
+// It implements the IProcessor interface.
 type Processor struct {
 	id         uint32             // id of the transforms
 	procPool   IProcessorPool     //
@@ -17,9 +21,8 @@ type Processor struct {
 	sndPool    sendPool           // The sndPool to fanout the messages produced by this Processor to all its listeners
 	errSender  chan<- message.Msg //
 	mesFactory message.Factory    // Msg Factory associated with the Processor. Helps in generating new messages.
-	lastRcvMid uint64             // id of the last received msg by the Processor
-	totalRcv   uint64             //
-	procLock   sync.Mutex         //
+	meta       *metadata          // Metadata produced by the processor
+	persistor  IPersistor         // Persists the processor's data
 }
 
 func (pr *Processor) lock(stgRoutes msgRoutes) {
@@ -36,6 +39,8 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 	if pr.executor.ExecutorType() != SINK {
 		pr.sndPool.lock()
 	}
+
+	pr.meta.lock()
 }
 
 // process executes the corresponding executor of the execute on the passed
@@ -47,29 +52,28 @@ func (pr *Processor) process(msg message.Msg) bool {
 		msg = pod.msg
 	}
 
-	pr.procLock.Lock()
-	pr.lastRcvMid = msg.Id()
-	pr.totalRcv++
-	pr.procLock.Unlock()
-
+	pr.meta.ping(msg)
 	return pr.executor.Execute(msg, pr)
 }
 
 func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
-	if pr.isClosed() || pr.executor.ExecutorType() == SINK {
+	if pr.IsClosed() || pr.executor.ExecutorType() == SINK {
 		return
 	}
 
 	m := pr.mesFactory.NewExecute(srcMsg, content)
 
 	//Send the messages one by one
-	pr.procLock.Lock()
 	// If sndPool can't send the messages, then there's no point in processing, so Done
 	if !pr.sndPool.send(m, false) {
-		println("Closing proc, could not send ", pr.sndPool.proc.procPool.stage().name)
+		log.Printf("Closing proc, Id: %v Stage: %v. Could not send.", pr.id, pr.processorPool().stage().name)
 		pr.Done()
 	}
-	pr.procLock.Unlock()
+}
+
+//! Not yet implemented
+func (pr *Processor) Persistor() IPersistor {
+	return pr.persistor
 }
 
 func (pr *Processor) incomingRoutes() msgRoutes {
@@ -85,9 +89,11 @@ func (pr *Processor) Done() {
 	if pr.executor.ExecutorType() != SINK {
 		pr.sndPool.close()
 	}
+	pr.meta.done()
+	pr.persistor.Close()
 }
 
-func (pr *Processor) isClosed() bool {
+func (pr *Processor) IsClosed() bool {
 	if pr.executor.ExecutorType() == SINK {
 		return false
 	}
@@ -118,12 +124,12 @@ func (pr *Processor) processorPool() IProcessorPool {
 // statusMessage creates a new msg with certain variables of interest.
 func (pr *Processor) statusMessage(withTrace bool) message.Msg {
 	status := make(message.MsgContent)
-	status.AddMessageValue("lastSndMid", message.NewFieldValue(pr.sndPool.lastSndMid, message.INT))
-	status.AddMessageValue("lastRcvMid", message.NewFieldValue(pr.lastRcvMid, message.INT))
-
 	mes := pr.mesFactory.NewExecuteRoot(status, withTrace)
-
 	return mes
+}
+
+func (pr *Processor) metadata() *metadata {
+	return pr.meta
 }
 
 // A processorFactory represents a factory that can produce processors(s).
@@ -147,11 +153,18 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 		executor:  executor,
 		routes:    routeMap,
 		errSender: factory.stage.pipeline.errorReceiver,
+		meta:      newMetadata(),
 	}
 	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)
 	if factory.stage.executorType != SINK {
 		p.sndPool = newSendPool(p)
 	}
+
+	// Add Persistor for the processor
+	stg := p.processorPool().stage()
+	ppln := stg.pipeline
+	path := fmt.Sprintf("%s%v/%s/%v/", config.DbRoot, ppln.Id(), stg.name, p.id)
+	p.persistor = NewBadger(path)
 
 	return p
 }
