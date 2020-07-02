@@ -1,4 +1,4 @@
-package agg
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -9,25 +9,25 @@ import (
 type Max struct {
 	alias string                            // Alias of the max
 	filt  func(map[string]interface{}) bool // The filter function
-	field string
+	field string                            // 'field' contains data whose maximum value is to be calculated
 }
 
-// NewCount creates a Max with the provided condition and returns it.
+// NewMax creates a Max with the provided condition and returns it.
 func NewMax(alias, field string, f func(map[string]interface{}) bool) *Max {
 	return &Max{alias: alias, field: field, filt: f}
 }
 
-// Name returns the name of the Counter
+// Name returns the name of the Max
 func (c *Max) Name() string {
 	return c.alias
 }
 
-// SetName sets the name of the Counter
+// SetName sets the name of the Max
 func (c *Max) SetName(alias string) {
 	c.alias = alias
 }
 
-// Aggregate counts the data based on the current value and the current
+// Aggregate finds the maximum value based on the current value and the current
 // message
 func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
 	if c.filt != nil && currentValue == nil {

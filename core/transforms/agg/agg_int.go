@@ -4,12 +4,12 @@ import (
 	"github.com/raralabs/canal/core/message"
 )
 
-// An Aggregator aggregates data on the basis of the provided fileds
-type Aggregator interface {
-	// Name returns the name of the Aggregator
+// An IAggregator aggregates data on the basis of the provided fileds
+type IAggregator interface {
+	// Name returns the name of the IAggregator
 	Name() string
 
-	// SetName sets the name of the Aggregator
+	// SetName sets the name of the IAggregator
 	SetName(string)
 
 	// Aggregate aggregates the data based on the current value and the current

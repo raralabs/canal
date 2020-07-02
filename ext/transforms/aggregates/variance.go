@@ -1,4 +1,4 @@
-package agg
+package aggregates
 
 import (
 	"log"
@@ -11,30 +11,30 @@ import (
 type Variance struct {
 	alias string                            // Alias of the Variance
 	filt  func(map[string]interface{}) bool // The filter function
-	field string
+	field string                            // 'field' contains data whose variance is to be calculated
 
 	num      uint64  // The number of elements that has arrived
 	lastMean float64 // Mean of the last data
 	lastV    float64 // The v
 }
 
-// NewCount creates a Variance with the provided condition and returns it.
+// NewVariance creates a Variance with the provided condition and returns it.
 func NewVariance(alias, field string, f func(map[string]interface{}) bool) *Variance {
 	return &Variance{alias: alias, field: field,
 		filt: f, num: uint64(0), lastMean: float64(0), lastV: float64(0)}
 }
 
-// Name returns the name of the Counter
+// Name returns the name of the Variance
 func (c *Variance) Name() string {
 	return c.alias
 }
 
-// SetName sets the name of the Counter
+// SetName sets the name of the Variance
 func (c *Variance) SetName(alias string) {
 	c.alias = alias
 }
 
-// Aggregate counts the data based on the current value and the current
+// Aggregate calculates variance of the data based on the current value and the current
 // message
 func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
 

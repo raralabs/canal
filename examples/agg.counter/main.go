@@ -4,13 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/raralabs/canal/ext/transforms/agg"
-	"github.com/raralabs/canal/ext/transforms/event/poll"
-
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/core/transforms/agg"
+	"github.com/raralabs/canal/core/transforms/event/poll"
+
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
 	"github.com/raralabs/canal/ext/transforms"
+	"github.com/raralabs/canal/ext/transforms/aggregates"
 )
 
 func main() {
@@ -23,19 +24,19 @@ func main() {
 	delay := p.AddTransform("Delay")
 	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
 
-	count := agg.NewCount("SimpleCount", func(m map[string]interface{}) bool {
+	count := aggregates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	mean := agg.NewMean("SimpleMean", "value", func(m map[string]interface{}) bool {
+	mean := aggregates.NewMean("SimpleMean", "value", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	aggs := []agg.Aggregator{count, mean}
+	aggs := []agg.IAggregator{count, mean}
 	filter := poll.NewFilterEvent(func(map[string]interface{}) bool {
 		return true
 	})
-	aggregator := transforms.NewAggregator(filter, aggs, nil)
+	aggregator := agg.NewAggregator(filter, aggs, nil)
 
 	counter := p.AddTransform("Adder")
 	ad := counter.AddProcessor(pipeline.DefaultProcessorOptions, aggregator.Function(), "path")

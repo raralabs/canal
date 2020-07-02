@@ -3,9 +3,10 @@ package transforms
 import (
 	"time"
 
+	"github.com/raralabs/canal/core/transforms/do"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/ext/transforms/base_transforms"
 )
 
 func DelayFunction(delay time.Duration) pipeline.Executor {
@@ -16,5 +17,5 @@ func DelayFunction(delay time.Duration) pipeline.Executor {
 		return true
 	}
 
-	return base_transforms.NewDoOperator(df)
+	return do.NewOperator(df)
 }

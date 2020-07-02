@@ -10,7 +10,7 @@ type Table interface {
 	// Alias gives the name of the table.
 	Alias() string
 
-	// Insertable cheks if the given message value is insertable to the
+	// Insertable checks if the given message value is insertable to the
 	// table on the basis of it's context.
 	Insertable(*message.MsgContent) bool
 

@@ -1,4 +1,4 @@
-package agg
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"

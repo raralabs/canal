@@ -1,4 +1,4 @@
-package agg
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -9,25 +9,25 @@ import (
 type Min struct {
 	alias string                            // Alias of the Min
 	filt  func(map[string]interface{}) bool // The filter function
-	field string
+	field string                            // 'field' contains data whose min value is to be calculated
 }
 
-// NewCount creates a Min with the provided condition and returns it.
+// NewMin creates a Min with the provided condition and returns it.
 func NewMin(alias, field string, f func(map[string]interface{}) bool) *Min {
 	return &Min{alias: alias, field: field, filt: f}
 }
 
-// Name returns the name of the Counter
+// Name returns the name of the Min
 func (c *Min) Name() string {
 	return c.alias
 }
 
-// SetName sets the name of the Counter
+// SetName sets the name of the Min
 func (c *Min) SetName(alias string) {
 	c.alias = alias
 }
 
-// Aggregate counts the data based on the current value and the current
+// Aggregate finds the minimum value based on the current value and the current
 // message
 func (c *Min) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
 
