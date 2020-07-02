@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"time"
 
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/core/transforms/do"
+
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms"
-	"github.com/raralabs/canal/ext/transforms/base_transforms"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewInlineRange(100))
 
 	delay := p.AddTransform("Delay")
-	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
+	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
 	bucket := 10
 	count := 0
@@ -59,7 +60,7 @@ func main() {
 	adder := p.AddTransform("Adder")
 	opts := pipeline.DefaultProcessorOptions
 	opts.Persistor = true
-	ad := adder.AddProcessor(opts, base_transforms.NewDoOperator(add), "path")
+	ad := adder.AddProcessor(opts, do.NewOperator(add), "path")
 
 	sink := p.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")

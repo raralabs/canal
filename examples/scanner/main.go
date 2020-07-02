@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"os/exec"
 	"regexp"
@@ -11,7 +12,6 @@ import (
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms"
 )
 
 func main() {
@@ -30,11 +30,11 @@ func main() {
 	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewFileReader(readFile, "name", -1))
 
 	delay := p.AddTransform("Delay")
-	f1 := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
+	f1 := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
 	middleNameRemover := p.AddTransform("Middle Names Remover")
 	m1 := middleNameRemover.AddProcessor(pipeline.DefaultProcessorOptions,
-		transforms.RegExp(`([a-zA-Z]+) (.*) ([a-zA-Z]+)`, "name", func(reg *regexp.Regexp, str string) string {
+		doFn.RegExp(`([a-zA-Z]+) (.*) ([a-zA-Z]+)`, "name", func(reg *regexp.Regexp, str string) string {
 			s := string(reg.ReplaceAll([]byte(str), []byte("${1} ${3}")))
 			return s
 		}),

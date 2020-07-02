@@ -1,4 +1,4 @@
-package transforms
+package doFn
 
 import (
 	"log"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/ext/transforms/base_transforms"
+	"github.com/raralabs/canal/core/transforms/do"
 )
 
 func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Executor {
@@ -48,5 +48,5 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 		return true
 	}
 
-	return base_transforms.NewDoOperator(df)
+	return do.NewOperator(df)
 }

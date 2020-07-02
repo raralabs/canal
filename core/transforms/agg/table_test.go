@@ -77,7 +77,7 @@ func TestTable(t *testing.T) {
 	agg1 := &count{name: "Count1"}
 	agg2 := &count{name: "Count2"}
 
-	aggs := []Aggregator{agg1, agg2}
+	aggs := []IAggregator{agg1, agg2}
 
 	tbl := NewTable(aggs, "name")
 	tbl1 := NewTable(aggs)

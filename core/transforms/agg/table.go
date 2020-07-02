@@ -8,7 +8,7 @@ import (
 
 type Table struct {
 	tblMu      *sync.Mutex                         // The mutex that synchronizes read and write of table
-	aggs       []Aggregator                        // The aggregator functions
+	aggs       []IAggregator                       // The aggregator functions
 	table      map[string][]*message.MsgFieldValue // The table that holds all the aggregator info
 	groupField []string                            // The fields to be grouped by
 	noGroup    message.MsgContent                  // Holds Data if grouping is not used
@@ -16,7 +16,7 @@ type Table struct {
 
 // NewTable creates a new aggregator table that can either group the messages
 // or not.
-func NewTable(aggs []Aggregator, groupBy ...string) *Table {
+func NewTable(aggs []IAggregator, groupBy ...string) *Table {
 
 	var table map[string][]*message.MsgFieldValue
 	var groups []string

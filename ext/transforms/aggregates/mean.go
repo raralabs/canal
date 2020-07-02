@@ -1,4 +1,4 @@
-package agg
+package aggregates
 
 import (
 	"log"
@@ -13,27 +13,27 @@ const MaxUint64 = ^uint64(0)
 type Mean struct {
 	alias string                            // Alias of the Mean
 	filt  func(map[string]interface{}) bool // The filter function
-	field string
+	field string                            // 'field' contains data whose mean is to be calculated
 
 	num uint64 // The number of elements that has arrived
 }
 
-// NewCount creates a Mean with the provided condition and returns it.
+// NewMean creates a Mean with the provided condition and returns it.
 func NewMean(alias, field string, f func(map[string]interface{}) bool) *Mean {
 	return &Mean{alias: alias, field: field, filt: f, num: uint64(0)}
 }
 
-// Name returns the name of the Counter
+// Name returns the name of the Mean
 func (c *Mean) Name() string {
 	return c.alias
 }
 
-// SetName sets the name of the Counter
+// SetName sets the name of the Mean
 func (c *Mean) SetName(alias string) {
 	c.alias = alias
 }
 
-// Aggregate counts the data based on the current value and the current
+// Aggregate finds the mean value based on the current value and the current
 // message
 func (c *Mean) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
 

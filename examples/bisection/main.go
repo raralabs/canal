@@ -8,9 +8,10 @@ import (
 
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/core/transforms/do"
+
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms/base_transforms"
 	"github.com/raralabs/canal/utils/cast"
 )
 
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	pass1 := p.AddTransform("FirstPass")
-	p1 := pass1.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(pf), "path1")
+	p1 := pass1.AddProcessor(pipeline.DefaultProcessorOptions, do.NewOperator(pf), "path1")
 
 	iter := uint64(0)
 	bisect := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
@@ -93,10 +94,10 @@ func main() {
 	}
 
 	bisector := p.AddTransform("Bisector")
-	bs := bisector.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(bisect), "path")
+	bs := bisector.AddProcessor(pipeline.DefaultProcessorOptions, do.NewOperator(bisect), "path")
 
 	filter := p.AddTransform("Filter Info")
-	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions, base_transforms.NewDoOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
+	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions, do.NewOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		msgContent := msg.Content()
 		content := make(message.MsgContent)
 

@@ -1,22 +1,20 @@
-package transforms
+package agg
 
 import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/ext/transforms/agg"
-	"github.com/raralabs/canal/ext/transforms/base_transforms"
-	"github.com/raralabs/canal/ext/transforms/event/poll"
+	"github.com/raralabs/canal/core/transforms/event/poll"
 )
 
 type Aggregator struct {
-	table *agg.Table             // The table that holds all the aggregator's info
-	ev    *poll.CompositeEvent   // The event that triggers the aggregator output
-	after func(message.Msg, pipeline.IProcessorForExecutor) bool // This function is called after execute on each message is called
+	table *Table                                                                        // The table that holds all the aggregator's info
+	ev    *poll.CompositeEvent                                                          // The event that triggers the aggregator output
+	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool // This function is called after execute on each message is called
 }
 
 // NewAggregator creates a new aggregator with the provided events, aggregators
 // and the groups and returns it.
-func NewAggregator(event poll.Event, aggs []agg.Aggregator, after func(message.Msg, pipeline.IProcessorForExecutor) bool, groupBy ...string) *Aggregator {
+func NewAggregator(event poll.Event, aggs []IAggregator, after func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool, groupBy ...string) *Aggregator {
 
 	ag := &Aggregator{
 		after: after,
@@ -28,13 +26,13 @@ func NewAggregator(event poll.Event, aggs []agg.Aggregator, after func(message.M
 		ag.ev = poll.NewCompositeEvent("or", event)
 	}
 
-	tbl := agg.NewTable(aggs, groupBy...)
+	tbl := NewTable(aggs, groupBy...)
 	ag.table = tbl
 
 	return ag
 }
 
-// AddEvents adds events to the Aggregator.
+// AddEvents adds events to the IAggregator.
 func (ag *Aggregator) AddEvents(events ...poll.Event) {
 	ag.ev.AddEvents(events...)
 }
@@ -49,7 +47,7 @@ func (ag *Aggregator) Reset() {
 	ag.table.Reset()
 }
 
-// Fulfilling the functions for Aggregator to act as an aggFunc
+// Fulfilling the functions for IAggregator to act as an aggFunc
 
 func (ag *Aggregator) toMessage(s *struct{}) []*message.MsgContent {
 
@@ -78,5 +76,5 @@ func (ag *Aggregator) aggFunc(m message.Msg, s *struct{}) (bool, error) {
 
 func (ag *Aggregator) Function() pipeline.Executor {
 	var s struct{}
-	return base_transforms.NewAggOperator(s, ag.toMessage, ag.aggFunc, ag.after)
+	return NewOperator(s, ag.toMessage, ag.aggFunc, ag.after)
 }
