@@ -2,9 +2,10 @@ package pipeline
 
 import (
 	"fmt"
-	"github.com/raralabs/canal/config"
 	"log"
 	"sync/atomic"
+
+	"github.com/raralabs/canal/config"
 
 	"github.com/raralabs/canal/core/message"
 )
@@ -23,6 +24,7 @@ type Processor struct {
 	mesFactory message.Factory    // Msg Factory associated with the Processor. Helps in generating new messages.
 	meta       *metadata          // Metadata produced by the processor
 	persistor  IPersistor         // Persists the processor's data
+	opts       ProcessorOptions   // Options for processor
 }
 
 func (pr *Processor) lock(stgRoutes msgRoutes) {
@@ -71,7 +73,7 @@ func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
 	}
 }
 
-//! Not yet implemented
+// Returns persistor held by the processor
 func (pr *Processor) Persistor() IPersistor {
 	return pr.persistor
 }
@@ -90,7 +92,9 @@ func (pr *Processor) Done() {
 		pr.sndPool.close()
 	}
 	pr.meta.done()
-	pr.persistor.Close()
+	if pr.persistor != nil {
+		pr.persistor.Close()
+	}
 }
 
 func (pr *Processor) IsClosed() bool {
@@ -146,7 +150,7 @@ func newProcessorFactory(stage *stage) processorFactory {
 
 // NewExecute creates a new transforms that is to be connected to 'hub' and 'executor' as the
 // main executing entity and returns it.
-func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Processor {
+func (factory *processorFactory) new(opts ProcessorOptions, executor Executor, routeMap msgRoutes) *Processor {
 	p := &Processor{
 		id:        atomic.AddUint32(&factory.hwm, 1),
 		procPool:  factory.stage.processorPool,
@@ -154,17 +158,20 @@ func (factory *processorFactory) new(executor Executor, routeMap msgRoutes) *Pro
 		routes:    routeMap,
 		errSender: factory.stage.pipeline.errorReceiver,
 		meta:      newMetadata(),
+		opts:      opts,
 	}
 	p.mesFactory = message.NewFactory(factory.stage.pipeline.id, factory.stage.id, p.id)
 	if factory.stage.executorType != SINK {
 		p.sndPool = newSendPool(p)
 	}
 
-	// Add Persistor for the processor
-	stg := p.processorPool().stage()
-	ppln := stg.pipeline
-	path := fmt.Sprintf("%s%v/%s/%v/", config.DbRoot, ppln.Id(), stg.name, p.id)
-	p.persistor = NewBadger(path)
+	if opts.Persistor == true {
+		// Add Persistor for the processor
+		stg := p.processorPool().stage()
+		ppln := stg.pipeline
+		path := fmt.Sprintf("%s%v/%s/%v/", config.DbRoot, ppln.Id(), stg.name, p.id)
+		p.persistor = NewBadger(path)
+	}
 
 	return p
 }

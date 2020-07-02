@@ -28,7 +28,7 @@ func newDummyProcessorPool(route msgRouteParam, stg *stage) *dummyProcessorPool 
 		stg:        stg,
 	}
 }
-func (d *dummyProcessorPool) add(exec Executor, routes msgRoutes) IProcessor {
+func (d *dummyProcessorPool) add(pr ProcessorOptions, exec Executor, routes msgRoutes) IProcessor {
 	return nil
 }
 func (d *dummyProcessorPool) shortCircuitProcessors() {
@@ -105,7 +105,7 @@ func TestProcessorPool(t *testing.T) {
 		}
 
 		// Add a processor to the pool with a dummy executor that simply returns the incoming messages
-		pr := procPool.add(newDummyExecutor(TRANSFORM), route)
+		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
 
 		// Add a channel where the processor can dump it's output
 		stg := stgFactory.new("Second Node", TRANSFORM)
@@ -301,7 +301,7 @@ func BenchmarkProcessorPool(b *testing.B) {
 			routeParam: struct{}{},
 		}
 
-		pr := procPool.add(newDummyExecutor(TRANSFORM), route)
+		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
 
 		stg := stgFactory.new("Second Node", TRANSFORM)
 		pr.addSendTo(stg, "test")

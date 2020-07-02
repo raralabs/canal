@@ -63,7 +63,7 @@ func (m *Msg) Id() uint64 {
 
 // SetField adds a (key, value) pair to the data stored by the Msg and
 // returns it.
-func (m *Msg) SetField(key string, value MsgFieldValue) *Msg {
+func (m *Msg) SetField(key string, value *MsgFieldValue) *Msg {
 	m.mcontent.AddMessageValue(key, value)
 	return m
 }

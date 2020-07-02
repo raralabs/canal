@@ -69,7 +69,7 @@ func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...IProcessor) *st
 
 // add creates a new Processor in a stg with the executor
 // and adds it to the procPool of the Stage. Returns the Processor that was created.
-func (stg *stage) AddProcessor(executor Executor, routes ...msgRouteParam) IProcessor {
+func (stg *stage) AddProcessor(opts ProcessorOptions, executor Executor, routes ...msgRouteParam) IProcessor {
 	if stg.isRunning() {
 		panic("error")
 	}
@@ -94,7 +94,7 @@ func (stg *stage) AddProcessor(executor Executor, routes ...msgRouteParam) IProc
 		}
 	}
 
-	return stg.processorPool.add(executor, routeMap)
+	return stg.processorPool.add(opts, executor, routeMap)
 }
 
 func (stg *stage) ShortCircuit() *stage {
