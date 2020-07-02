@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 	"sync"
 
 	"github.com/raralabs/canal/core/message"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 	filter1 := p.AddTransform("FirstPass")
 	filter1.ReceiveFrom("f1p1", sp1)
 	filter1.ReceiveFrom("f1p2", sp2)
-	f1 := filter1.AddProcessor(pipeline.DefaultProcessorOptions, transforms.PassFunction(), "")
+	f1 := filter1.AddProcessor(pipeline.DefaultProcessorOptions, doFn.PassFunction(), "")
 
 	ef := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 

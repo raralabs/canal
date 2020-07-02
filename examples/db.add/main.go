@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewInlineRange(100))
 
 	delay := p.AddTransform("Delay")
-	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
+	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
 	bucket := 10
 	count := 0

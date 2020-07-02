@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 	"time"
 
 	"github.com/raralabs/canal/core/pipeline"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms"
 	"github.com/raralabs/canal/ext/transforms/aggregates"
 )
 
@@ -22,7 +22,7 @@ func main() {
 	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewInlineRange(10))
 
 	delay := p.AddTransform("Delay")
-	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, transforms.DelayFunction(100*time.Millisecond), "path1")
+	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
 	count := aggregates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
 		return true
