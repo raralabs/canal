@@ -10,14 +10,14 @@ type Operator struct {
 	state   *struct{}
 	toMsg   func(*struct{}) []*message.MsgContent
 	aggFunc func(message.Msg, *struct{}) (bool, error)
-	after   func(message.Msg, pipeline.IProcessorForExecutor) bool
+	after   func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool
 }
 
 func NewOperator(
 	initialState struct{},
 	tmf func(*struct{}) []*message.MsgContent,
 	af func(message.Msg, *struct{}) (bool, error),
-	after func(message.Msg, pipeline.IProcessorForExecutor) bool,
+	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool,
 ) pipeline.Executor {
 	return &Operator{
 		state:   &initialState,
@@ -31,12 +31,13 @@ func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 	done, _ := af.aggFunc(m, af.state)
 	msgs := af.toMsg(af.state)
 
-	for _, msg := range msgs {
-		proc.Result(m, *msg)
-	}
-
-	if af.after != nil {
-		af.after(m, proc)
+	// Pass all the messages ahead if there is no after handler
+	if af.after == nil {
+		for _, msg := range msgs {
+			proc.Result(m, *msg)
+		}
+	} else { // Handle all the messages in after handler
+		af.after(m, proc, msgs)
 	}
 
 	return done
