@@ -8,16 +8,16 @@ import (
 type Operator struct {
 	name    string
 	state   *struct{}
-	toMsg   func(*struct{}) []*message.MsgContent
+	toMsg   func(*struct{}) []message.MsgContent
 	aggFunc func(message.Msg, *struct{}) (bool, error)
-	after   func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool
+	after   func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool
 }
 
 func NewOperator(
 	initialState struct{},
-	tmf func(*struct{}) []*message.MsgContent,
+	tmf func(*struct{}) []message.MsgContent,
 	af func(message.Msg, *struct{}) (bool, error),
-	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.MsgContent) bool,
+	after func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool,
 ) pipeline.Executor {
 	return &Operator{
 		state:   &initialState,
@@ -34,7 +34,7 @@ func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 	// Pass all the messages ahead if there is no after handler
 	if af.after == nil {
 		for _, msg := range msgs {
-			proc.Result(m, *msg)
+			proc.Result(m, msg)
 		}
 	} else { // Handle all the messages in after handler
 		af.after(m, proc, msgs)
