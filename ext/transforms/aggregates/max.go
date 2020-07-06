@@ -14,6 +14,9 @@ type Max struct {
 
 // NewMax creates a Max with the provided condition and returns it.
 func NewMax(alias, field string, f func(map[string]interface{}) bool) *Max {
+	if alias == "" {
+		alias = "Max"
+	}
 	return &Max{alias: alias, field: field, filt: f}
 }
 

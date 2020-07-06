@@ -14,6 +14,9 @@ type Min struct {
 
 // NewMin creates a Min with the provided condition and returns it.
 func NewMin(alias, field string, f func(map[string]interface{}) bool) *Min {
+	if alias == "" {
+		alias = "Min"
+	}
 	return &Min{alias: alias, field: field, filt: f}
 }
 

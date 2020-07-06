@@ -20,6 +20,9 @@ type Mean struct {
 
 // NewMean creates a Mean with the provided condition and returns it.
 func NewMean(alias, field string, f func(map[string]interface{}) bool) *Mean {
+	if alias == "" {
+		alias = "Mean"
+	}
 	return &Mean{alias: alias, field: field, filt: f, num: uint64(0)}
 }
 

@@ -12,6 +12,9 @@ type Count struct {
 
 // NewCount creates a Count with the provided condition and returns it.
 func NewCount(alias string, condition func(map[string]interface{}) bool) *Count {
+	if alias == "" {
+		alias = "Count"
+	}
 	return &Count{alias: alias, filt: condition}
 }
 

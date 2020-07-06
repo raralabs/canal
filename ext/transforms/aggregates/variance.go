@@ -20,6 +20,9 @@ type Variance struct {
 
 // NewVariance creates a Variance with the provided condition and returns it.
 func NewVariance(alias, field string, f func(map[string]interface{}) bool) *Variance {
+	if alias == "" {
+		alias = "Variance"
+	}
 	return &Variance{alias: alias, field: field,
 		filt: f, num: uint64(0), lastMean: float64(0), lastV: float64(0)}
 }
