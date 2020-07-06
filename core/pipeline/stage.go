@@ -8,9 +8,9 @@ import (
 	"github.com/raralabs/canal/core/message"
 )
 
-type msgRouteParam string
+type MsgRouteParam string
 
-type msgRoutes map[msgRouteParam]struct{}
+type msgRoutes map[MsgRouteParam]struct{}
 
 // A stg represents an entity that is responsible for collecting messages from
 // multiple other hubs and send the msg to the procPool. It is also
@@ -37,7 +37,7 @@ func (stg *stage) GetId() uint32 {
 // receivePool of this stg. Returns the stg after associating it with the Processor.
 // This function can't be called on a stg of type SOURCE, since a source does
 // not receive messages from any other stages.
-func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...IProcessor) *stage {
+func (stg *stage) ReceiveFrom(route MsgRouteParam, processors ...IProcessor) *stage {
 	if stg.isRunning() {
 		return nil
 	}
@@ -69,7 +69,7 @@ func (stg *stage) ReceiveFrom(route msgRouteParam, processors ...IProcessor) *st
 
 // add creates a new Processor in a stg with the executor
 // and adds it to the procPool of the Stage. Returns the Processor that was created.
-func (stg *stage) AddProcessor(opts ProcessorOptions, executor Executor, routes ...msgRouteParam) IProcessor {
+func (stg *stage) AddProcessor(opts ProcessorOptions, executor Executor, routes ...MsgRouteParam) IProcessor {
 	if stg.isRunning() {
 		panic("error")
 	}

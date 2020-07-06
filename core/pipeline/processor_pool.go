@@ -64,13 +64,13 @@ type processorPool struct {
 	runLock          atomic.Value     //
 	closed           atomic.Value     //
 
-	procMsgPaths map[msgRouteParam][]IProcessorForPool // Maps the incoming route to a list of processors that subscribe to the path
+	procMsgPaths map[MsgRouteParam][]IProcessorForPool // Maps the incoming route to a list of processors that subscribe to the path
 }
 
 // newProcessorPool creates a new procPool with default values.
 func newProcessorPool(stage *stage) *processorPool {
 
-	procMsgPaths := make(map[msgRouteParam][]IProcessorForPool)
+	procMsgPaths := make(map[MsgRouteParam][]IProcessorForPool)
 
 	return &processorPool{
 		stg:              stage,
@@ -178,7 +178,7 @@ func (pool *processorPool) execute(pod msgPod) {
 	allClosed := true
 
 	for path, procs := range pool.procMsgPaths {
-		if path != msgRouteParam("") && path != pod.route {
+		if path != MsgRouteParam("") && path != pod.route {
 			continue
 		}
 

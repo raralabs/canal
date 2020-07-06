@@ -19,7 +19,7 @@ type dummyProcessorPool struct {
 	stg        *stage
 }
 
-func newDummyProcessorPool(route msgRouteParam, stg *stage) *dummyProcessorPool {
+func newDummyProcessorPool(route MsgRouteParam, stg *stage) *dummyProcessorPool {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	return &dummyProcessorPool{
 		outRoute:   sendChannel,
@@ -99,7 +99,7 @@ func TestProcessorPool(t *testing.T) {
 		procPool := newProcessorPool(tStage)
 
 		// Create a route for the incoming messages for a processor
-		routeParam := msgRouteParam("path1")
+		routeParam := MsgRouteParam("path1")
 		route := msgRoutes{
 			routeParam: struct{}{},
 		}
@@ -188,7 +188,7 @@ func TestProcessorPool(t *testing.T) {
 		procPool := newProcessorPool(tStage)
 
 		// Create a route for the incoming messages for a processor
-		routeParam := msgRouteParam("path1")
+		routeParam := MsgRouteParam("path1")
 		route := msgRoutes{
 			routeParam: struct{}{},
 		}
@@ -296,7 +296,7 @@ func BenchmarkProcessorPool(b *testing.B) {
 		tStage := stgFactory.new("First Node", TRANSFORM)
 		procPool := newProcessorPool(tStage)
 
-		routeParam := msgRouteParam("path1")
+		routeParam := MsgRouteParam("path1")
 		route := msgRoutes{
 			routeParam: struct{}{},
 		}

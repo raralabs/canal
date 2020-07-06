@@ -106,7 +106,7 @@ func (pr *Processor) IsClosed() bool {
 }
 
 // addSendTo connects a Processor to to other Stage's receivePool to send messages there.
-func (pr *Processor) addSendTo(stage *stage, route msgRouteParam) {
+func (pr *Processor) addSendTo(stage *stage, route MsgRouteParam) {
 	pr.sndPool.addSendTo(stage, route)
 }
 

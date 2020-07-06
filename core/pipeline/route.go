@@ -8,7 +8,7 @@ import (
 
 type msgPod struct {
 	msg   message.Msg
-	route msgRouteParam
+	route MsgRouteParam
 }
 
 func newMsgPod(msg message.Msg) msgPod {
@@ -17,12 +17,12 @@ func newMsgPod(msg message.Msg) msgPod {
 
 type sendRoute struct {
 	sendChannel chan msgPod
-	route       msgRouteParam
+	route       MsgRouteParam
 	timer       *time.Timer
 	retries     uint8
 }
 
-func newSendRoute(ch chan msgPod, r msgRouteParam) sendRoute {
+func newSendRoute(ch chan msgPod, r MsgRouteParam) sendRoute {
 	timer := time.NewTimer(1 * time.Minute)
 	timer.Stop()
 

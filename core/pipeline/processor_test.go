@@ -82,7 +82,7 @@ func (d *dummyProcessor) IsClosed() bool {
 	}
 	return d.closed
 }
-func (d *dummyProcessor) addSendTo(s *stage, route msgRouteParam) {
+func (d *dummyProcessor) addSendTo(s *stage, route MsgRouteParam) {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	d.outRoute = newSendRoute(sendChannel, route)
 }

@@ -37,7 +37,7 @@ func (sp *sendPool) isConnected() bool {
 }
 
 // addSendTo registers a stg to which the sndPool is supposed to send the msg.
-func (sp *sendPool) addSendTo(stg *stage, route msgRouteParam) {
+func (sp *sendPool) addSendTo(stg *stage, route MsgRouteParam) {
 	if sp.isLocked() {
 		return
 	}

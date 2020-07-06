@@ -41,7 +41,7 @@ type IProcessorReceiver interface {
 // IProcessorSender defines the interface for a processor from the perspective of Receiver in the next stg
 type IProcessorSender interface {
 	// addSendTo adds a send route to a stg from the processor.
-	addSendTo(stage *stage, route msgRouteParam)
+	addSendTo(stage *stage, route MsgRouteParam)
 
 	// channelForStageId returns a channel that emits message for the respective stage.
 	channelForStageId(stage *stage) <-chan msgPod

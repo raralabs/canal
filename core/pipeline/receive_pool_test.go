@@ -18,7 +18,7 @@ func (d *dummyProcessorForReceiver) Error(u uint8, err error) {
 }
 func (d *dummyProcessorForReceiver) Done() {
 }
-func (d *dummyProcessorForReceiver) addSendTo(stg *stage, route msgRouteParam) {
+func (d *dummyProcessorForReceiver) addSendTo(stg *stage, route MsgRouteParam) {
 	d.sendChannel = make(chan msgPod, _SendBufferLength)
 }
 func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan msgPod {
@@ -86,7 +86,7 @@ func TestReceivePool(t *testing.T) {
 		}
 		msg := msgF.NewExecuteRoot(content, false)
 
-		routeParam := msgRouteParam("path1")
+		routeParam := MsgRouteParam("path1")
 		msgPack := msgPod{
 			msg:   msg,
 			route: routeParam,
@@ -149,7 +149,7 @@ func BenchmarkReceivePool(b *testing.B) {
 		}
 		msg := msgF.NewExecuteRoot(content, false)
 
-		routeParam := msgRouteParam("path1")
+		routeParam := MsgRouteParam("path1")
 		msgPack := msgPod{
 			msg:   msg,
 			route: routeParam,
