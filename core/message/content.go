@@ -92,7 +92,11 @@ func (content MsgContent) Values() map[string]interface{} {
 
 	values := make(map[string]interface{})
 	for k, v := range content {
-		values[k] = v.Value()
+		if v == nil {
+			values[k] = nil
+		} else {
+			values[k] = v.Value()
+		}
 	}
 
 	return values
@@ -108,7 +112,11 @@ func (content MsgContent) Types() map[string]FieldValueType {
 
 	types := make(map[string]FieldValueType)
 	for k, v := range content {
-		types[k] = v.ValueType()
+		if v == nil {
+			types[k] = NONE
+		} else {
+			types[k] = v.ValueType()
+		}
 	}
 
 	return types
