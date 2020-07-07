@@ -40,6 +40,10 @@ func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCon
 	}
 
 	content := *msg
+	if _, ok := content[c.field]; !ok {
+		return currentValue
+	}
+
 	if currentValue == nil {
 		return content[c.field]
 	}

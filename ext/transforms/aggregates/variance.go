@@ -54,10 +54,15 @@ func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.M
 		}
 	}
 
+	content := *msg
+	if _, ok := content[c.field]; !ok {
+		return currentValue
+	}
+
 	switch currentValue.ValueType() {
 	case message.INT, message.FLOAT:
 		lastV := c.lastV
-		content := *msg
+
 		xk, _ := cast.TryFloat(content[c.field].Value())
 
 		c.num += 1

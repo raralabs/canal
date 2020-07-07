@@ -56,6 +56,10 @@ func (c *Mean) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCo
 	}
 
 	content := *msg
+	if _, ok := content[c.field]; !ok {
+		return currentValue
+	}
+
 	switch currentValue.ValueType() {
 	case message.INT, message.FLOAT:
 		v1, _ := cast.TryFloat(v)
