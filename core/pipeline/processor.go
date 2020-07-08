@@ -58,14 +58,14 @@ func (pr *Processor) process(msg message.Msg) bool {
 	return pr.executor.Execute(msg, pr)
 }
 
-func (pr *Processor) Result(srcMsg message.Msg, content message.MsgContent) {
+func (pr *Processor) Result(srcMsg message.Msg, content *message.OrderedContent) {
 	if pr.IsClosed() || pr.executor.ExecutorType() == SINK {
 		return
 	}
 
 	m := pr.mesFactory.NewExecute(srcMsg, content)
 
-	//Send the messages one by one
+	// Send the messages one by one
 	// If sndPool can't send the messages, then there's no point in processing, so Done
 	if !pr.sndPool.send(m, false) {
 		log.Printf("Closing proc, Id: %v Stage: %v. Could not send.", pr.id, pr.processorPool().stage().name)
@@ -127,7 +127,7 @@ func (pr *Processor) processorPool() IProcessorPool {
 
 // statusMessage creates a new msg with certain variables of interest.
 func (pr *Processor) statusMessage(withTrace bool) message.Msg {
-	status := make(message.MsgContent)
+	status := message.NewOrderedContent()
 	mes := pr.mesFactory.NewExecuteRoot(status, withTrace)
 	return mes
 }

@@ -12,10 +12,10 @@ type Table interface {
 
 	// Insertable checks if the given message value is insertable to the
 	// table on the basis of it's context.
-	Insertable(*message.MsgContent) bool
+	Insertable(*message.OrderedContent) bool
 
 	// Insert inserts the message value to the table.
-	Insert(*message.MsgContent)
+	Insert(*message.OrderedContent)
 
 	// Append appends a row of values to the table.
 	Append([]message.MsgFieldValue)

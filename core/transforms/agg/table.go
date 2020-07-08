@@ -11,7 +11,7 @@ type Table struct {
 	aggs       []IAggregator                       // The aggregator functions
 	table      map[string][]*message.MsgFieldValue // The table that holds all the aggregator info
 	groupField []string                            // The fields to be grouped by
-	noGroup    message.MsgContent                  // Holds Data if grouping is not used
+	noGroup    *message.OrderedContent             // Holds Data if grouping is not used
 }
 
 // NewTable creates a new aggregator table that can either group the messages
@@ -20,7 +20,7 @@ func NewTable(aggs []IAggregator, groupBy ...string) *Table {
 
 	var table map[string][]*message.MsgFieldValue
 	var groups []string
-	var nGrp message.MsgContent
+	var nGrp *message.OrderedContent
 
 	if len(groupBy) != 0 {
 		table = make(map[string][]*message.MsgFieldValue)
@@ -29,9 +29,9 @@ func NewTable(aggs []IAggregator, groupBy ...string) *Table {
 			groups[i] = s
 		}
 	} else {
-		nGrp = make(message.MsgContent, len(aggs))
+		nGrp = message.NewOrderedContent()
 		for _, agg := range aggs {
-			nGrp[agg.Name()] = agg.InitValue()
+			nGrp.Add(agg.Name(), agg.InitValue())
 		}
 	}
 
@@ -42,7 +42,7 @@ func NewTable(aggs []IAggregator, groupBy ...string) *Table {
 
 // Insert inserts a message to the Table and updates the either the
 // grouping table or noGroup map
-func (tbl *Table) Insert(msg *message.MsgContent) {
+func (tbl *Table) Insert(msg *message.OrderedContent) {
 
 	tbl.tblMu.Lock()
 	defer tbl.tblMu.Unlock()
@@ -50,9 +50,9 @@ func (tbl *Table) Insert(msg *message.MsgContent) {
 	// No Grouping Used
 	if len(tbl.groupField) == 0 {
 		for _, agg := range tbl.aggs {
-			currVal := tbl.noGroup[agg.Name()]
+			currVal, _ := tbl.noGroup.Get(agg.Name())
 			updateVal := agg.Aggregate(currVal, msg)
-			tbl.noGroup[agg.Name()] = updateVal
+			tbl.noGroup.Add(agg.Name(), updateVal)
 		}
 		return
 	}
@@ -61,7 +61,7 @@ func (tbl *Table) Insert(msg *message.MsgContent) {
 	data := make(map[string]*message.MsgFieldValue)
 	mvals := *msg
 	for _, grp := range tbl.groupField {
-		if v, ok := mvals[grp]; ok {
+		if v, ok := mvals.Get(grp); ok {
 			data[grp] = v
 		} else {
 			return
@@ -101,35 +101,37 @@ func (tbl *Table) Insert(msg *message.MsgContent) {
 
 // Messages creates an array of messages for each of the rows in the table and
 // returns it.
-func (tbl *Table) Messages() []message.MsgContent {
+func (tbl *Table) Messages() []*message.OrderedContent {
 
 	tbl.tblMu.Lock()
 	defer tbl.tblMu.Unlock()
 
 	// If there was no grouping, just a single message is generated.
 	if len(tbl.groupField) == 0 {
-		msg := make(message.MsgContent)
-		for k, v := range tbl.noGroup {
-			msg[k] = v
+		msg := message.NewOrderedContent()
+		for e := tbl.noGroup.Front(); e != nil; e = e.Next() {
+			k, _ := e.Value.(string)
+			v, _ := tbl.noGroup.Get(k)
+			msg.Add(k, v)
 		}
 
-		return []message.MsgContent{msg}
+		return []*message.OrderedContent{msg}
 	}
 
 	if len(tbl.table) == 0 {
 		// No Messages have been inserted
-		return []message.MsgContent{}
+		return []*message.OrderedContent{}
 	}
 
 	if grp, ok := tbl.table[tbl.groupField[0]]; ok {
 		depth := len(grp)
-		msgs := make([]message.MsgContent, depth)
+		msgs := make([]*message.OrderedContent, depth)
 
 		for i := 0; i < depth; i++ {
-			msg := make(message.MsgContent)
+			msg := message.NewOrderedContent()
 
 			for k, v := range tbl.table {
-				msg[k] = v[i]
+				msg.Add(k, v[i])
 			}
 
 			msgs[i] = msg
@@ -138,7 +140,7 @@ func (tbl *Table) Messages() []message.MsgContent {
 		return msgs
 	}
 
-	return []message.MsgContent{}
+	return []*message.OrderedContent{}
 }
 
 // Reset resets the table
@@ -150,9 +152,9 @@ func (tbl *Table) Reset() {
 		delete(tbl.table, k)
 	}
 
-	for k := range tbl.noGroup {
-		delete(tbl.noGroup, k)
-	}
+	// for k := range tbl.noGroup {
+	// 	delete(tbl.noGroup, k)
+	// }
 
 	for _, ag := range tbl.aggs {
 		ag.Reset()

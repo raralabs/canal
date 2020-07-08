@@ -22,14 +22,14 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 		content := m.Content()
 		types := m.Types()
 
-		if v, ok := content["eof"]; ok {
+		if v, ok := content.Get("eof"); ok {
 			if v.Val == true {
 				proc.Result(m, content)
 				return true
 			}
 		}
 
-		str := content[key]
+		str, _ := content.Get(key)
 
 		if types[key] != message.STRING {
 			log.Panicf("Could not parse non-string values: %v", str)
@@ -41,7 +41,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 			s := f(reg, st)
 			str.Val = s
 
-			content[key] = str
+			content.Add(key, str)
 		}
 
 		proc.Result(m, content)

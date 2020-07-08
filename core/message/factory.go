@@ -17,7 +17,7 @@ func NewFactory(pipelineId uint32, stageId uint32, processorId uint32) Factory {
 }
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
-func (mf *Factory) NewExecuteRoot(content MsgContent, withTrace bool) Msg {
+func (mf *Factory) NewExecuteRoot(content *OrderedContent, withTrace bool) Msg {
 	traceRoot := newTraceRoot(withTrace)
 	return Msg{
 		id:          atomic.AddUint64(&mf.HWM, 1),
@@ -31,7 +31,7 @@ func (mf *Factory) NewExecuteRoot(content MsgContent, withTrace bool) Msg {
 }
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
-func (mf *Factory) NewExecute(srcMessage Msg, content MsgContent) Msg {
+func (mf *Factory) NewExecute(srcMessage Msg, content *OrderedContent) Msg {
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
 		pipelineId:     mf.pipelineId,
@@ -54,9 +54,9 @@ func (mf *Factory) NewError(srcMessage *Msg, code uint8, mes string) Msg {
 		ssId, spId, smId = srcMessage.stageId, srcMessage.processorId, srcMessage.id
 	}
 
-	content := make(MsgContent)
-	content.AddMessageValue("text", NewFieldValue(mes, STRING))
-	content.AddMessageValue("code", NewFieldValue(code, INT))
+	content := NewOrderedContent()
+	content.Add("text", NewFieldValue(mes, STRING))
+	content.Add("code", NewFieldValue(code, INT))
 
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),

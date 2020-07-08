@@ -39,7 +39,7 @@ func (c *Variance) SetName(alias string) {
 
 // Aggregate calculates variance of the data based on the current value and the current
 // message
-func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.num == MaxUint64 {
 		log.Panicln("Maximum possible number of elements have been passed")
@@ -55,7 +55,7 @@ func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.M
 	}
 
 	content := *msg
-	if _, ok := content[c.field]; !ok {
+	if _, ok := content.Get(c.field); !ok {
 		return currentValue
 	}
 
@@ -63,7 +63,8 @@ func (c *Variance) Aggregate(currentValue *message.MsgFieldValue, msg *message.M
 	case message.INT, message.FLOAT:
 		lastV := c.lastV
 
-		xk, _ := cast.TryFloat(content[c.field].Value())
+		val, _ := content.Get(c.field)
+		xk, _ := cast.TryFloat(val.Value())
 
 		c.num += 1
 		newMean := c.lastMean + (xk-c.lastMean)/float64(c.num)
@@ -87,17 +88,20 @@ func (c *Variance) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the Variance based
 // on the message
-func (c *Variance) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Variance) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {
 			return c.InitValue()
 		}
 	}
-	c.num += 1
-	content := *msg
-	c.lastMean, _ = cast.TryFloat(content[c.field].Value())
-	return message.NewFieldValue(float64(0), message.FLOAT)
+	m := *msg
+	if v, ok := m.Get(c.field); ok {
+		c.num += 1
+		c.lastMean, _ = cast.TryFloat(v.Value())
+		return message.NewFieldValue(float64(0), message.FLOAT)
+	}
+	return nil
 }
 
 func (c *Variance) Reset() {

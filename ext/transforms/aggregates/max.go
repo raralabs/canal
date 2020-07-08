@@ -32,7 +32,7 @@ func (c *Max) SetName(alias string) {
 
 // Aggregate finds the maximum value based on the current value and the current
 // message
-func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
 	if c.filt != nil && currentValue == nil {
 		if !c.filt(msg.Values()) {
 			return nil
@@ -40,12 +40,13 @@ func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCon
 	}
 
 	content := *msg
-	if _, ok := content[c.field]; !ok {
+	if _, ok := content.Get(c.field); !ok {
 		return currentValue
 	}
 
 	if currentValue == nil {
-		return content[c.field]
+		val, _ := content.Get(c.field)
+		return val
 	}
 
 	v := currentValue.Value()
@@ -53,7 +54,8 @@ func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCon
 	switch currentValue.ValueType() {
 	case message.INT:
 		cmp, _ := cast.TryInt(v)
-		m, _ := cast.TryInt(content[c.field].Value())
+		val, _ := content.Get(c.field)
+		m, _ := cast.TryInt(val.Value())
 
 		mx := maxi(cmp, m)
 
@@ -61,7 +63,8 @@ func (c *Max) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCon
 
 	case message.FLOAT:
 		cmp, _ := cast.TryFloat(v)
-		m, _ := cast.TryFloat(content[c.field].Value())
+		val, _ := content.Get(c.field)
+		m, _ := cast.TryFloat(val.Value())
 
 		mx := maxf(cmp, m)
 
@@ -79,7 +82,7 @@ func (c *Max) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the max based
 // on the message
-func (c *Max) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Max) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {
@@ -87,7 +90,10 @@ func (c *Max) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
 		}
 	}
 	m := *msg
-	return m[c.field]
+	if v, ok := m.Get(c.field); ok {
+		return v
+	}
+	return nil
 }
 
 func (c *Max) Reset() {

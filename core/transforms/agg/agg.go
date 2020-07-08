@@ -7,14 +7,14 @@ import (
 )
 
 type Aggregator struct {
-	table *Table                                                                       // The table that holds all the aggregator's info
-	ev    *poll.CompositeEvent                                                         // The event that triggers the aggregator output
-	after func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool // This function is called after execute on each message is called
+	table *Table                                                                            // The table that holds all the aggregator's info
+	ev    *poll.CompositeEvent                                                              // The event that triggers the aggregator output
+	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool // This function is called after execute on each message is called
 }
 
 // NewAggregator creates a new aggregator with the provided events, aggregators
 // and the groups and returns it.
-func NewAggregator(event poll.Event, aggs []IAggregator, after func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool, groupBy ...string) *Aggregator {
+func NewAggregator(event poll.Event, aggs []IAggregator, after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool, groupBy ...string) *Aggregator {
 
 	ag := &Aggregator{
 		after: after,
@@ -49,9 +49,9 @@ func (ag *Aggregator) Reset() {
 
 // Fulfilling the functions for IAggregator to act as an aggFunc
 
-func (ag *Aggregator) toMessage(s *struct{}) []message.MsgContent {
+func (ag *Aggregator) toMessage(s *struct{}) []*message.OrderedContent {
 
-	var msgs []message.MsgContent
+	var msgs []*message.OrderedContent
 	msgVals := ag.table.Messages()
 
 	if len(msgVals) != 0 {
@@ -70,7 +70,7 @@ func (ag *Aggregator) toMessage(s *struct{}) []message.MsgContent {
 func (ag *Aggregator) aggFunc(m message.Msg, s *struct{}) (bool, error) {
 
 	content := m.Content()
-	ag.table.Insert(&content)
+	ag.table.Insert(content)
 	return true, nil
 }
 

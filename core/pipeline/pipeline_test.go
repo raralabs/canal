@@ -25,8 +25,8 @@ func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) boo
 	}
 
 	s.curVal++
-	content := make(message.MsgContent)
-	content.AddMessageValue("value", message.NewFieldValue(s.curVal, message.INT))
+	content := message.NewOrderedContent()
+	content.Add("value", message.NewFieldValue(s.curVal, message.INT))
 	proc.Result(m, content)
 	return false
 }
@@ -107,7 +107,9 @@ func TestPipeline(t *testing.T) {
 			if !ok {
 				break
 			}
-			receivedMsgs = append(receivedMsgs, rcvd.Content()["value"].Val)
+			if val, ok := rcvd.Content().Get("value"); ok {
+				receivedMsgs = append(receivedMsgs, val.Val)
+			}
 		}
 
 		for i := range receivedMsgs {

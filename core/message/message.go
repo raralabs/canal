@@ -17,22 +17,22 @@ const (
 )
 
 type Msg struct {
-	id             uint64     // id of the Msg
-	pipelineId     uint32     // id of the pipeline from which the message was created
-	stageId        uint32     // id of the latest stage through which the message has passed
-	processorId    uint32     // id of the latest processor which has generated the message
-	srcStageId     uint32     //
-	srcProcessorId uint32     //
-	srcMessageId   uint64     //
-	mtype          MsgType    // MsgType of the message
-	mcontent       MsgContent // MsgContent of the message
-	trace          trace      // trace of the message
+	id             uint64          // id of the Msg
+	pipelineId     uint32          // id of the pipeline from which the message was created
+	stageId        uint32          // id of the latest stage through which the message has passed
+	processorId    uint32          // id of the latest processor which has generated the message
+	srcStageId     uint32          //
+	srcProcessorId uint32          //
+	srcMessageId   uint64          //
+	mtype          MsgType         // MsgType of the message
+	mcontent       *OrderedContent // MsgContent of the message
+	trace          trace           // trace of the message
 }
 
 func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
-	content := make(MsgContent)
-	content.AddMessageValue("text", NewFieldValue(text, STRING))
-	content.AddMessageValue("code", NewFieldValue(code, INT))
+	content := NewOrderedContent()
+	content.Add("text", NewFieldValue(text, STRING))
+	content.Add("code", NewFieldValue(code, INT))
 
 	return Msg{
 		pipelineId:  pipelineId,
@@ -64,12 +64,12 @@ func (m *Msg) Id() uint64 {
 // SetField adds a (key, value) pair to the data stored by the Msg and
 // returns it.
 func (m *Msg) SetField(key string, value *MsgFieldValue) *Msg {
-	m.mcontent.AddMessageValue(key, value)
+	m.mcontent.Add(key, value)
 	return m
 }
 
 // MsgContent returns the data stored by the message.
-func (m *Msg) Content() MsgContent {
+func (m *Msg) Content() *OrderedContent {
 	return m.mcontent
 }
 

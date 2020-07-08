@@ -38,7 +38,7 @@ func (c *Mean) SetName(alias string) {
 
 // Aggregate finds the mean value based on the current value and the current
 // message
-func (c *Mean) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Mean) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.num == MaxUint64 {
 		log.Panicln("Maximum possible number of elements have been passed")
@@ -56,14 +56,15 @@ func (c *Mean) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgCo
 	}
 
 	content := *msg
-	if _, ok := content[c.field]; !ok {
+	if _, ok := content.Get(c.field); !ok {
 		return currentValue
 	}
 
 	switch currentValue.ValueType() {
 	case message.INT, message.FLOAT:
 		v1, _ := cast.TryFloat(v)
-		v2, _ := cast.TryFloat(content[c.field].Value())
+		val, _ := content.Get(c.field)
+		v2, _ := cast.TryFloat(val.Value())
 
 		mean := v1*float64(c.num) + v2
 		c.num += 1
@@ -82,16 +83,19 @@ func (c *Mean) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the Mean based
 // on the message
-func (c *Mean) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Mean) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {
 			return c.InitValue()
 		}
 	}
-	c.num += 1
-	content := *msg
-	return content[c.field]
+	m := *msg
+	if v, ok := m.Get(c.field); ok {
+		c.num += 1
+		return v
+	}
+	return nil
 }
 
 func (c *Mean) Reset() {

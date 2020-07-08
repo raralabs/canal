@@ -48,13 +48,13 @@ func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 	}
 
 	if fr.scanner.Scan() {
-		content := make(message.MsgContent)
+		content := message.NewOrderedContent()
 		line := fr.scanner.Text()
-		content.AddMessageValue(fr.key, message.NewFieldValue(line, message.STRING))
+		content.Add(fr.key, message.NewFieldValue(line, message.STRING))
 		proc.Result(m, content)
 	} else {
-		content := make(message.MsgContent)
-		content.AddMessageValue("eof", message.NewFieldValue(true, message.BOOL))
+		content := message.NewOrderedContent()
+		content.Add("eof", message.NewFieldValue(true, message.BOOL))
 		proc.Result(m, content)
 
 		proc.Done()
