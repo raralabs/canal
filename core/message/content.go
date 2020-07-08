@@ -33,6 +33,10 @@ func (oc *OrderedContent) Add(key string, value *MsgFieldValue) {
 	oc.content[key] = value
 }
 
+func (oc *OrderedContent) Len() int {
+	return len(oc.content)
+}
+
 func (oc *OrderedContent) Front() *list.Element {
 	return oc.keyList.Front()
 }
