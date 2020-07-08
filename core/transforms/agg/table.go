@@ -58,11 +58,11 @@ func (tbl *Table) Insert(msg *message.OrderedContent) {
 	}
 
 	// Extract data from the required fields
-	data := make(map[string]*message.MsgFieldValue)
+	data := message.NewOrderedContent()
 	mvals := *msg
 	for _, grp := range tbl.groupField {
 		if v, ok := mvals.Get(grp); ok {
-			data[grp] = v
+			data.Add(grp, v)
 		} else {
 			return
 		}
@@ -73,7 +73,8 @@ func (tbl *Table) Insert(msg *message.OrderedContent) {
 	for i := 0; i < depth; i++ {
 		out := true
 		for _, v := range tbl.groupField {
-			x := data[v].Value() == tbl.table[v][i].Value()
+			val, _ := data.Get(v)
+			x := val.Value() == tbl.table[v][i].Value()
 			out = out && x
 		}
 
@@ -91,7 +92,8 @@ func (tbl *Table) Insert(msg *message.OrderedContent) {
 
 	// If no match to any existing values, insert the values in the table
 	for _, v := range tbl.groupField {
-		tbl.table[v] = append(tbl.table[v], data[v])
+		val, _ := data.Get(v)
+		tbl.table[v] = append(tbl.table[v], val)
 	}
 
 	for _, agg := range tbl.aggs {
@@ -130,8 +132,15 @@ func (tbl *Table) Messages() []*message.OrderedContent {
 		for i := 0; i < depth; i++ {
 			msg := message.NewOrderedContent()
 
-			for k, v := range tbl.table {
-				msg.Add(k, v[i])
+			// Collect Groups data first
+			for _, k := range tbl.groupField {
+				msg.Add(k, tbl.table[k][i])
+			}
+
+			// Then, collect aggregator's data
+			for _, ag := range tbl.aggs {
+				k := ag.Name()
+				msg.Add(k, tbl.table[k][i])
 			}
 
 			msgs[i] = msg
