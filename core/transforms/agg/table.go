@@ -111,7 +111,7 @@ func (tbl *Table) Messages() []*message.OrderedContent {
 	// If there was no grouping, just a single message is generated.
 	if len(tbl.groupField) == 0 {
 		msg := message.NewOrderedContent()
-		for e := tbl.noGroup.Front(); e != nil; e = e.Next() {
+		for e := tbl.noGroup.First(); e != nil; e = e.Next() {
 			k, _ := e.Value.(string)
 			v, _ := tbl.noGroup.Get(k)
 			msg.Add(k, v)

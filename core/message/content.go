@@ -37,11 +37,11 @@ func (oc *OrderedContent) Len() int {
 	return len(oc.content)
 }
 
-func (oc *OrderedContent) Front() *list.Element {
+func (oc *OrderedContent) First() *list.Element {
 	return oc.keyList.Front()
 }
 
-func (oc *OrderedContent) Back() *list.Element {
+func (oc *OrderedContent) Last() *list.Element {
 	return oc.keyList.Back()
 }
 
@@ -53,7 +53,7 @@ func (oc *OrderedContent) Values() map[string]interface{} {
 	}
 
 	values := make(map[string]interface{})
-	for e := oc.Front(); e != nil; e = e.Next() {
+	for e := oc.First(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
@@ -76,7 +76,7 @@ func (oc *OrderedContent) Types() map[string]FieldValueType {
 	}
 
 	types := make(map[string]FieldValueType)
-	for e := oc.Front(); e != nil; e = e.Next() {
+	for e := oc.First(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
@@ -93,7 +93,7 @@ func (oc *OrderedContent) Types() map[string]FieldValueType {
 // String returns string representation in order
 func (oc *OrderedContent) String() string {
 	var values string
-	for e := oc.Front(); e != nil; e = e.Next() {
+	for e := oc.First(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
