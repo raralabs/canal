@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/raralabs/canal/ext/transforms/doFn"
 	"sync"
+
+	"github.com/raralabs/canal/ext/transforms/doFn"
 
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
@@ -29,7 +30,7 @@ func main() {
 
 	ef := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		val := m.Content()["value"]
+		val, _ := m.Content().Get("value")
 		if val.ValType == message.INT {
 			v := val.Val.(uint64)
 			if v%2 == 0 {
