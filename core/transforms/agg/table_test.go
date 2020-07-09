@@ -2,38 +2,60 @@ package agg
 
 import (
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/raralabs/canal/core/message"
 	"github.com/stretchr/testify/assert"
 )
 
-type count struct {
+type countTemplate struct {
 	name string
 }
 
-func (c *count) Name() string {
-	return c.name
+func (ct *countTemplate) Filter(m map[string]interface{}) bool {
+	return true
 }
 
-func (c *count) SetName(name string) {
-	c.name = name
+func (ct *countTemplate) Function() IAggFunc {
+	return newCount(ct)
 }
 
-func (c *count) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
-	return message.NewFieldValue(currentValue.Value().(int)+1, message.INT)
+func (ct *countTemplate) Name() string {
+	return ct.name
 }
 
-func (c *count) InitValue() *message.MsgFieldValue {
-	return message.NewFieldValue(int(0), message.INT)
+func (ct *countTemplate) Field() string {
+	return ""
 }
 
-func (c *count) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
-	return message.NewFieldValue(int(1), message.INT)
+
+type countFunction struct {
+	count uint64
+	tmpl IAggFuncTemplate
 }
 
-func (c *count) Reset() {
+func newCount(tmpl IAggFuncTemplate) *countFunction {
+	return &countFunction{
+		tmpl: tmpl,
+	}
 }
+
+func (c *countFunction) Add(value *message.OrderedContent) {
+	atomic.AddUint64(&c.count, 1)
+}
+
+func (c *countFunction) Result() *message.MsgFieldValue {
+	return message.NewFieldValue(c.count, message.INT)
+}
+
+func (c *countFunction) Name() string {
+	return c.tmpl.Name()
+}
+
+func (c *countFunction) Reset() {
+}
+
 
 func getValType(v interface{}) (interface{}, message.FieldValueType) {
 
@@ -74,10 +96,10 @@ func preprocess(m map[string]interface{}) *message.OrderedContent {
 
 func TestTable(t *testing.T) {
 
-	agg1 := &count{name: "Count1"}
-	agg2 := &count{name: "Count2"}
+	agg1 := &countTemplate{name: "Count1"}
+	agg2 := &countTemplate{name: "Count2"}
 
-	aggs := []IAggregator{agg1, agg2}
+	aggs := []IAggFuncTemplate{agg1, agg2}
 
 	tbl := NewTable(aggs, "name")
 	tbl1 := NewTable(aggs)
@@ -105,14 +127,15 @@ func TestTable(t *testing.T) {
 
 		tbl1.Insert(msg)
 
-		for _, v := range tbl.Messages() {
-			assert.Equal(t, int(i+1), v.Values()["Count1"], "")
-			assert.Equal(t, int(i+1), v.Values()["Count2"], "")
+		for _, v := range tbl.Entries() {
+			assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")
+			assert.Equal(t, uint64(i+1), v.Values()["Count2"], "")
+			assert.Equal(t, "Nepal", v.Values()["name"], "")
 		}
 
-		for _, v := range tbl1.Messages() {
-			assert.Equal(t, int(i+1), v.Values()["Count1"], "")
-			assert.Equal(t, int(i+1), v.Values()["Count2"], "")
+		for _, v := range tbl1.Entries() {
+			assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")
+			assert.Equal(t, uint64(i+1), v.Values()["Count2"], "")
 		}
 	}
 }
