@@ -81,9 +81,9 @@ func TestReceivePool(t *testing.T) {
 		pipelineId := uint32(1)
 
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.MsgContent{
-			"value": message.NewFieldValue(12, message.INT),
-		}
+		content := message.NewOrderedContent()
+		content.Add("value", message.NewFieldValue(12, message.INT))
+
 		msg := msgF.NewExecuteRoot(content, false)
 
 		routeParam := MsgRouteParam("path1")
@@ -144,9 +144,9 @@ func BenchmarkReceivePool(b *testing.B) {
 		pipelineId := uint32(1)
 
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.MsgContent{
-			"value": message.NewFieldValue(12, message.INT),
-		}
+		content := message.NewOrderedContent()
+		content.Add("value", message.NewFieldValue(12, message.INT))
+
 		msg := msgF.NewExecuteRoot(content, false)
 
 		routeParam := MsgRouteParam("path1")

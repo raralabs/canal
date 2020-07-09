@@ -1,97 +1,62 @@
 package message
 
-import "fmt"
-
-// FieldValueType represents the supported types for the value of message
-type FieldValueType uint8
-
-// These are the currently supported types
-const (
-	INT    FieldValueType = iota + 1 // Represents integer number
-	FLOAT                            // Represents floating point number
-	STRING                           // Represents string
-	BOOL                             // Represents boolean value
-
-	NONE
+import (
+	"container/list"
+	"fmt"
 )
 
-func (fvt FieldValueType) String() string {
-	switch fvt {
-	case INT:
-		return "int"
-	case FLOAT:
-		return "float"
-	case STRING:
-		return "str"
-	case BOOL:
-		return "bool"
-	case NONE:
-		return "none"
+type OrderedContent struct {
+	keyList *list.List
+	content map[string]*MsgFieldValue
+}
+
+func NewOrderedContent() *OrderedContent {
+	kl := list.New()
+	c := make(map[string]*MsgFieldValue)
+
+	return &OrderedContent{
+		keyList: kl,
+		content: c,
 	}
-
-	return "unknown"
 }
 
-// A MsgFieldValue implements the MessageAttr interface.
-type MsgFieldValue struct {
-	Val     interface{}
-	ValType FieldValueType
+func (oc *OrderedContent) Get(key string) (*MsgFieldValue, bool) {
+	val, ok := oc.content[key]
+	return val, ok
 }
 
-// Creates a new MsgFieldValue and returns it.
-func NewFieldValue(value interface{}, valueType FieldValueType) *MsgFieldValue {
-	m := &MsgFieldValue{}
-	m.SetValue(value)
-	m.SetType(valueType)
-
-	return m
+func (oc *OrderedContent) Add(key string, value *MsgFieldValue) {
+	// Add the key to list if it is new
+	if _, ok := oc.content[key]; !ok {
+		oc.keyList.PushBack(key)
+	}
+	oc.content[key] = value
 }
 
-//func (mfv MsgFieldValue) Value() interface{} {
-//	return mfv.Val
-//}
-//
-//func (mfv MsgFieldValue) ValueType() FieldValueType {
-//	return mfv.ValType
-//}
-
-func (mfv *MsgFieldValue) Value() interface{} {
-	return mfv.Val
+func (oc *OrderedContent) Len() int {
+	return len(oc.content)
 }
 
-func (mfv *MsgFieldValue) ValueType() FieldValueType {
-	return mfv.ValType
+func (oc *OrderedContent) First() *list.Element {
+	return oc.keyList.Front()
 }
 
-func (mfv *MsgFieldValue) SetValue(value interface{}) {
-	mfv.Val = value
-}
-
-func (mfv *MsgFieldValue) SetType(valueType FieldValueType) {
-	mfv.ValType = valueType
-}
-
-func (mfv *MsgFieldValue) String() string {
-	return fmt.Sprintf("%s(%v)", mfv.ValType, mfv.Val)
-}
-
-// A MsgContent is the actual data stored by the message.
-type MsgContent map[string]*MsgFieldValue
-
-// AddMessageValue adds a value with given key and type to the MessageContent.
-func (content MsgContent) AddMessageValue(key string, value *MsgFieldValue) {
-	content[key] = value
+func (oc *OrderedContent) Last() *list.Element {
+	return oc.keyList.Back()
 }
 
 // Values returns a map with just keys and values in the message, without type
-// information.
-func (content MsgContent) Values() map[string]interface{} {
-	if content == nil {
+// information in order.
+func (oc *OrderedContent) Values() map[string]interface{} {
+	if oc.content == nil {
 		return nil
 	}
 
 	values := make(map[string]interface{})
-	for k, v := range content {
+	for e := oc.First(); e != nil; e = e.Next() {
+		// Since we are only inserting strings, so no check required
+		k, _ := e.Value.(string)
+		v := oc.content[k]
 		if v == nil {
 			values[k] = nil
 		} else {
@@ -103,15 +68,18 @@ func (content MsgContent) Values() map[string]interface{} {
 }
 
 // Types returns a map with just keys and values types in the message, without
-// actual.
-func (content MsgContent) Types() map[string]FieldValueType {
+// actual in order.
+func (oc *OrderedContent) Types() map[string]FieldValueType {
 
-	if content == nil {
+	if oc.content == nil {
 		return nil
 	}
 
 	types := make(map[string]FieldValueType)
-	for k, v := range content {
+	for e := oc.First(); e != nil; e = e.Next() {
+		// Since we are only inserting strings, so no check required
+		k, _ := e.Value.(string)
+		v := oc.content[k]
 		if v == nil {
 			types[k] = NONE
 		} else {
@@ -122,9 +90,14 @@ func (content MsgContent) Types() map[string]FieldValueType {
 	return types
 }
 
-func (content MsgContent) String() string {
+// String returns string representation in order
+func (oc *OrderedContent) String() string {
 	var values string
-	for k, v := range content {
+	for e := oc.First(); e != nil; e = e.Next() {
+		// Since we are only inserting strings, so no check required
+		k, _ := e.Value.(string)
+		v := oc.content[k]
+
 		if values != "" {
 			values += " "
 		}

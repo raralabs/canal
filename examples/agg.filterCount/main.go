@@ -41,7 +41,7 @@ func main() {
 
 		content := m.Content()
 
-		if v, ok := content["eof"]; ok {
+		if v, ok := content.Get("eof"); ok {
 			if v.Val == true {
 				proc.Result(m, content)
 				proc.Done()
@@ -49,8 +49,8 @@ func main() {
 			}
 		}
 
-		rawAge := content["age"].Val
-		if age, ok := cast.TryFloat(rawAge); ok {
+		rawAge, _ := content.Get("eof")
+		if age, ok := cast.TryFloat(rawAge.Val); ok {
 			if age > 30 && age < 50 {
 				proc.Result(m, content)
 			}
@@ -69,10 +69,10 @@ func main() {
 	filterEvent := poll.NewFilterEvent(func(m map[string]interface{}) bool {
 		return true
 	})
-	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, msgs []message.MsgContent) bool {
+	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, msgs []*message.OrderedContent) bool {
 		content := m.Content()
 
-		if v, ok := content["eof"]; ok {
+		if v, ok := content.Get("eof"); ok {
 			if v.Val == true {
 				for _, msg := range msgs {
 					proc.Result(m, msg)

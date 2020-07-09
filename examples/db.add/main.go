@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/binary"
-	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
+	"github.com/raralabs/canal/ext/transforms/doFn"
 )
 
 func main() {
@@ -30,7 +30,8 @@ func main() {
 	add := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 		content := m.Content()
-		v := content["value"].Val
+		vl, _ := content.Get("value")
+		v := vl.Val
 		sum, _ := v.(uint64)
 
 		db := proc.Persistor()
@@ -49,9 +50,8 @@ func main() {
 		count++
 		if count >= bucket {
 			count = 0
-			msgContent := message.MsgContent{
-				"sum": message.NewFieldValue(sum, message.INT),
-			}
+			msgContent := message.NewOrderedContent()
+			msgContent.Add("sum", message.NewFieldValue(sum, message.INT))
 			proc.Result(m, msgContent)
 		}
 		return true

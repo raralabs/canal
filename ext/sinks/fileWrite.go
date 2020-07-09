@@ -33,8 +33,10 @@ func (fw *FileWriter) ExecutorType() pipeline.ExecutorType {
 func (fw *FileWriter) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 	content := m.Content()
-	str := fmt.Sprintf("%v\n", content[fw.key].Val)
-	fw.writer.WriteString(str)
+	if val, ok := content.Get(fw.key); ok {
+		str := fmt.Sprintf("%v\n", val.Val)
+		fw.writer.WriteString(str)
+	}
 
 	return false
 }

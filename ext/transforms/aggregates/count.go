@@ -30,7 +30,7 @@ func (c *Count) SetName(alias string) {
 
 // Aggregate counts the data based on the current value and the current
 // message
-func (c *Count) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Count) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
 
 	v := currentValue.Value()
 	// Maybe we could assert that v's type is INT
@@ -53,7 +53,7 @@ func (c *Count) InitValue() *message.MsgFieldValue {
 
 // InitMsgValue gives the initialization value for the counter based
 // on the message
-func (c *Count) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
+func (c *Count) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
 
 	if c.filt != nil {
 		if !c.filt(msg.Values()) {

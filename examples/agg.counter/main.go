@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/raralabs/canal/ext/transforms/doFn"
 	"time"
+
+	"github.com/raralabs/canal/ext/transforms/doFn"
 
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/agg"

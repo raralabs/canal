@@ -8,16 +8,16 @@ import (
 type Operator struct {
 	name    string
 	state   *struct{}
-	toMsg   func(*struct{}) []message.MsgContent
+	toMsg   func(*struct{}) []*message.OrderedContent
 	aggFunc func(message.Msg, *struct{}) (bool, error)
-	after   func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool
+	after   func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool
 }
 
 func NewOperator(
 	initialState struct{},
-	tmf func(*struct{}) []message.MsgContent,
+	tmf func(*struct{}) []*message.OrderedContent,
 	af func(message.Msg, *struct{}) (bool, error),
-	after func(message.Msg, pipeline.IProcessorForExecutor, []message.MsgContent) bool,
+	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool,
 ) pipeline.Executor {
 	return &Operator{
 		state:   &initialState,

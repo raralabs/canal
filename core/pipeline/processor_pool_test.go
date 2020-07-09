@@ -86,9 +86,9 @@ func TestProcessorPool(t *testing.T) {
 
 		// Generate Message
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.MsgContent{
-			"value": message.NewFieldValue(12, message.INT),
-		}
+		content := message.NewOrderedContent()
+		content.Add("value", message.NewFieldValue(12, message.INT))
+
 		msg := msgF.NewExecuteRoot(content, false)
 
 		// Create pipeline and stg
@@ -175,9 +175,9 @@ func TestProcessorPool(t *testing.T) {
 
 		// Generate Message
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.MsgContent{
-			"value": message.NewFieldValue(12, message.INT),
-		}
+		content := message.NewOrderedContent()
+		content.Add("value", message.NewFieldValue(12, message.INT))
+
 		msg := msgF.NewExecuteRoot(content, false)
 
 		// Create pipeline and stg
@@ -285,9 +285,9 @@ func BenchmarkProcessorPool(b *testing.B) {
 		pipelineId := uint32(1)
 
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.MsgContent{
-			"value": message.NewFieldValue(12, message.INT),
-		}
+		content := message.NewOrderedContent()
+		content.Add("value", message.NewFieldValue(12, message.INT))
+
 		msg := msgF.NewExecuteRoot(content, false)
 
 		pipeline := NewPipeline(pipelineId)

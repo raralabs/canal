@@ -10,8 +10,8 @@ import (
 type MapValue struct {
 	name string // The name of the source
 
-	values message.MsgContent // The values to be passed
-	times  int                // The number of times the values should be passed
+	values *message.OrderedContent // The values to be passed
+	times  int                     // The number of times the values should be passed
 }
 
 func getValType(v interface{}) (interface{}, message.FieldValueType) {
@@ -38,13 +38,13 @@ func getValType(v interface{}) (interface{}, message.FieldValueType) {
 	return v, message.NONE
 }
 
-func preprocess(m map[string]interface{}) message.MsgContent {
+func preprocess(m map[string]interface{}) *message.OrderedContent {
 
-	mVal := make(message.MsgContent)
+	mVal := message.NewOrderedContent()
 
 	for k, v := range m {
 		val, valType := getValType(v)
-		mVal.AddMessageValue(k, message.NewFieldValue(val, valType))
+		mVal.Add(k, message.NewFieldValue(val, valType))
 	}
 
 	return mVal
@@ -53,11 +53,11 @@ func preprocess(m map[string]interface{}) message.MsgContent {
 func NewMapValueSource(val map[string]interface{}, times int) pipeline.Executor {
 
 	mv := &MapValue{}
-	mv.values = make(message.MsgContent)
+	mv.values = message.NewOrderedContent()
 
 	for k, v := range val {
 		value, valType := getValType(v)
-		mv.values.AddMessageValue(k, message.NewFieldValue(value, valType))
+		mv.values.Add(k, message.NewFieldValue(value, valType))
 	}
 
 	mv.times = times

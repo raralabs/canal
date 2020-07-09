@@ -9,9 +9,9 @@ import (
 type Context interface {
 	// Insertable checks if the given message value is insertable to the
 	// table on the basis of it's context
-	Insertable(Table, *message.MsgContent) bool
+	Insertable(Table, *message.OrderedContent) bool
 
 	// Insert inserts a message to the table passed to it, keeping the
 	// context.
-	Insert(Table, *message.MsgContent)
+	Insert(Table, *message.OrderedContent)
 }

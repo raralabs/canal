@@ -9,7 +9,7 @@ import (
 type dummyProcessorExecutor struct {
 	exec       Executor
 	resSrcMsg  message.Msg
-	resContent message.MsgContent
+	resContent *message.OrderedContent
 }
 
 func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
@@ -18,7 +18,7 @@ func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
 func (dp *dummyProcessorExecutor) process(msg message.Msg) bool {
 	return dp.exec.Execute(msg, dp)
 }
-func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content message.MsgContent) {
+func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content *message.OrderedContent) {
 	dp.resSrcMsg = srcMsg
 	dp.resContent = content
 }
@@ -49,7 +49,7 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 		meta:   newMetadata(),
 	}
 }
-func (d *dummyProcessor) Result(msg message.Msg, content message.MsgContent) {
+func (d *dummyProcessor) Result(msg message.Msg, content *message.OrderedContent) {
 	msgPack := msgPod{
 		msg:   msg,
 		route: d.outRoute.route,

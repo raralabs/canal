@@ -46,9 +46,13 @@ func main() {
 
 		content := m.Content()
 
-		a := content["lowerEnd"].Value()
-		b := content["upperEnd"].Value()
-		t := content["tol"].Value()
+		a1, _ := content.Get("lowerEnd")
+		b1, _ := content.Get("upperEnd")
+		t1, _ := content.Get("tol")
+
+		a := a1.Value()
+		b := b1.Value()
+		t := t1.Value()
 
 		af, _ := cast.TryFloat(a)
 		bf, _ := cast.TryFloat(b)
@@ -65,7 +69,7 @@ func main() {
 		c := (af + bf) / 2.0
 		fc := f(c)
 		if math.Abs(fc) < tol {
-			content.AddMessageValue("root", message.NewFieldValue(c, message.FLOAT))
+			content.Add("root", message.NewFieldValue(c, message.FLOAT))
 			proc.Result(m, content)
 			proc.Done()
 			return true
@@ -76,14 +80,14 @@ func main() {
 		} else {
 			b = c
 		}
-		content.AddMessageValue("lowerEnd", message.NewFieldValue(a, message.FLOAT))
-		content.AddMessageValue("upperEnd", message.NewFieldValue(b, message.FLOAT))
+		content.Add("lowerEnd", message.NewFieldValue(a, message.FLOAT))
+		content.Add("upperEnd", message.NewFieldValue(b, message.FLOAT))
 
 		atomic.AddUint64(&iter, 1)
-		it := content["maxIters"].Value()
-		if iter > it.(uint64) {
-			content.AddMessageValue("error", message.NewFieldValue("Iterations over before result", message.STRING))
-			content.AddMessageValue("bestRoot", message.NewFieldValue(c, message.FLOAT))
+		it, _ := content.Get("maxIters")
+		if iter > it.Value().(uint64) {
+			content.Add("error", message.NewFieldValue("Iterations over before result", message.STRING))
+			content.Add("bestRoot", message.NewFieldValue(c, message.FLOAT))
 			proc.Result(m, content)
 			proc.Done()
 			return true
@@ -99,19 +103,21 @@ func main() {
 	filter := p.AddTransform("Filter Info")
 	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions, do.NewOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		msgContent := msg.Content()
-		content := make(message.MsgContent)
+		content := message.NewOrderedContent()
 
 		uniqueInfo := []string{
 			"root", "error", "bestRoot",
 		}
 
 		for _, info := range uniqueInfo {
-			if value, ok := msgContent[info]; ok {
-				content.AddMessageValue(info, value)
+			if value, ok := msgContent.Get(info); ok {
+				content.Add(info, value)
 			}
 		}
-		content.AddMessageValue("lowerEnd", msgContent["lowerEnd"])
-		content.AddMessageValue("upperEnd", msgContent["upperEnd"])
+		lower, _ := msgContent.Get("lowerEnd")
+		upper, _ := msgContent.Get("upperEnd")
+		content.Add("lowerEnd", lower)
+		content.Add("upperEnd", upper)
 
 		proc.Result(msg, content)
 

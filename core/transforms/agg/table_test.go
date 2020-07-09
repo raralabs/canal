@@ -20,7 +20,7 @@ func (c *count) SetName(name string) {
 	c.name = name
 }
 
-func (c *count) Aggregate(currentValue *message.MsgFieldValue, msg *message.MsgContent) *message.MsgFieldValue {
+func (c *count) Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue {
 	return message.NewFieldValue(currentValue.Value().(int)+1, message.INT)
 }
 
@@ -28,7 +28,7 @@ func (c *count) InitValue() *message.MsgFieldValue {
 	return message.NewFieldValue(int(0), message.INT)
 }
 
-func (c *count) InitMsgValue(msg *message.MsgContent) *message.MsgFieldValue {
+func (c *count) InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue {
 	return message.NewFieldValue(int(1), message.INT)
 }
 
@@ -60,16 +60,16 @@ func getValType(v interface{}) (interface{}, message.FieldValueType) {
 	return v, message.NONE
 }
 
-func preprocess(m map[string]interface{}) *message.MsgContent {
+func preprocess(m map[string]interface{}) *message.OrderedContent {
 
-	mVal := make(message.MsgContent)
+	mVal := message.NewOrderedContent()
 
 	for k, v := range m {
 		val, valType := getValType(v)
-		mVal.AddMessageValue(k, message.NewFieldValue(val, valType))
+		mVal.Add(k, message.NewFieldValue(val, valType))
 	}
 
-	return &mVal
+	return mVal
 }
 
 func TestTable(t *testing.T) {

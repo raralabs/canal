@@ -120,9 +120,9 @@ func TestStage(t *testing.T) {
 			})
 
 			msgF := message.NewFactory(pipelineId, 3, 1)
-			content := message.MsgContent{
-				"value": message.NewFieldValue(12, message.INT),
-			}
+			content := message.NewOrderedContent()
+			content.Add("value", message.NewFieldValue(12, message.INT))
+
 			msg := msgF.NewExecuteRoot(content, false)
 
 			pr1.process(msg)
