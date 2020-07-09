@@ -5,6 +5,8 @@ go 1.14
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/antonmedv/expr v1.8.2 // indirect
+	github.com/cespare/xxhash v1.1.0
+	github.com/clarkduvall/hyperloglog v0.0.0-20171127014514-a0107a5d8004
 	github.com/d5/tengo v1.24.8
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259 // indirect

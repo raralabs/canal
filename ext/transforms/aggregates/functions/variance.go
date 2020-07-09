@@ -70,4 +70,10 @@ func (c *Variance) Name() string {
 }
 
 func (c *Variance) Reset() {
+	c.variance.Val = nil
+	c.variance.ValType = message.NONE
+
+	c.num = 0
+	c.lastMean = 0
+	c.lastV = 0
 }

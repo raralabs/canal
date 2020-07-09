@@ -58,6 +58,8 @@ func (c *Max) Name() string {
 }
 
 func (c *Max) Reset() {
+	c.maxVal.Val = nil
+	c.maxVal.ValType = message.NONE
 }
 
 

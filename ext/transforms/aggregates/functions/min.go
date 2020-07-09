@@ -7,14 +7,14 @@ import (
 )
 
 type Min struct {
-	maxVal *message.MsgFieldValue
-	tmpl agg.IAggFuncTemplate
+	minVal *message.MsgFieldValue
+	tmpl   agg.IAggFuncTemplate
 }
 
 func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	return &Min{
-		tmpl: tmpl,
-		maxVal: message.NewFieldValue(nil, message.NONE),
+		tmpl:   tmpl,
+		minVal: message.NewFieldValue(nil, message.NONE),
 	}
 }
 
@@ -25,32 +25,32 @@ func (c *Min) Add(content *message.OrderedContent) {
 			return
 		}
 
-		if c.maxVal.Value() == nil {
-			c.maxVal.Val = val.Value()
-			c.maxVal.ValType = val.ValueType()
+		if c.minVal.Value() == nil {
+			c.minVal.Val = val.Value()
+			c.minVal.ValType = val.ValueType()
 			return
 		}
 
 		switch val.ValueType() {
 		case message.INT:
 			m, _ := cast.TryInt(val.Value())
-			cmp, _ := cast.TryInt(c.maxVal.Value())
+			cmp, _ := cast.TryInt(c.minVal.Value())
 
 			mn := mini(m, cmp)
-			c.maxVal.Val = mn
+			c.minVal.Val = mn
 
 		case message.FLOAT:
 			m, _ := cast.TryFloat(val.Value())
-			cmp, _ := cast.TryFloat(c.maxVal.Value())
+			cmp, _ := cast.TryFloat(c.minVal.Value())
 
 			mn := minf(m, cmp)
-			c.maxVal.Val = mn
+			c.minVal.Val = mn
 		}
 	}
 }
 
 func (c *Min) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.maxVal.Value(), c.maxVal.ValueType())
+	return message.NewFieldValue(c.minVal.Value(), c.minVal.ValueType())
 }
 
 func (c *Min) Name() string {
@@ -58,6 +58,8 @@ func (c *Min) Name() string {
 }
 
 func (c *Min) Reset() {
+	c.minVal.Val = nil
+	c.minVal.ValType = message.NONE
 }
 
 
