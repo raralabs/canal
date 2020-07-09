@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/ext/transforms/aggregates/templates"
 	"time"
 
 	"github.com/raralabs/canal/ext/transforms/doFn"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms/aggregates"
 )
 
 func main() {
@@ -25,15 +25,15 @@ func main() {
 	delay := p.AddTransform("Delay")
 	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
-	count := aggregates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
+	count := templates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	mean := aggregates.NewMean("SimpleMean", "value", func(m map[string]interface{}) bool {
+	avg := templates.NewVariance("Sample-Variance", "value", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	aggs := []agg.IAggregator{count, mean}
+	aggs := []agg.IAggFuncTemplate{avg, count}
 	filter := poll.NewFilterEvent(func(map[string]interface{}) bool {
 		return true
 	})
