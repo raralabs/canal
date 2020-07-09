@@ -14,7 +14,7 @@ type Aggregator struct {
 
 // NewAggregator creates a new aggregator with the provided events, aggregators
 // and the groups and returns it.
-func NewAggregator(event poll.Event, aggs []IAggregator, after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool, groupBy ...string) *Aggregator {
+func NewAggregator(event poll.Event, aggs []IAggFuncTemplate, after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent) bool, groupBy ...string) *Aggregator {
 
 	ag := &Aggregator{
 		after: after,
@@ -52,7 +52,7 @@ func (ag *Aggregator) Reset() {
 func (ag *Aggregator) toMessage(s *struct{}) []*message.OrderedContent {
 
 	var msgs []*message.OrderedContent
-	msgVals := ag.table.Messages()
+	msgVals := ag.table.Entries()
 
 	if len(msgVals) != 0 {
 		for _, mv := range msgVals {
