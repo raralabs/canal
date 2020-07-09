@@ -12,6 +12,9 @@ type Avg struct {
 }
 
 func NewAvg(alias, field string, filter func(map[string]interface{}) bool) *Avg {
+	if alias == "" {
+		alias = "Avg"
+	}
 	return &Avg{
 		name: alias,
 		filter: filter,

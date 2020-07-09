@@ -12,6 +12,9 @@ type Min struct {
 }
 
 func NewMin(alias, field string, filter func(map[string]interface{}) bool) *Min {
+	if alias == "" {
+		alias = "Min"
+	}
 	return &Min{
 		name: alias,
 		filter: filter,

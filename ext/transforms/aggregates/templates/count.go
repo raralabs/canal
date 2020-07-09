@@ -11,6 +11,9 @@ type Count struct {
 }
 
 func NewCount(alias string, filter func(map[string]interface{}) bool) *Count {
+	if alias == "" {
+		alias = "Count"
+	}
 	return &Count{
 		name: alias,
 		filter: filter,
