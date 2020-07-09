@@ -1,28 +1,33 @@
 package agg
 
-import (
-	"github.com/raralabs/canal/core/message"
-)
+import "github.com/raralabs/canal/core/message"
 
-// An IAggregator aggregates data on the basis of the provided fileds
-type IAggregator interface {
-	// Name returns the name of the IAggregator
+type IAggFuncTemplate interface {
+	// Name returns the name of the aggregator template.
 	Name() string
 
-	// SetName sets the name of the IAggregator
-	SetName(string)
+	// Field returns the field of the aggregator function.
+	// For agg funcs like count, "" is returned.
+	Field() string
 
-	// Aggregate aggregates the data based on the current value and the current
-	// message
-	Aggregate(currentValue *message.MsgFieldValue, msg *message.OrderedContent) *message.MsgFieldValue
+	// Filter checks for the aggregator's inner condition.
+	Filter(map[string]interface{}) bool
 
-	// InitValue gives the initialization value for the aggregator
-	InitValue() *message.MsgFieldValue
+	// Function returns the aggregator function associated with
+	// the template.
+	Function() IAggFunc
+}
 
-	// InitMsgValue gives the initialization value for the aggregator based
-	// on the message
-	InitMsgValue(msg *message.OrderedContent) *message.MsgFieldValue
+type IAggFunc interface {
+	// Add adds a message content to the aggregator.
+	Add(value *message.OrderedContent)
 
-	// Reset resets the aggregator functions' inner states
+	// Result returns result of the agg func.
+	Result() *message.MsgFieldValue
+
+	// Name returns the name of the agg func.
+	Name() string
+
+	// Reset resets the aggregator function.
 	Reset()
 }
