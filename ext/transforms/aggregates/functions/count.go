@@ -32,4 +32,5 @@ func (c *Count) Name() string {
 }
 
 func (c *Count) Reset() {
+	c.count = 0
 }

@@ -8,8 +8,9 @@ import (
 )
 
 type Avg struct {
-	lastAvg *message.MsgFieldValue
 	tmpl agg.IAggFuncTemplate
+
+	lastAvg *message.MsgFieldValue
 	num uint64
 }
 
@@ -57,4 +58,7 @@ func (c *Avg) Name() string {
 }
 
 func (c *Avg) Reset() {
+	c.num = 0
+	c.lastAvg.Val = nil
+	c.lastAvg.ValType = message.NONE
 }
