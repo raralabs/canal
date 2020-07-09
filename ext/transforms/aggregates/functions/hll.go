@@ -29,7 +29,7 @@ type HLLpp struct {
 }
 
 func NewHLLpp(tmpl agg.IAggFuncTemplate) *HLLpp {
-	hpp, err := hyperloglog.NewPlus(64)
+	hpp, err := hyperloglog.NewPlus(8)
 	if err != nil {
 		log.Panic(err)
 	}
