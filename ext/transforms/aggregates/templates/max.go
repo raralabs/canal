@@ -6,9 +6,9 @@ import (
 )
 
 type Max struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
-	field string
+	field  string
 }
 
 func NewMax(alias, field string, filter func(map[string]interface{}) bool) *Max {
@@ -16,9 +16,9 @@ func NewMax(alias, field string, filter func(map[string]interface{}) bool) *Max 
 		alias = "Max"
 	}
 	return &Max{
-		name: alias,
+		name:   alias,
 		filter: filter,
-		field: field,
+		field:  field,
 	}
 }
 

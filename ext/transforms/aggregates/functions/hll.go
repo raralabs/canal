@@ -2,11 +2,12 @@ package functions
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/cespare/xxhash"
 	"github.com/clarkduvall/hyperloglog"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
-	"log"
 )
 
 type xxHash struct {
@@ -24,7 +25,7 @@ func (xxh *xxHash) Sum64() uint64 {
 }
 
 type HLLpp struct {
-	tmpl agg.IAggFuncTemplate
+	tmpl  agg.IAggFuncTemplate
 	hllpp *hyperloglog.HyperLogLogPlus
 }
 
@@ -35,7 +36,7 @@ func NewHLLpp(tmpl agg.IAggFuncTemplate) *HLLpp {
 	}
 
 	return &HLLpp{
-		tmpl: tmpl,
+		tmpl:  tmpl,
 		hllpp: hpp,
 	}
 }
@@ -62,4 +63,3 @@ func (H *HLLpp) Name() string {
 func (H *HLLpp) Reset() {
 	H.hllpp.Clear()
 }
-

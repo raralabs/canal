@@ -1,14 +1,15 @@
 package functions
 
 import (
+	"sync/atomic"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
-	"sync/atomic"
 )
 
 type Count struct {
 	count uint64
-	tmpl agg.IAggFuncTemplate
+	tmpl  agg.IAggFuncTemplate
 }
 
 func NewCount(tmpl agg.IAggFuncTemplate) *Count {

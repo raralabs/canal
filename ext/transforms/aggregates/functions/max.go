@@ -8,12 +8,12 @@ import (
 
 type Max struct {
 	maxVal *message.MsgFieldValue
-	tmpl agg.IAggFuncTemplate
+	tmpl   agg.IAggFuncTemplate
 }
 
 func NewMax(tmpl agg.IAggFuncTemplate) *Max {
 	return &Max{
-		tmpl: tmpl,
+		tmpl:   tmpl,
 		maxVal: message.NewFieldValue(nil, message.NONE),
 	}
 }
@@ -61,7 +61,6 @@ func (c *Max) Reset() {
 	c.maxVal.Val = nil
 	c.maxVal.ValType = message.NONE
 }
-
 
 func maxi(a, b int64) int64 {
 	if a > b {

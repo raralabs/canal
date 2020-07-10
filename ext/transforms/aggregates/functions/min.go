@@ -62,7 +62,6 @@ func (c *Min) Reset() {
 	c.minVal.ValType = message.NONE
 }
 
-
 func mini(a, b int64) int64 {
 	if a < b {
 		return a

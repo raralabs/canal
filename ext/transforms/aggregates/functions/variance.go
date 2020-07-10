@@ -1,10 +1,11 @@
 package functions
 
 import (
+	"sync/atomic"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
-	"sync/atomic"
 )
 
 type Variance struct {
@@ -18,11 +19,11 @@ type Variance struct {
 
 func NewVariance(tmpl agg.IAggFuncTemplate) *Variance {
 	return &Variance{
-		tmpl: tmpl,
+		tmpl:     tmpl,
 		variance: message.NewFieldValue(nil, message.NONE),
-		num: uint64(0),
+		num:      uint64(0),
 		lastMean: float64(0),
-		lastV: float64(0),
+		lastV:    float64(0),
 	}
 }
 
