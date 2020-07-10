@@ -23,6 +23,8 @@ func TestRoundRobin(t *testing.T) {
 		}
 
 		assert.Equal(t, 5, result[0])
+		val, _ := rb.Get(0)
+		assert.Equal(t, 5, val, "")
 	})
 
 	t.Run("Multiple Insert", func(t *testing.T) {
@@ -66,6 +68,13 @@ func TestRoundRobin(t *testing.T) {
 		assert.Equal(t, 7, result[0])
 		assert.Equal(t, 8, result[1])
 		assert.Equal(t, 9, result[2])
+
+		val, _ := rb.Get(0)
+		assert.Equal(t, 7, val, "")
+		val, _ = rb.Get(1)
+		assert.Equal(t, 8, val, "")
+		val, _ = rb.Get(2)
+		assert.Equal(t, 9, val, "")
 
 		rb.Dispose()
 		res, err := rb.GetAll()

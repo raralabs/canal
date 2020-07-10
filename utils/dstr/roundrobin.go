@@ -14,7 +14,7 @@ type node struct {
 // RoundRobin is a data structure in which elements can be inserted, but can't be deleted.
 // On insertion on buffer full, the oldest elements are removed.
 type RoundRobin struct {
-	nodes                []*node
+	nodes                        []*node
 	disposed, head, size, filled uint64 // The size of the buffer
 }
 
@@ -70,6 +70,26 @@ func (rr *RoundRobin) GetAll() ([]interface{}, error) {
 		for i := uint64(0); i < head; i++ {
 			out[i+head+1] = rr.nodes[i].data
 		}
+	}
+
+	return out, nil
+}
+
+// Get returns the data at the ith position
+func (rr *RoundRobin) Get(i uint64) (interface{}, error) {
+
+	if atomic.LoadUint64(&rr.disposed) == 1 {
+		return nil, disposedError
+	}
+
+	filled := atomic.LoadUint64(&rr.filled)
+	head := atomic.LoadUint64(&rr.head)
+	var out interface{}
+
+	if filled < atomic.LoadUint64(&rr.size) {
+		out = rr.nodes[i].data
+	} else {
+		out = rr.nodes[(i+head)%atomic.LoadUint64(&rr.size)].data
 	}
 
 	return out, nil
