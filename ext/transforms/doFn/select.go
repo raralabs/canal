@@ -6,20 +6,25 @@ import (
 	"github.com/raralabs/canal/core/transforms/do"
 )
 
-func SelectFunction(fields []string) pipeline.Executor {
+func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Executor {
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 		mContent := m.Content()
-		content := message.NewOrderedContent()
-		for _, fld := range fields {
-			if v, ok := mContent.Get(fld); ok {
-				content.Add(fld, v)
-			} else {
-				content.Add(fld, message.NewFieldValue(nil, message.NONE))
+		if !done(m) {
+			content := message.NewOrderedContent()
+			for _, fld := range fields {
+				if v, ok := mContent.Get(fld); ok {
+					content.Add(fld, v)
+				} else {
+					content.Add(fld, message.NewFieldValue(nil, message.NONE))
+				}
 			}
-		}
 
-		proc.Result(m, content)
+			proc.Result(m, content)
+		} else {
+			proc.Result(m, mContent)
+			proc.Done()
+		}
 
 		return false
 	})
