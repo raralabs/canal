@@ -6,9 +6,9 @@ import (
 )
 
 type Avg struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
-	field string
+	field  string
 }
 
 func NewAvg(alias, field string, filter func(map[string]interface{}) bool) *Avg {
@@ -16,9 +16,9 @@ func NewAvg(alias, field string, filter func(map[string]interface{}) bool) *Avg 
 		alias = "Avg"
 	}
 	return &Avg{
-		name: alias,
+		name:   alias,
 		filter: filter,
-		field: field,
+		field:  field,
 	}
 }
 

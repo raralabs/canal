@@ -6,9 +6,9 @@ import (
 )
 
 type Min struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
-	field string
+	field  string
 }
 
 func NewMin(alias, field string, filter func(map[string]interface{}) bool) *Min {
@@ -16,9 +16,9 @@ func NewMin(alias, field string, filter func(map[string]interface{}) bool) *Min 
 		alias = "Min"
 	}
 	return &Min{
-		name: alias,
+		name:   alias,
 		filter: filter,
-		field: field,
+		field:  field,
 	}
 }
 

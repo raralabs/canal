@@ -6,9 +6,9 @@ import (
 )
 
 type Variance struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
-	field string
+	field  string
 }
 
 func NewVariance(alias, field string, filter func(map[string]interface{}) bool) *Variance {
@@ -16,9 +16,9 @@ func NewVariance(alias, field string, filter func(map[string]interface{}) bool) 
 		alias = "Variance"
 	}
 	return &Variance{
-		name: alias,
+		name:   alias,
 		filter: filter,
-		field: field,
+		field:  field,
 	}
 }
 

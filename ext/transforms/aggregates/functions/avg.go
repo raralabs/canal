@@ -1,22 +1,23 @@
 package functions
 
 import (
+	"sync/atomic"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
-	"sync/atomic"
 )
 
 type Avg struct {
 	tmpl agg.IAggFuncTemplate
 
 	lastAvg *message.MsgFieldValue
-	num uint64
+	num     uint64
 }
 
 func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
 	return &Avg{
-		tmpl: tmpl,
+		tmpl:    tmpl,
 		lastAvg: message.NewFieldValue(nil, message.NONE),
 	}
 }

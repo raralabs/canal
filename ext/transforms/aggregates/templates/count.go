@@ -6,7 +6,7 @@ import (
 )
 
 type Count struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
 }
 
@@ -15,7 +15,7 @@ func NewCount(alias string, filter func(map[string]interface{}) bool) *Count {
 		alias = "Count"
 	}
 	return &Count{
-		name: alias,
+		name:   alias,
 		filter: filter,
 	}
 }

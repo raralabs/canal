@@ -8,9 +8,9 @@ import (
 // HLLpp uses HyperLogLog++ to count distinct number
 // of elements
 type HLLpp struct {
-	name string
+	name   string
 	filter func(map[string]interface{}) bool
-	field string
+	field  string
 }
 
 func NewHLLpp(alias, field string, filter func(map[string]interface{}) bool) *HLLpp {
@@ -39,4 +39,3 @@ func (H *HLLpp) Filter(m map[string]interface{}) bool {
 func (H *HLLpp) Function() agg.IAggFunc {
 	return functions.NewHLLpp(H)
 }
-
