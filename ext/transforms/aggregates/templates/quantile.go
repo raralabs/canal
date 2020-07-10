@@ -23,7 +23,7 @@ func NewQuantile(alias, field, weight string, q float64, filter func(map[string]
 	}
 
 	if alias == "" {
-		alias = fmt.Sprintf("%fth Quantile", q*100)
+		alias = fmt.Sprintf("%.2fth Quantile", q*100)
 	}
 	return &Quantile{
 		name:   alias,
