@@ -54,4 +54,3 @@ func (ft *firstPick) Messages() []*message.OrderedContent {
 
 	return contents
 }
-
