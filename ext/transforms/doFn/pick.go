@@ -7,15 +7,17 @@ import (
 	"github.com/raralabs/canal/ext/transforms/doFn/pick"
 )
 
-var pickMap = map[string]pick.IPick{
-	"first": pick.NewFirstPick(),
-	"random": pick.NewRandomPick(),
-}
-
 func PickFunction(desc string, num uint64, done func(m message.Msg) bool) pipeline.Executor {
 
-	picker := pickMap[desc]
-	picker.Init(num)
+	var picker pick.IPick
+	switch desc {
+	case "first":
+		pick.NewFirstPick(num)
+	case "random":
+		pick.NewRandomPick(num)
+	case "last":
+		pick.NewLastPick(num)
+	}
 
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 

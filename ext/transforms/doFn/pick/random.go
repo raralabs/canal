@@ -13,24 +13,15 @@ type randomPick struct {
 	table   map[string][]interface{}
 	first   bool
 	cols    []string
-	rs      *maths.ReservoirSampling
 }
 
-func NewRandomPick() *randomPick {
+func NewRandomPick(maxRows uint64) *randomPick {
 	return &randomPick{
 		count:   uint64(0),
-		maxRows: uint64(0),
-		table:   nil,
-		first:   false,
-		rs:      nil,
+		maxRows: maxRows,
+		table:   make(map[string][]interface{}),
+		first:   true,
 	}
-}
-
-func (rt *randomPick) Init(maxRows uint64) {
-	rt.first = true
-	rt.maxRows = maxRows
-	rt.table = make(map[string][]interface{})
-	rt.rs = maths.NewReservoirSampling(rt.maxRows)
 }
 
 func (rt *randomPick) Pick(content *message.OrderedContent) {
@@ -49,7 +40,7 @@ func (rt *randomPick) Pick(content *message.OrderedContent) {
 				log.Panic("Depth should be equal to max rows for random pick.")
 			}
 
-			if index, ok := rt.rs.Sample(rt.count); ok {
+			if index, ok := maths.ReservoirSample(rt.maxRows, rt.count); ok {
 				// Replace the item at index with current item
 				for _, key := range rt.cols {
 					if val, ok := content.Get(key); ok {
