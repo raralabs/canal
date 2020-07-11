@@ -12,11 +12,11 @@ func PickFunction(desc string, num uint64, done func(m message.Msg) bool) pipeli
 	var picker pick.IPick
 	switch desc {
 	case "first":
-		pick.NewFirstPick(num)
+		picker = pick.NewFirstPick(num)
 	case "random":
-		pick.NewRandomPick(num)
+		picker = pick.NewRandomPick(num)
 	case "last":
-		pick.NewLastPick(num)
+		picker = pick.NewLastPick(num)
 	}
 
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
