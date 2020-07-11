@@ -10,19 +10,13 @@ type firstPick struct {
 	cols    []string
 }
 
-func NewFirstPick() *firstPick {
+func NewFirstPick(maxRows uint64) *firstPick {
 	return &firstPick{
 		count:   uint64(0),
-		maxRows: uint64(0),
-		table:   nil,
-		first:   false,
+		maxRows: maxRows,
+		table:   make(map[string][]interface{}),
+		first:   true,
 	}
-}
-
-func (ft *firstPick) Init(maxRows uint64) {
-	ft.first = true
-	ft.maxRows = maxRows
-	ft.table = make(map[string][]interface{})
 }
 
 func (ft *firstPick) Pick(content *message.OrderedContent) {
