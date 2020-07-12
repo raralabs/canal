@@ -3,6 +3,7 @@ package pick
 import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/utils/dstr"
+	"github.com/raralabs/canal/utils/extract"
 	"log"
 )
 
@@ -24,7 +25,7 @@ func NewLastPick(maxRows uint64) *lastPick {
 func (lt *lastPick) Pick(content *message.OrderedContent) {
 	if lt.first {
 		lt.first = false
-		lt.cols = extractCols(content)
+		lt.cols = extract.Columns(content)
 		for _, col := range lt.cols {
 			lt.table[col] = dstr.NewRoundRobin(lt.maxRows)
 		}
