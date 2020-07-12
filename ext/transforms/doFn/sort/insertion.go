@@ -2,6 +2,7 @@ package sort
 
 import (
 	"container/list"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/utils/cast"
 	"github.com/raralabs/canal/utils/extract"
@@ -56,11 +57,25 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 		currContent, _ := e.Value.([]*message.MsgFieldValue)
 		switch ins.fieldType {
 		case message.INT:
-			newVal, _ := cast.TryInt(items[keyIndex].Value())
-			currVal, _ := cast.TryInt(currContent[keyIndex].Value())
+			v1 := items[keyIndex].Value()
+			v2 := currContent[keyIndex].Value()
+			newVal, ok1 := cast.TryInt(v1)
+			currVal, ok2 := cast.TryInt(v2)
 
-			if newVal < currVal {
-				ins.ordered.InsertAfter(items, e)
+			// Handle uint64
+			if !ok1 || !ok2 {
+				x, _ := v1.(uint64)
+				y, _ := v2.(uint64)
+
+				if x >= y {
+					ins.ordered.InsertBefore(items, e)
+					return
+				}
+				break
+			}
+
+			if newVal >= currVal {
+				ins.ordered.InsertBefore(items, e)
 				return
 			}
 
@@ -68,8 +83,8 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 			newVal, _ := cast.TryFloat(items[keyIndex].Value())
 			currVal, _ := cast.TryFloat(currContent[keyIndex].Value())
 
-			if newVal < currVal {
-				ins.ordered.InsertAfter(items, e)
+			if newVal >= currVal {
+				ins.ordered.InsertBefore(items, e)
 				return
 			}
 
@@ -77,12 +92,14 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 			newVal, _ := cast.TryString(items[keyIndex].Value())
 			currVal, _ := cast.TryString(currContent[keyIndex].Value())
 
-			if newVal < currVal {
-				ins.ordered.InsertAfter(items, e)
+			if newVal >= currVal {
+				ins.ordered.InsertBefore(items, e)
 				return
 			}
 		}
 	}
+
+	ins.ordered.PushBack(items)
 }
 
 func (ins *Insertion) Iterate() chan []*message.MsgFieldValue {
