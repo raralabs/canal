@@ -15,6 +15,6 @@ require (
 	github.com/spenczar/tdigest v2.1.0+incompatible
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/stretchr/testify v1.5.1
-	gonum.org/v1/gonum v0.7.0 // indirect
+	gonum.org/v1/gonum v0.7.0
 	google.golang.org/api v0.28.0 // indirect
 )
