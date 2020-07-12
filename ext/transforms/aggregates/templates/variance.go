@@ -13,7 +13,7 @@ type Variance struct {
 
 func NewVariance(alias, field string, filter func(map[string]interface{}) bool) *Variance {
 	if alias == "" {
-		alias = "Variance"
+		alias = "Var"
 	}
 	return &Variance{
 		name:   alias,
