@@ -1,6 +1,7 @@
 package stream_math
 
 import (
+	"errors"
 	"math"
 	"sync/atomic"
 
@@ -27,6 +28,9 @@ func (m *PValue) Add(x, y float64) {
 }
 
 func (m *PValue) Result() (float64, error) {
+	if m.num < 3 {
+		return 0, errors.New("pvalue calculation needs at least 2 sets of data")
+	}
 	r, err := m.corr.Result()
 	if err != nil {
 		return 0, err
