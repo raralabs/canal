@@ -1,6 +1,9 @@
 package pick
 
-import "github.com/raralabs/canal/core/message"
+import (
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/utils/extract"
+)
 
 type firstPick struct {
 	count   uint64
@@ -22,7 +25,7 @@ func NewFirstPick(maxRows uint64) *firstPick {
 func (ft *firstPick) Pick(content *message.OrderedContent) {
 	if ft.first {
 		ft.first = false
-		ft.cols = extractCols(content)
+		ft.cols = extract.Columns(content)
 	}
 	if ft.count < ft.maxRows {
 		insertMessage(func(key string, val interface{}) {

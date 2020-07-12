@@ -1,6 +1,7 @@
 package pick
 
 import (
+	"github.com/raralabs/canal/utils/extract"
 	"log"
 
 	"github.com/raralabs/canal/core/message"
@@ -27,7 +28,7 @@ func NewRandomPick(maxRows uint64) *randomPick {
 func (rt *randomPick) Pick(content *message.OrderedContent) {
 	if rt.first {
 		rt.first = false
-		rt.cols = extractCols(content)
+		rt.cols = extract.Columns(content)
 	}
 	if rt.count < rt.maxRows {
 		insertMessage(func(key string, val interface{}) {
