@@ -18,7 +18,7 @@ func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
 func (dp *dummyProcessorExecutor) process(msg message.Msg) bool {
 	return dp.exec.Execute(msg, dp)
 }
-func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content *message.OrderedContent) {
+func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content, prevContent *message.OrderedContent) {
 	dp.resSrcMsg = srcMsg
 	dp.resContent = content
 }
@@ -49,7 +49,7 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 		meta:   newMetadata(),
 	}
 }
-func (d *dummyProcessor) Result(msg message.Msg, content *message.OrderedContent) {
+func (d *dummyProcessor) Result(msg message.Msg, content, prevContent *message.OrderedContent) {
 	msgPack := msgPod{
 		msg:   msg,
 		route: d.outRoute.route,

@@ -16,7 +16,7 @@ type Avg struct {
 func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
 	return &Avg{
 		tmpl: tmpl,
-		avg:  stream_math.NewMean(2),
+		avg:  stream_math.NewMean(),
 	}
 }
 
@@ -29,10 +29,14 @@ func (c *Avg) Add(content, prevContent *message.OrderedContent) {
 
 		switch val.ValueType() {
 		case message.INT, message.FLOAT:
-			if prevContent != nil {
-				c.avg.Pop()
-			}
 			v, _ := cast.TryFloat(val.Value())
+			if prevContent != nil {
+				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+					v1, _ := cast.TryFloat(old.Value())
+					c.avg.Replace(v1, v)
+					return
+				}
+			}
 			c.avg.Add(v)
 		}
 	}

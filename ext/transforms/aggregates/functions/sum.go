@@ -39,6 +39,13 @@ func (c *Sum) Add(content, prevContent *message.OrderedContent) {
 
 			sum := v1 + v2
 
+			if prevContent != nil {
+				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+					oldVal, _ := cast.TryFloat(old.Value())
+					sum -= oldVal
+				}
+			}
+
 			c.lastSum.Val = sum
 		}
 	}

@@ -1,29 +1,22 @@
 package functions
 
 import (
-	"sync/atomic"
-
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 type Variance struct {
 	tmpl agg.IAggFuncTemplate
 
-	num      uint64  // The number of elements that has arrived
-	lastMean float64 // Mean of the last data
-	lastV    float64 // The v
-	variance *message.MsgFieldValue
+	variance *stream_math.Variance
 }
 
 func NewVariance(tmpl agg.IAggFuncTemplate) *Variance {
 	return &Variance{
 		tmpl:     tmpl,
-		variance: message.NewFieldValue(nil, message.NONE),
-		num:      uint64(0),
-		lastMean: float64(0),
-		lastV:    float64(0),
+		variance: stream_math.NewVariance(),
 	}
 }
 
@@ -34,36 +27,27 @@ func (c *Variance) Add(content, prevContent *message.OrderedContent) {
 			return
 		}
 
-		if c.variance.Value() == nil {
-			c.variance.Val = float64(0)
-			c.variance.ValType = message.FLOAT
-
-			atomic.AddUint64(&c.num, 1)
-			c.lastMean, _ = cast.TryFloat(val.Value())
-			return
-		}
-
 		switch val.ValueType() {
 		case message.INT, message.FLOAT:
-			lastV := c.lastV
-			xk, _ := cast.TryFloat(val.Value())
-
-			atomic.AddUint64(&c.num, 1)
-			newMean := c.lastMean + (xk-c.lastMean)/float64(c.num)
-
-			vk := lastV + (xk-c.lastMean)*(xk-newMean)
-			variance := vk / float64(c.num-1)
-
-			c.lastMean = newMean
-			c.lastV = vk
-
-			c.variance.Val = variance
+			v, _ := cast.TryFloat(val.Value())
+			if prevContent != nil {
+				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+					v1, _ := cast.TryFloat(old.Value())
+					c.variance.Replace(v1, v)
+					return
+				}
+			}
+			c.variance.Add(v)
 		}
 	}
 }
 
 func (c *Variance) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.variance.Value(), c.variance.ValueType())
+	res, err := c.variance.Result()
+	if err != nil {
+		return message.NewFieldValue(nil, message.NONE)
+	}
+	return message.NewFieldValue(res, message.FLOAT)
 }
 
 func (c *Variance) Name() string {
@@ -71,10 +55,5 @@ func (c *Variance) Name() string {
 }
 
 func (c *Variance) Reset() {
-	c.variance.Val = nil
-	c.variance.ValType = message.NONE
-
-	c.num = 0
-	c.lastMean = 0
-	c.lastV = 0
+	c.variance.Reset()
 }
