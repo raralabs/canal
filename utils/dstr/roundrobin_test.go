@@ -54,6 +54,8 @@ func TestRoundRobin(t *testing.T) {
 
 		for i := 0; i < 10; i++ {
 			err := rb.Put(i)
+			val, _ := rb.GetLast()
+			assert.Equal(t, i, val, "")
 			if !assert.Nil(t, err) {
 				return
 			}
@@ -75,6 +77,18 @@ func TestRoundRobin(t *testing.T) {
 		assert.Equal(t, 8, val, "")
 		val, _ = rb.Get(2)
 		assert.Equal(t, 9, val, "")
+
+		val, _ = rb.GetLast()
+		assert.Equal(t, 9, val, "")
+
+		val, _ = rb.Pop()
+		assert.Equal(t, 9, val, "")
+
+		val, _ = rb.Pop()
+		assert.Equal(t, 8, val, "")
+
+		val, _ = rb.Pop()
+		assert.Equal(t, 7, val, "")
 
 		rb.Dispose()
 		res, err := rb.GetAll()

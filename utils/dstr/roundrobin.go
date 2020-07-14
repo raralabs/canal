@@ -14,8 +14,8 @@ type node struct {
 // RoundRobin is a data structure in which elements can be inserted, but can't be deleted.
 // On insertion on buffer full, the oldest elements are removed.
 type RoundRobin struct {
-	nodes                        []*node
-	disposed, head, size, filled uint64 // The size of the buffer
+	nodes                              []*node
+	disposed, head, size, filled, tail uint64 // The size of the buffer
 }
 
 func (rr *RoundRobin) init(size uint64) {
@@ -40,6 +40,9 @@ func (rr *RoundRobin) Put(item interface{}) error {
 
 	if atomic.LoadUint64(&rr.filled) < atomic.LoadUint64(&rr.size) {
 		atomic.AddUint64(&rr.filled, 1)
+	} else {
+		atomic.AddUint64(&rr.tail, 1)
+		rr.tail %= atomic.LoadUint64(&rr.size)
 	}
 
 	atomic.CompareAndSwapUint64(&rr.head, pos, pos+1)
@@ -57,18 +60,24 @@ func (rr *RoundRobin) GetAll() ([]interface{}, error) {
 
 	filled := atomic.LoadUint64(&rr.filled)
 	head := atomic.LoadUint64(&rr.head)
+	tail := atomic.LoadUint64(&rr.tail)
 	out := make([]interface{}, filled)
 
-	if filled < atomic.LoadUint64(&rr.size) {
-		for i := uint64(0); i < head; i++ {
-			out[i] = rr.nodes[i].data
+	if head > tail {
+		j := 0
+		for i := tail; i < head; i++ {
+			out[j] = rr.nodes[i].data
+			j++
 		}
 	} else {
-		for i := head; i < rr.size; i++ {
-			out[i-head] = rr.nodes[i].data
+		j := 0
+		for i := tail; i < rr.size; i++ {
+			out[j] = rr.nodes[i].data
+			j++
 		}
 		for i := uint64(0); i < head; i++ {
-			out[i+head+1] = rr.nodes[i].data
+			out[j] = rr.nodes[i].data
+			j++
 		}
 	}
 
@@ -93,6 +102,40 @@ func (rr *RoundRobin) Get(i uint64) (interface{}, error) {
 	}
 
 	return out, nil
+}
+
+// GetLast returns the data at the last position
+func (rr *RoundRobin) GetLast() (interface{}, error) {
+
+	if atomic.LoadUint64(&rr.disposed) == 1 {
+		return nil, disposedError
+	}
+
+	head := atomic.LoadUint64(&rr.head)
+	if head == 0 {
+		head = rr.Len()
+	}
+	return rr.nodes[head-1].data, nil
+}
+
+// Pop removes the last data and returns it
+func (rr *RoundRobin) Pop() (interface{}, error) {
+
+	if atomic.LoadUint64(&rr.disposed) == 1 {
+		return nil, disposedError
+	}
+
+	head := atomic.LoadUint64(&rr.head)
+	if head == 0 {
+		head = rr.size
+	}
+
+	rr.head = head - 1
+	rr.filled = rr.filled - 1
+
+	rr.head %= atomic.LoadUint64(&rr.size)
+
+	return rr.nodes[rr.head].data, nil
 }
 
 // Len returns the number of items in the queue.
