@@ -67,10 +67,15 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 
 	var pContent *message.OrderedContent
 
-	if _, ok := t.table[strRep]; ok {
+	if vals, ok := t.table[strRep]; ok {
 		// Extract current agg content of the table and
 		// Add the content to the aggregator functions
 		pContent = message.NewOrderedContent()
+		// Insert group info to the content
+		for i, grp := range t.groupBy {
+			pContent.Add(grp, vals[i])
+		}
+
 		for _, aggFn := range t.aggFns[strRep] {
 			pContent.Add(aggFn.Name(), aggFn.Result())
 			aggFn.Add(content, prevContent)
