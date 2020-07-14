@@ -5,6 +5,10 @@ import (
 	"sync/atomic"
 )
 
+func square(x float64) float64 {
+	return x*x
+}
+
 // Calculates ** Population Variance **
 type Variance struct {
 	num      uint64  // The number of elements that has arrived
@@ -29,6 +33,21 @@ func (m *Variance) Add(v float64) {
 
 	m.lastMean = newMean
 	m.lastV = vk
+}
+
+func (m *Variance) Replace(old, new float64) {
+	if m.num == 0 {
+		return
+	}
+	v := m.lastV / float64(m.num)
+	mn := m.lastMean
+
+	m_ := mn + (new - old) / float64(m.num)
+
+	v_ := v + square(m_ - mn) + ( square(new - m_) - square(old - m_)) / float64(m.num)
+
+	m.lastMean = m_
+	m.lastV = v_ * float64(m.num)
 }
 
 func (m *Variance) Result() (float64, error) {

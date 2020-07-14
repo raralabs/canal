@@ -1,47 +1,33 @@
 package stream_math
 
-import (
-	"github.com/raralabs/canal/utils/dstr"
-	"sync/atomic"
-)
+import "sync/atomic"
 
 type Mean struct {
-	means *dstr.RoundRobin
-	bufSz uint64
-	num   uint64
+	mean float64
+	num  uint64
 }
 
-func NewMean(bufSz uint64) *Mean {
+func NewMean() *Mean {
 	return &Mean{
-		means: dstr.NewRoundRobin(bufSz),
-		num:   0,
+		mean: 0,
+		num:  0,
 	}
 }
 
 func (m *Mean) Add(v float64) {
-	mean := float64(0)
-	if m.num > 0 {
-		lst, _ := m.means.GetLast()
-		mean, _ = lst.(float64)
-	}
 	atomic.AddUint64(&m.num, 1)
-	mean = mean + (v-mean)/float64(m.num)
-	m.means.Put(mean)
+	m.mean = m.mean + (v-m.mean)/float64(m.num)
 }
 
-func (m *Mean) Pop() {
-	m.num--
-	m.means.Pop()
+func (m *Mean) Replace(old, new float64) {
+	m.mean += (new - old) / float64(m.num)
 }
 
 func (m *Mean) Result() (float64, error) {
-	v, _ := m.means.GetLast()
-	val, _ := v.(float64)
-	return val, nil
+	return m.mean, nil
 }
 
 func (m *Mean) Reset() {
-	m.means.Dispose()
-	m.means = dstr.NewRoundRobin(m.bufSz)
+	m.mean = 0
 	m.num = 0
 }
