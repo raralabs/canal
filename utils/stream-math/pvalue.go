@@ -27,6 +27,10 @@ func (m *PValue) Add(x, y float64) {
 	atomic.AddUint64(&m.num, 1)
 }
 
+func (m *PValue) Replace(x1, y1, x2, y2 float64) {
+	m.corr.Replace(x1, y1, x2, y2)
+}
+
 func (m *PValue) Result() (float64, error) {
 	if m.num < 3 {
 		return 0, errors.New("pvalue calculation needs at least 2 sets of data")

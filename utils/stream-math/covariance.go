@@ -1,44 +1,45 @@
 package stream_math
 
-import (
-	"errors"
-	"sync/atomic"
-)
+// Source: Online section of https://www.probabilitycourse.com/chapter5/5_3_1_covariance_correlation.php
 
-// Source: Online section of https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Covariance
-// Calculates ** Population Covariance **
 type Covariance struct {
-	mX, mY float64
-	C      float64
-	n      uint64
+	mX, mY, mXY *Mean
 }
 
 func NewCovariance() *Covariance {
 
-	cov := &Covariance{}
+	cov := &Covariance{
+		mX:  NewMean(),
+		mY:  NewMean(),
+		mXY: NewMean(),
+	}
 	cov.Reset()
 
 	return cov
 }
 
 func (m *Covariance) Add(x, y float64) {
-	atomic.AddUint64(&m.n, 1)
-	dx := x - m.mX
-	m.mX += dx / float64(m.n)
-	m.mY += (y - m.mY) / float64(m.n)
-	m.C += dx * (y - m.mY)
+	m.mX.Add(x)
+	m.mY.Add(y)
+	m.mXY.Add(x * y)
+}
+
+func (m *Covariance) Replace(x1, y1, x2, y2 float64) {
+	m.mX.Replace(x1, x2)
+	m.mY.Replace(y1, y2)
+	m.mXY.Replace(x1*y1, x2*y2)
 }
 
 func (m *Covariance) Result() (float64, error) {
-	if m.n == 0 {
-		return 0, errors.New("division by 0 during covariance calculation")
-	}
-	return m.C / float64(m.n), nil
+	mx, _ := m.mX.Result()
+	my, _ := m.mY.Result()
+	mxy, _ := m.mXY.Result()
+
+	return mxy - mx*my, nil
 }
 
 func (m *Covariance) Reset() {
-	m.mX = 0
-	m.mY = 0
-	m.C = 0
-	m.n = 0
+	m.mX.Reset()
+	m.mY.Reset()
+	m.mXY.Reset()
 }

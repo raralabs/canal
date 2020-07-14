@@ -27,6 +27,12 @@ func (m *Correlation) Add(x, y float64) {
 	m.varY.Add(y)
 }
 
+func (m *Correlation) Replace(x1, y1, x2, y2 float64) {
+	m.covXY.Replace(x1, y1, x2, y2)
+	m.varX.Replace(x1, x2)
+	m.varY.Replace(y1, y2)
+}
+
 func (m *Correlation) Result() (float64, error) {
 	vX, err := m.varX.Result()
 	if err != nil {
