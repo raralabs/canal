@@ -26,6 +26,7 @@ type Msg struct {
 	srcMessageId   uint64          //
 	mtype          MsgType         // MsgType of the message
 	mcontent       *OrderedContent // MsgContent of the message
+	prevContent    *OrderedContent // Content of previous message
 	trace          trace           // trace of the message
 }
 
@@ -71,6 +72,16 @@ func (m *Msg) SetField(key string, value *MsgFieldValue) *Msg {
 // MsgContent returns the data stored by the message.
 func (m *Msg) Content() *OrderedContent {
 	return m.mcontent
+}
+
+// MsgContent returns the data stored by the message.
+func (m *Msg) PrevContent() *OrderedContent {
+	return m.prevContent
+}
+
+// MsgContent returns the data stored by the message.
+func (m *Msg) SetPrevContent(content *OrderedContent) {
+	m.prevContent = content
 }
 
 // Values returns a map with just keys and values in the message, without type information.
