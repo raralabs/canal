@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-var disposedError = errors.New(`Queue has been disposed.`)
+var disposedError = errors.New(`queue has been disposed`)
 
 type node struct {
 	data interface{}
@@ -53,6 +53,10 @@ func (rr *RoundRobin) Put(item interface{}) error {
 
 // GetAll returns all the stored data in the roundrobin in order
 func (rr *RoundRobin) GetAll() ([]interface{}, error) {
+
+	if rr.filled == 0 {
+		return nil, errors.New("no data")
+	}
 
 	if atomic.LoadUint64(&rr.disposed) == 1 {
 		return nil, disposedError
@@ -107,6 +111,10 @@ func (rr *RoundRobin) Get(i uint64) (interface{}, error) {
 // GetLast returns the data at the last position
 func (rr *RoundRobin) GetLast() (interface{}, error) {
 
+	if rr.filled == 0 {
+		return nil, errors.New("no data")
+	}
+
 	if atomic.LoadUint64(&rr.disposed) == 1 {
 		return nil, disposedError
 	}
@@ -120,6 +128,10 @@ func (rr *RoundRobin) GetLast() (interface{}, error) {
 
 // Pop removes the last data and returns it
 func (rr *RoundRobin) Pop() (interface{}, error) {
+
+	if rr.filled == 0 {
+		return nil, errors.New("no data")
+	}
 
 	if atomic.LoadUint64(&rr.disposed) == 1 {
 		return nil, disposedError
