@@ -24,7 +24,7 @@ func NewCorrelation(tmpl agg.IAggFuncTemplate, field2 func() string) *Correlatio
 	}
 }
 
-func (c *Correlation) Add(content *message.OrderedContent) {
+func (c *Correlation) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {

@@ -24,7 +24,7 @@ func NewCovariance(tmpl agg.IAggFuncTemplate, field2 func() string) *Covariance 
 	}
 }
 
-func (c *Covariance) Add(content *message.OrderedContent) {
+func (c *Covariance) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {

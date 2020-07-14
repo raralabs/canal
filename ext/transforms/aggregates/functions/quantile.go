@@ -24,7 +24,7 @@ func NewQuantile(tmpl agg.IAggFuncTemplate, wtFn func() string, qth func() float
 	}
 }
 
-func (q *Quantile) Add(content *message.OrderedContent) {
+func (q *Quantile) Add(content, prevContent *message.OrderedContent) {
 	if q.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(q.tmpl.Field())
 		if !ok {

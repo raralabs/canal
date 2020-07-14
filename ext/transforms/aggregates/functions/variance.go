@@ -27,7 +27,7 @@ func NewVariance(tmpl agg.IAggFuncTemplate) *Variance {
 	}
 }
 
-func (c *Variance) Add(content *message.OrderedContent) {
+func (c *Variance) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
