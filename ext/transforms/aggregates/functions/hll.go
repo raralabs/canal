@@ -41,7 +41,7 @@ func NewHLLpp(tmpl agg.IAggFuncTemplate) *HLLpp {
 	}
 }
 
-func (H *HLLpp) Add(content *message.OrderedContent) {
+func (H *HLLpp) Add(content, prevContent *message.OrderedContent) {
 	if H.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(H.tmpl.Field())
 		if !ok {

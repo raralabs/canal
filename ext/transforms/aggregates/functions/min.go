@@ -18,7 +18,7 @@ func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	}
 }
 
-func (c *Min) Add(content *message.OrderedContent) {
+func (c *Min) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {

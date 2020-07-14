@@ -18,7 +18,7 @@ func NewMax(tmpl agg.IAggFuncTemplate) *Max {
 	}
 }
 
-func (c *Max) Add(content *message.OrderedContent) {
+func (c *Max) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {

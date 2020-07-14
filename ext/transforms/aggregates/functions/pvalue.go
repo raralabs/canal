@@ -24,7 +24,7 @@ func NewPValue(tmpl agg.IAggFuncTemplate, field2 func() string) *PValue {
 	}
 }
 
-func (c *PValue) Add(content *message.OrderedContent) {
+func (c *PValue) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {

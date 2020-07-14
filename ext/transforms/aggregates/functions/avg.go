@@ -22,7 +22,7 @@ func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
 	}
 }
 
-func (c *Avg) Add(content *message.OrderedContent) {
+func (c *Avg) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
