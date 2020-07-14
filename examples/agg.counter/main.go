@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/raralabs/canal/ext/transforms/aggregates/templates"
 	"time"
+
+	"github.com/raralabs/canal/ext/transforms/aggregates/templates"
 
 	"github.com/raralabs/canal/ext/transforms/doFn"
 
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/agg"
-	"github.com/raralabs/canal/core/transforms/event/poll"
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
@@ -34,10 +34,7 @@ func main() {
 	})
 
 	aggs := []agg.IAggFuncTemplate{avg, count}
-	filter := poll.NewFilterEvent(func(map[string]interface{}) bool {
-		return true
-	})
-	aggregator := agg.NewAggregator(filter, aggs, nil)
+	aggregator := agg.NewAggregator(aggs, nil)
 
 	counter := p.AddTransform("Adder")
 	ad := counter.AddProcessor(pipeline.DefaultProcessorOptions, aggregator.Function(), "path")
@@ -52,6 +49,5 @@ func main() {
 	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	p.Validate()
 
-	aggregator.Start()
 	p.Start(c, cancel)
 }
