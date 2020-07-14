@@ -34,7 +34,7 @@ func main() {
 		if val.ValType == message.INT {
 			v := val.Val.(uint64)
 			if v%2 == 0 {
-				proc.Result(m, m.Content())
+				proc.Result(m, m.Content(), nil)
 			}
 		}
 

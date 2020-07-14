@@ -32,7 +32,7 @@ func (mf *Factory) NewExecuteRoot(content *OrderedContent, withTrace bool) Msg {
 }
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
-func (mf *Factory) NewExecute(srcMessage Msg, content *OrderedContent) Msg {
+func (mf *Factory) NewExecute(srcMessage Msg, content *OrderedContent, pContent *OrderedContent) Msg {
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
 		pipelineId:     mf.pipelineId,
@@ -44,6 +44,7 @@ func (mf *Factory) NewExecute(srcMessage Msg, content *OrderedContent) Msg {
 		mtype:          EXECUTE,
 		mcontent:       content,
 		trace:          newTrace(srcMessage),
+		prevContent:    pContent,
 	}
 }
 

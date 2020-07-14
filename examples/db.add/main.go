@@ -52,7 +52,7 @@ func main() {
 			count = 0
 			msgContent := message.NewOrderedContent()
 			msgContent.Add("sum", message.NewFieldValue(sum, message.INT))
-			proc.Result(m, msgContent)
+			proc.Result(m, msgContent, nil)
 		}
 		return true
 	}

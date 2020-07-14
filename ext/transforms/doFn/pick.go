@@ -24,9 +24,9 @@ func PickFunction(desc string, num uint64, done func(m message.Msg) bool) pipeli
 		mContent := m.Content()
 		if done(m) {
 			for _, output := range picker.Messages() {
-				proc.Result(m, output)
+				proc.Result(m, output, nil)
 			}
-			proc.Result(m, mContent)
+			proc.Result(m, mContent, nil)
 			proc.Done()
 			return false
 		}

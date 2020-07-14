@@ -24,7 +24,7 @@ func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 	s.curVal++
 	content := message.NewOrderedContent()
 	content.Add("value", message.NewFieldValue(s.curVal, message.INT))
-	proc.Result(m, content)
+	proc.Result(m, content, nil)
 	return false
 }
 

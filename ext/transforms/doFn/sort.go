@@ -21,9 +21,9 @@ func SortFunction(field string, done func(m message.Msg) bool) pipeline.Executor
 				for i, c := range cols {
 					content.Add(c, output[i])
 				}
-				proc.Result(m, content)
+				proc.Result(m, content, nil)
 			}
-			proc.Result(m, mContent)
+			proc.Result(m, mContent, nil)
 			proc.Done()
 			return false
 		}

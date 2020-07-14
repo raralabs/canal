@@ -58,12 +58,12 @@ func (pr *Processor) process(msg message.Msg) bool {
 	return pr.executor.Execute(msg, pr)
 }
 
-func (pr *Processor) Result(srcMsg message.Msg, content *message.OrderedContent) {
+func (pr *Processor) Result(srcMsg message.Msg, content, pContent *message.OrderedContent) {
 	if pr.IsClosed() || pr.executor.ExecutorType() == SINK {
 		return
 	}
 
-	m := pr.mesFactory.NewExecute(srcMsg, content)
+	m := pr.mesFactory.NewExecute(srcMsg, content, pContent)
 
 	// Send the messages one by one
 	// If sndPool can't send the messages, then there's no point in processing, so Done
