@@ -11,7 +11,6 @@ type Correlation struct {
 	tmpl agg.IAggFuncTemplate
 
 	cor    *stream_math.Correlation
-	corr  *message.MsgFieldValue
 	field2 func() string
 }
 
@@ -19,7 +18,6 @@ func NewCorrelation(tmpl agg.IAggFuncTemplate, field2 func() string) *Correlatio
 	return &Correlation{
 		tmpl:   tmpl,
 		cor:    stream_math.NewCorrelation(),
-		corr:  message.NewFieldValue(nil, message.NONE),
 		field2: field2,
 	}
 }
@@ -35,16 +33,25 @@ func (c *Correlation) Add(content, prevContent *message.OrderedContent) {
 			return
 		}
 
-		if c.corr.Value() == nil {
-			c.corr.ValType = message.FLOAT
-		}
-
 		switch val1.ValueType() {
 		case message.INT, message.FLOAT:
-			v1, _ := cast.TryFloat(val1.Val)
-			v2, _ := cast.TryFloat(val2.Val)
+			x1, _ := cast.TryFloat(val1.Val)
+			y1, _ := cast.TryFloat(val2.Val)
 
-			c.cor.Add(v1, v2)
+			if prevContent != nil {
+				vl1, ok1 := prevContent.Get(c.tmpl.Field())
+				vl2, ok2 := prevContent.Get(c.field2())
+
+				if ok1 && ok2 {
+					x2, _ := cast.TryFloat(vl1.Val)
+					y2, _ := cast.TryFloat(vl2.Val)
+
+					c.cor.Replace(x1, y1, x2, y2)
+				}
+
+			}
+
+			c.cor.Add(x1, y1)
 		}
 	}
 }
@@ -54,7 +61,7 @@ func (c *Correlation) Result() *message.MsgFieldValue {
 	if err != nil {
 		return message.NewFieldValue(nil, message.NONE)
 	}
-	return message.NewFieldValue(res, c.corr.ValueType())
+	return message.NewFieldValue(res, message.FLOAT)
 }
 
 func (c *Correlation) Name() string {
@@ -63,5 +70,4 @@ func (c *Correlation) Name() string {
 
 func (c *Correlation) Reset() {
 	c.cor.Reset()
-	c.corr.ValType = message.NONE
 }

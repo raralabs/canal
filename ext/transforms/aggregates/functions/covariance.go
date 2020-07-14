@@ -11,7 +11,6 @@ type Covariance struct {
 	tmpl agg.IAggFuncTemplate
 
 	cov    *stream_math.Covariance
-	covar  *message.MsgFieldValue
 	field2 func() string
 }
 
@@ -19,7 +18,6 @@ func NewCovariance(tmpl agg.IAggFuncTemplate, field2 func() string) *Covariance 
 	return &Covariance{
 		tmpl:   tmpl,
 		cov:    stream_math.NewCovariance(),
-		covar:  message.NewFieldValue(nil, message.NONE),
 		field2: field2,
 	}
 }
@@ -35,26 +33,32 @@ func (c *Covariance) Add(content, prevContent *message.OrderedContent) {
 			return
 		}
 
-		if c.covar.Value() == nil {
-			c.covar.ValType = message.FLOAT
-		}
-
 		switch val1.ValueType() {
 		case message.INT, message.FLOAT:
-			v1, _ := cast.TryFloat(val1.Val)
-			v2, _ := cast.TryFloat(val2.Val)
+			x1, _ := cast.TryFloat(val1.Val)
+			y1, _ := cast.TryFloat(val2.Val)
 
-			c.cov.Add(v1, v2)
+			if prevContent != nil {
+				vl1, ok1 := prevContent.Get(c.tmpl.Field())
+				vl2, ok2 := prevContent.Get(c.field2())
+
+				if ok1 && ok2 {
+					x2, _ := cast.TryFloat(vl1.Val)
+					y2, _ := cast.TryFloat(vl2.Val)
+
+					c.cov.Replace(x1, y1, x2, y2)
+				}
+
+			}
+
+			c.cov.Add(x1, y1)
 		}
 	}
 }
 
 func (c *Covariance) Result() *message.MsgFieldValue {
-	res, err := c.cov.Result()
-	if err != nil {
-		return message.NewFieldValue(nil, message.NONE)
-	}
-	return message.NewFieldValue(res, c.covar.ValueType())
+	res, _ := c.cov.Result()
+	return message.NewFieldValue(res, message.FLOAT)
 }
 
 func (c *Covariance) Name() string {
@@ -63,5 +67,4 @@ func (c *Covariance) Name() string {
 
 func (c *Covariance) Reset() {
 	c.cov.Reset()
-	c.covar.ValType = message.NONE
 }
