@@ -1,24 +1,22 @@
 package functions
 
 import (
-	"sync/atomic"
-
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 type Avg struct {
 	tmpl agg.IAggFuncTemplate
 
-	lastAvg *message.MsgFieldValue
-	num     uint64
+	avg *stream_math.Mean
 }
 
 func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
 	return &Avg{
-		tmpl:    tmpl,
-		lastAvg: message.NewFieldValue(nil, message.NONE),
+		tmpl: tmpl,
+		avg:  stream_math.NewMean(2),
 	}
 }
 
@@ -29,29 +27,20 @@ func (c *Avg) Add(content, prevContent *message.OrderedContent) {
 			return
 		}
 
-		if c.lastAvg.Value() == nil {
-			c.lastAvg.Val = val.Value()
-			c.lastAvg.ValType = message.FLOAT
-			atomic.AddUint64(&c.num, 1)
-			return
-		}
-
 		switch val.ValueType() {
 		case message.INT, message.FLOAT:
-			v1, _ := cast.TryFloat(c.lastAvg.Value())
-			v2, _ := cast.TryFloat(val.Value())
-
-			mean := v1*float64(c.num) + v2
-			atomic.AddUint64(&c.num, 1)
-			mean /= float64(c.num)
-
-			c.lastAvg.Val = mean
+			if prevContent != nil {
+				c.avg.Pop()
+			}
+			v, _ := cast.TryFloat(val.Value())
+			c.avg.Add(v)
 		}
 	}
 }
 
 func (c *Avg) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.lastAvg.Value(), c.lastAvg.ValueType())
+	res, _ := c.avg.Result()
+	return message.NewFieldValue(res, message.FLOAT)
 }
 
 func (c *Avg) Name() string {
@@ -59,7 +48,5 @@ func (c *Avg) Name() string {
 }
 
 func (c *Avg) Reset() {
-	c.num = 0
-	c.lastAvg.Val = nil
-	c.lastAvg.ValType = message.NONE
+	c.avg.Reset()
 }
