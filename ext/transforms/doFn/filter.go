@@ -13,14 +13,14 @@ func FilterFunction(filter func(m message.Msg) (bool, bool, error)) pipeline.Exe
 
 		if err == nil {
 			if done {
-				proc.Result(m, m.Content())
+				proc.Result(m, m.Content(), nil)
 				proc.Done()
 				return false
 			}
 
 			if match {
 				c := m.Content()
-				proc.Result(m, c)
+				proc.Result(m, c, nil)
 			}
 		}
 

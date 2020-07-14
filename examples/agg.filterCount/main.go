@@ -43,7 +43,7 @@ func main() {
 
 		if v, ok := content.Get("eof"); ok {
 			if v.Val == true {
-				proc.Result(m, content)
+				proc.Result(m, content, nil)
 				proc.Done()
 				return false
 			}
@@ -52,7 +52,7 @@ func main() {
 		rawAge, _ := content.Get("eof")
 		if age, ok := cast.TryFloat(rawAge.Val); ok {
 			if age > 30 && age < 50 {
-				proc.Result(m, content)
+				proc.Result(m, content, nil)
 			}
 		}
 

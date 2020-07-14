@@ -84,7 +84,7 @@ func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 				mv.times--
 			}
 
-			proc.Result(m, mv.values)
+			proc.Result(m, mv.values, nil)
 		}
 	} else {
 		proc.Done()

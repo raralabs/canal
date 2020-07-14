@@ -24,7 +24,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 
 		if v, ok := content.Get("eof"); ok {
 			if v.Val == true {
-				proc.Result(m, content)
+				proc.Result(m, content, nil)
 				return true
 			}
 		}
@@ -44,7 +44,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 			content.Add(key, str)
 		}
 
-		proc.Result(m, content)
+		proc.Result(m, content, nil)
 		return true
 	}
 

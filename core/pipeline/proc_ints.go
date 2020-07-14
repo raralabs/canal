@@ -19,7 +19,7 @@ type IProcessorCommon interface {
 // IProcessorExecutor defines the interface for a processor from the perspective of an Executor.
 type IProcessorExecutor interface {
 	// An Executor expects a processor to be able to handle the results it produce.
-	Result(message.Msg, *message.OrderedContent)
+	Result(m message.Msg, content, pContent *message.OrderedContent)
 
 	// Returns the persistor held by the processor.
 	Persistor() IPersistor

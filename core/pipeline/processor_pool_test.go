@@ -132,7 +132,7 @@ func TestProcessorPool(t *testing.T) {
 		})
 
 		t.Run("Test2", func(t *testing.T) {
-			msg2 := msgF.NewExecute(msg, content)
+			msg2 := msgF.NewExecute(msg, content, nil)
 			msgPack := msgPod{
 				msg:   msg2,
 				route: routeParam,
@@ -150,7 +150,7 @@ func TestProcessorPool(t *testing.T) {
 		})
 
 		t.Run("Test3", func(t *testing.T) {
-			msg2 := msgF.NewExecute(msg, content)
+			msg2 := msgF.NewExecute(msg, content, nil)
 			msgPack := msgPod{
 				msg:   msg2,
 				route: routeParam,

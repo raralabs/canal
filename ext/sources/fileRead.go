@@ -51,11 +51,11 @@ func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 		content := message.NewOrderedContent()
 		line := fr.scanner.Text()
 		content.Add(fr.key, message.NewFieldValue(line, message.STRING))
-		proc.Result(m, content)
+		proc.Result(m, content, nil)
 	} else {
 		content := message.NewOrderedContent()
 		content.Add("eof", message.NewFieldValue(true, message.BOOL))
-		proc.Result(m, content)
+		proc.Result(m, content, nil)
 
 		proc.Done()
 		fr.close()

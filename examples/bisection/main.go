@@ -34,7 +34,7 @@ func main() {
 
 	pf := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		time.Sleep(200 * time.Millisecond)
-		proc.Result(m, m.Content())
+		proc.Result(m, m.Content(), nil)
 		return true
 	}
 
@@ -70,7 +70,7 @@ func main() {
 		fc := f(c)
 		if math.Abs(fc) < tol {
 			content.Add("root", message.NewFieldValue(c, message.FLOAT))
-			proc.Result(m, content)
+			proc.Result(m, content, nil)
 			proc.Done()
 			return true
 		}
@@ -88,12 +88,12 @@ func main() {
 		if iter > it.Value().(uint64) {
 			content.Add("error", message.NewFieldValue("Iterations over before result", message.STRING))
 			content.Add("bestRoot", message.NewFieldValue(c, message.FLOAT))
-			proc.Result(m, content)
+			proc.Result(m, content, nil)
 			proc.Done()
 			return true
 		}
 
-		proc.Result(m, content)
+		proc.Result(m, content, nil)
 		return true
 	}
 
@@ -119,7 +119,7 @@ func main() {
 		content.Add("lowerEnd", lower)
 		content.Add("upperEnd", upper)
 
-		proc.Result(msg, content)
+		proc.Result(msg, content, nil)
 
 		return true
 	}), "infoPath")

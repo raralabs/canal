@@ -27,7 +27,7 @@ func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) boo
 	s.curVal++
 	content := message.NewOrderedContent()
 	content.Add("value", message.NewFieldValue(s.curVal, message.INT))
-	proc.Result(m, content)
+	proc.Result(m, content, nil)
 	return false
 }
 func (s *numberGenerator) ExecutorType() ExecutorType {

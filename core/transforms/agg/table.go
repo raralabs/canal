@@ -47,14 +47,14 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 	}
 }
 
-func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.OrderedContent, error) {
+func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.OrderedContent, *message.OrderedContent, error) {
 	groupVals := make([]*message.MsgFieldValue, len(t.groupBy))
 
 	for i, grp := range t.groupBy {
 		if v, ok := content.Get(grp); ok {
 			groupVals[i] = v
 		} else {
-			return nil, errors.New("required contents unavailable")
+			return nil, nil, errors.New("required contents unavailable")
 		}
 	}
 
@@ -65,9 +65,14 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 
 	strRep := stringRep(values...)
 
+	var pContent *message.OrderedContent
+
 	if _, ok := t.table[strRep]; ok {
+		// Extract current agg content of the table and
 		// Add the content to the aggregator functions
+		pContent = message.NewOrderedContent()
 		for _, aggFn := range t.aggFns[strRep] {
+			pContent.Add(aggFn.Name(), aggFn.Result())
 			aggFn.Add(content, prevContent)
 		}
 	} else {
@@ -101,7 +106,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 		newContent.Add(ag.Name(), ag.Result())
 	}
 
-	return newContent, nil
+	return newContent, pContent, nil
 }
 
 func (t *Table) Entries() []*message.OrderedContent {
