@@ -26,6 +26,7 @@ func (mf *Factory) NewExecuteRoot(content *OrderedContent, withTrace bool) Msg {
 		processorId: mf.processorId,
 		mtype:       EXECUTE,
 		mcontent:    content,
+		prevContent: nil,
 		trace:       traceRoot,
 	}
 }

@@ -1,6 +1,7 @@
 package agg
 
 import (
+	"errors"
 	"fmt"
 	"github.com/raralabs/canal/core/message"
 	"strings"
@@ -46,14 +47,14 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 	}
 }
 
-func (t *Table) Insert(content *message.OrderedContent) {
+func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.OrderedContent, error) {
 	groupVals := make([]*message.MsgFieldValue, len(t.groupBy))
 
 	for i, grp := range t.groupBy {
 		if v, ok := content.Get(grp); ok {
 			groupVals[i] = v
 		} else {
-			return
+			return nil, errors.New("required contents unavailable")
 		}
 	}
 
@@ -67,7 +68,7 @@ func (t *Table) Insert(content *message.OrderedContent) {
 	if _, ok := t.table[strRep]; ok {
 		// Add the content to the aggregator functions
 		for _, aggFn := range t.aggFns[strRep] {
-			aggFn.Add(content)
+			aggFn.Add(content, prevContent)
 		}
 	} else {
 		// Fill the table with new elements
@@ -82,9 +83,25 @@ func (t *Table) Insert(content *message.OrderedContent) {
 
 		// Add the content to the aggregator functions
 		for _, aggFn := range t.aggFns[strRep] {
-			aggFn.Add(content)
+			aggFn.Add(content, prevContent)
 		}
 	}
+
+	newContent := message.NewOrderedContent()
+	vals := t.table[strRep]
+
+	// Insert group info to the content
+	for i, grp := range t.groupBy {
+		newContent.Add(grp, vals[i])
+	}
+
+	// Insert aggregator functions' results to the content
+	aggs := t.aggFns[strRep]
+	for _, ag := range aggs {
+		newContent.Add(ag.Name(), ag.Result())
+	}
+
+	return newContent, nil
 }
 
 func (t *Table) Entries() []*message.OrderedContent {

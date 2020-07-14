@@ -41,8 +41,10 @@ func newCount(tmpl IAggFuncTemplate) *countFunction {
 	}
 }
 
-func (c *countFunction) Add(value *message.OrderedContent) {
-	atomic.AddUint64(&c.count, 1)
+func (c *countFunction) Add(value, prevContent *message.OrderedContent) {
+	if prevContent == nil {
+		atomic.AddUint64(&c.count, 1)
+	}
 }
 
 func (c *countFunction) Result() *message.MsgFieldValue {
@@ -122,10 +124,11 @@ func TestTable(t *testing.T) {
 	msg1 := preprocess(value1)
 
 	for i := 0; i < 3; i++ {
-		tbl.Insert(msg)
-		tbl.Insert(msg1)
+		tbl.Insert(msg, nil)
+		tbl.Insert(msg, msg)
+		tbl.Insert(msg1, nil)
 
-		tbl1.Insert(msg)
+		tbl1.Insert(msg, nil)
 
 		for _, v := range tbl.Entries() {
 			assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")

@@ -20,7 +20,7 @@ type IAggFuncTemplate interface {
 
 type IAggFunc interface {
 	// Add adds a message content to the aggregator.
-	Add(value *message.OrderedContent)
+	Add(value, prevContent *message.OrderedContent)
 
 	// Result returns result of the agg func.
 	Result() *message.MsgFieldValue
