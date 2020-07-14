@@ -19,7 +19,7 @@ func NewCount(tmpl agg.IAggFuncTemplate) *Count {
 }
 
 func (c *Count) Add(content, prevContent *message.OrderedContent) {
-	if prevContent != nil {
+	if prevContent == nil {
 		if c.tmpl.Filter(content.Values()) {
 			atomic.AddUint64(&c.count, 1)
 		}
