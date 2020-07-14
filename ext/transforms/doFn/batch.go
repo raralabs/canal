@@ -40,9 +40,6 @@ func (cw *BatchMaker) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 
 			cw.doneFunc(m, proc, contents)
 		}
-		proc.Result(m, m.Content(), nil)
-
-		proc.Done()
 		return false
 	}
 
