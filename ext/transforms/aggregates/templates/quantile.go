@@ -12,11 +12,10 @@ type Quantile struct {
 	name   string
 	filter func(map[string]interface{}) bool
 	field  string
-	weight string
 	q      float64
 }
 
-func NewQuantile(alias, field, weight string, q float64, filter func(map[string]interface{}) bool) *Quantile {
+func NewQuantile(alias, field string, q float64, filter func(map[string]interface{}) bool) *Quantile {
 
 	if q < 0 || q > 1 {
 		log.Panic("Quantile range must be (0,1)")
@@ -29,7 +28,6 @@ func NewQuantile(alias, field, weight string, q float64, filter func(map[string]
 		name:   alias,
 		filter: filter,
 		field:  field,
-		weight: weight,
 		q:      q,
 	}
 }
@@ -47,11 +45,7 @@ func (q *Quantile) Filter(m map[string]interface{}) bool {
 }
 
 func (q *Quantile) Function() agg.IAggFunc {
-	return functions.NewQuantile(q, q.Weight, q.Qth)
-}
-
-func (q *Quantile) Weight() string {
-	return q.weight
+	return functions.NewQuantile(q, q.Qth)
 }
 
 func (q *Quantile) Qth() float64 {
