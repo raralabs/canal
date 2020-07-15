@@ -11,11 +11,11 @@ type Mode struct {
 	field  string
 }
 
-func NewMode(alias, field string, filter func(map[string]interface{}) bool) *Avg {
+func NewMode(alias, field string, filter func(map[string]interface{}) bool) *Mode {
 	if alias == "" {
 		alias = "Mode"
 	}
-	return &Avg{
+	return &Mode{
 		name:   alias,
 		filter: filter,
 		field:  field,
