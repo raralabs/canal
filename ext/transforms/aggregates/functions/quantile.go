@@ -4,57 +4,107 @@ import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
-	"github.com/spenczar/tdigest"
+	sort_algo "github.com/raralabs/canal/utils/sort-algo"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
+	"math"
 )
 
 type Quantile struct {
-	tmpl agg.IAggFuncTemplate
-	tdg  *tdigest.TDigest
-	wtFn func() string
-	qth  func() float64
+	tmpl  agg.IAggFuncTemplate
+	qth   func() float64
+	fqCnt *stream_math.FreqCounter
+
+	orderedVals *sort_algo.Insertion
 }
 
-func NewQuantile(tmpl agg.IAggFuncTemplate, wtFn func() string, qth func() float64) *Quantile {
+func NewQuantile(tmpl agg.IAggFuncTemplate, qth func() float64) *Quantile {
 
 	return &Quantile{
-		tmpl: tmpl,
-		wtFn: wtFn,
-		qth:  qth,
-		tdg:  tdigest.New(),
+		tmpl:  tmpl,
+		qth:   qth,
+		fqCnt: stream_math.NewFreqCounter(),
+		orderedVals: sort_algo.NewInsertion(func(old, new interface{}) bool {
+			o, _ := cast.TryFloat(old)
+			n, _ := cast.TryFloat(new)
+
+			return o > n
+		}),
 	}
 }
 
 func (q *Quantile) Add(content, prevContent *message.OrderedContent) {
+	// Remove the previous fieldVal
+	if prevContent != nil {
+		if prevVal, ok := prevContent.Get(q.tmpl.Field()); ok {
+			switch prevVal.ValueType() {
+			case message.INT, message.FLOAT:
+				val, _ := cast.TryFloat(prevVal.Value())
+				if v := q.fqCnt.Remove(val); v != nil {
+					q.orderedVals.Remove(v)
+				}
+			}
+		}
+	}
+
 	if q.tmpl.Filter(content.Values()) {
+
 		val, ok := content.Get(q.tmpl.Field())
 		if !ok {
 			return
 		}
 
-		vf, ok := cast.TryFloat(val.Val)
-		if !ok {
-			return
-		}
-
-		wt := q.wtFn()
-		if wt != "" {
-			if weight, ok := content.Get(wt); ok {
-				wf, ok := cast.TryInt(weight.Val)
-
-				if !ok {
-					return
-				}
-
-				q.tdg.Add(vf, int(wf))
+		switch val.ValueType() {
+		case message.INT, message.FLOAT:
+			vl, _ := cast.TryFloat(val.Value())
+			if v := q.fqCnt.Add(vl); v != nil {
+				q.orderedVals.Add(v)
 			}
-		} else {
-			q.tdg.Add(vf, 1)
 		}
 	}
 }
 
 func (q *Quantile) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(q.tdg.Quantile(q.qth()), message.FLOAT)
+	return message.NewFieldValue(q.quantile(), message.FLOAT)
+}
+
+func (q *Quantile) quantile() float64 {
+	qth := q.qth()
+	n := q.fqCnt.TotalFreq()
+
+	i := qth * float64(n+1)
+	j := math.Floor(i)
+
+	values := q.fqCnt.Values()
+
+	var jth, j1th interface{}
+
+	cf := uint64(0)
+	for e := q.orderedVals.First(); e != nil; e = e.Next() {
+		entry := e.Value
+		cf += values[entry]
+
+		if (j+1) <= float64(cf) {
+			j1th = entry
+			break
+		}
+
+		if j < float64(cf) {
+			jth = entry
+			if i == j {
+				jthf, _ := cast.TryFloat(jth)
+				return jthf
+			}
+		}
+	}
+
+	if jth == nil {
+		jth = j1th
+	}
+
+	jthf, _ := cast.TryFloat(jth)
+	j1thf, _ := cast.TryFloat(j1th)
+
+	return jthf + (j1thf - jthf)*(i - j)
 }
 
 func (q *Quantile) Name() string {
@@ -62,5 +112,4 @@ func (q *Quantile) Name() string {
 }
 
 func (q *Quantile) Reset() {
-	q.tdg = tdigest.New()
 }
