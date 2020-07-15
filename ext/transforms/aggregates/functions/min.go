@@ -10,7 +10,7 @@ import (
 type Min struct {
 	tmpl agg.IAggFuncTemplate
 
-	fieldVals map[interface{}]bool
+	fieldVals map[interface{}]uint64
 	valType   message.FieldValueType
 	first     bool
 }
@@ -19,7 +19,7 @@ func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	return &Min{
 		tmpl:      tmpl,
 		valType:   message.NONE,
-		fieldVals: make(map[interface{}]bool),
+		fieldVals: make(map[interface{}]uint64),
 		first:     true,
 	}
 }
@@ -30,8 +30,13 @@ func (c *Min) Add(content, prevContent *message.OrderedContent) {
 		// Remove the previous fieldVal
 		if prevContent != nil {
 			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
-				if _, ok := c.fieldVals[prevVal.Value()]; ok {
-					delete(c.fieldVals, prevVal.Value())
+				k := prevVal.Value()
+				if v, ok := c.fieldVals[k]; ok {
+					if v > 1 {
+						c.fieldVals[k]--
+					} else {
+						delete(c.fieldVals, prevVal.Value())
+					}
 				}
 			}
 		}
@@ -46,7 +51,14 @@ func (c *Min) Add(content, prevContent *message.OrderedContent) {
 			c.valType = val.ValueType()
 		}
 
-		c.fieldVals[val.Value()] = true
+		k := val.Value()
+		if v, ok := c.fieldVals[k]; ok {
+			if v == 0 {
+				c.fieldVals[k] = uint64(1)
+			} else {
+				c.fieldVals[k]++
+			}
+		}
 	}
 }
 
@@ -65,7 +77,7 @@ func (c *Min) Result() *message.MsgFieldValue {
 		}
 	}
 
-	return message.NewFieldValue(mn, c.valType)
+	return message.NewFieldValue(mn, message.FLOAT)
 }
 
 func (c *Min) Name() string {
@@ -78,8 +90,8 @@ func (c *Min) Reset() {
 func minIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
 	switch fieldType {
 	case message.INT, message.FLOAT:
-		af,_ := cast.TryFloat(a)
-		bf,_ := cast.TryFloat(b)
+		af, _ := cast.TryFloat(a)
+		bf, _ := cast.TryFloat(b)
 
 		return minf(af, bf), nil
 
