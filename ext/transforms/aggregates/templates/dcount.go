@@ -11,7 +11,7 @@ type DCount struct {
 	field  string
 }
 
-func NewHLLpp(alias, field string, filter func(map[string]interface{}) bool) *DCount {
+func NewDCount(alias, field string, filter func(map[string]interface{}) bool) *DCount {
 	if alias == "" {
 		alias = "Distinct_Count"
 	}
