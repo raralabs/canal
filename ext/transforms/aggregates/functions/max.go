@@ -78,13 +78,15 @@ func (c *Max) calculate(m map[interface{}]uint64) (interface{}, error) {
 	var mx interface{}
 	var err error
 
-	for k := range m {
-		if mx == nil {
-			mx = k
-		} else {
-			mx, err = maxIface(c.valType, mx, k)
-			if err != nil {
-				return nil, err
+	for k, v := range m {
+		if v > 0 {
+			if mx == nil {
+				mx = k
+			} else {
+				mx, err = maxIface(c.valType, mx, k)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
