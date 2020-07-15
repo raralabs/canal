@@ -2,26 +2,31 @@ package functions
 
 import (
 	"errors"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 type Max struct {
 	tmpl agg.IAggFuncTemplate
 
-	fieldVals map[interface{}]uint64
-	valType   message.FieldValueType
-	first     bool
+	fqCnt   *stream_math.FreqCounter
+	valType message.FieldValueType
+	first   bool
 }
 
 func NewMax(tmpl agg.IAggFuncTemplate) *Max {
-	return &Max{
-		tmpl:      tmpl,
-		valType:   message.NONE,
-		fieldVals: make(map[interface{}]uint64),
-		first:     true,
+
+	max := &Max{
+		tmpl:    tmpl,
+		valType: message.NONE,
+		first:   true,
+		fqCnt:   stream_math.NewFreqCounter(),
 	}
+
+	return max
 }
 
 func (c *Max) Add(content, prevContent *message.OrderedContent) {
@@ -30,14 +35,7 @@ func (c *Max) Add(content, prevContent *message.OrderedContent) {
 		// Remove the previous fieldVal
 		if prevContent != nil {
 			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
-				k := prevVal.Value()
-				if v, ok := c.fieldVals[k]; ok {
-					if v > 1 {
-						c.fieldVals[k]--
-					} else {
-						delete(c.fieldVals, prevVal.Value())
-					}
-				}
+				c.fqCnt.Remove(prevVal.Value())
 			}
 		}
 
@@ -52,29 +50,15 @@ func (c *Max) Add(content, prevContent *message.OrderedContent) {
 		}
 
 		k := val.Value()
-		if v, ok := c.fieldVals[k]; ok {
-			if v == 0 {
-				c.fieldVals[k] = uint64(1)
-			} else {
-				c.fieldVals[k]++
-			}
-		}
+		c.fqCnt.Add(k)
 	}
 }
 
 func (c *Max) Result() *message.MsgFieldValue {
-	var mx interface{}
-	var err error
 
-	for k := range c.fieldVals {
-		if mx == nil {
-			mx = k
-		} else {
-			mx, err = maxIface(c.valType, mx, k)
-			if err != nil {
-				return message.NewFieldValue(nil, message.NONE)
-			}
-		}
+	mx, err := c.calculate(c.fqCnt.Values())
+	if err != nil {
+		return message.NewFieldValue(nil, message.NONE)
 	}
 
 	return message.NewFieldValue(mx, message.FLOAT)
@@ -85,6 +69,27 @@ func (c *Max) Name() string {
 }
 
 func (c *Max) Reset() {
+	c.first = true
+	c.valType = message.NONE
+	c.fqCnt.Reset()
+}
+
+func (c *Max) calculate(m map[interface{}]uint64) (interface{}, error) {
+	var mx interface{}
+	var err error
+
+	for k := range m {
+		if mx == nil {
+			mx = k
+		} else {
+			mx, err = maxIface(c.valType, mx, k)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return mx, nil
+
 }
 
 func maxIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
