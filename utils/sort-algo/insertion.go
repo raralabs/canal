@@ -38,3 +38,12 @@ func (ins *Insertion) First() *list.Element {
 func (ins *Insertion) Last() *list.Element {
 	return ins.ordered.Back()
 }
+
+func (ins *Insertion) Remove(v interface{}) {
+	for e := ins.First(); e != nil; e = e.Next() {
+		if e.Value == v {
+			ins.ordered.Remove(e)
+			break
+		}
+	}
+}

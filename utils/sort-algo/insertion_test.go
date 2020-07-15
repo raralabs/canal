@@ -22,8 +22,9 @@ func TestInsertion(t *testing.T) {
 	for _, d := range data {
 		insertion.Add(d)
 	}
+	insertion.Remove(11.001)
 
-	expected := []float64{4234, 23, 11.001, -12, -12.312}
+	expected := []float64{4234, 23, -12, -12.312}
 	e := insertion.First()
 	for _, ex := range expected {
 		if e == nil {
