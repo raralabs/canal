@@ -1,56 +1,71 @@
 package functions
 
 import (
+	"errors"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 )
 
 type Min struct {
-	minVal *message.MsgFieldValue
-	tmpl   agg.IAggFuncTemplate
+	tmpl agg.IAggFuncTemplate
+
+	fieldVals map[interface{}]bool
+	valType   message.FieldValueType
+	first     bool
 }
 
 func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	return &Min{
-		tmpl:   tmpl,
-		minVal: message.NewFieldValue(nil, message.NONE),
+		tmpl:      tmpl,
+		valType:   message.NONE,
+		fieldVals: make(map[interface{}]bool),
+		first:     true,
 	}
 }
 
 func (c *Min) Add(content, prevContent *message.OrderedContent) {
+
 	if c.tmpl.Filter(content.Values()) {
+		// Remove the previous fieldVal
+		if prevContent != nil {
+			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
+				if _, ok := c.fieldVals[prevVal.Value()]; ok {
+					delete(c.fieldVals, prevVal.Value())
+				}
+			}
+		}
+
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
 
-		if c.minVal.Value() == nil {
-			c.minVal.Val = val.Value()
-			c.minVal.ValType = val.ValueType()
-			return
+		if c.first {
+			c.first = false
+			c.valType = val.ValueType()
 		}
 
-		switch val.ValueType() {
-		case message.INT:
-			m, _ := cast.TryInt(val.Value())
-			cmp, _ := cast.TryInt(c.minVal.Value())
-
-			mn := mini(m, cmp)
-			c.minVal.Val = mn
-
-		case message.FLOAT:
-			m, _ := cast.TryFloat(val.Value())
-			cmp, _ := cast.TryFloat(c.minVal.Value())
-
-			mn := minf(m, cmp)
-			c.minVal.Val = mn
-		}
+		c.fieldVals[val.Value()] = true
 	}
 }
 
 func (c *Min) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.minVal.Value(), c.minVal.ValueType())
+	var mn interface{}
+	var err error
+
+	for k := range c.fieldVals {
+		if mn == nil {
+			mn = k
+		} else {
+			mn, err = minIface(c.valType, mn, k)
+			if err != nil {
+				return message.NewFieldValue(nil, message.NONE)
+			}
+		}
+	}
+
+	return message.NewFieldValue(mn, c.valType)
 }
 
 func (c *Min) Name() string {
@@ -58,15 +73,18 @@ func (c *Min) Name() string {
 }
 
 func (c *Min) Reset() {
-	c.minVal.Val = nil
-	c.minVal.ValType = message.NONE
 }
 
-func mini(a, b int64) int64 {
-	if a < b {
-		return a
+func minIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
+	switch fieldType {
+	case message.INT, message.FLOAT:
+		af,_ := cast.TryFloat(a)
+		bf,_ := cast.TryFloat(b)
+
+		return minf(af, bf), nil
+
 	}
-	return b
+	return nil, errors.New("unsupported type")
 }
 
 func minf(a, b float64) float64 {

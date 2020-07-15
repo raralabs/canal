@@ -1,56 +1,71 @@
 package functions
 
 import (
+	"errors"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 )
 
 type Max struct {
-	maxVal *message.MsgFieldValue
-	tmpl   agg.IAggFuncTemplate
+	tmpl agg.IAggFuncTemplate
+
+	fieldVals map[interface{}]bool
+	valType   message.FieldValueType
+	first     bool
 }
 
 func NewMax(tmpl agg.IAggFuncTemplate) *Max {
 	return &Max{
-		tmpl:   tmpl,
-		maxVal: message.NewFieldValue(nil, message.NONE),
+		tmpl:      tmpl,
+		valType:   message.NONE,
+		fieldVals: make(map[interface{}]bool),
+		first:     true,
 	}
 }
 
 func (c *Max) Add(content, prevContent *message.OrderedContent) {
+
 	if c.tmpl.Filter(content.Values()) {
+		// Remove the previous fieldVal
+		if prevContent != nil {
+			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
+				if _, ok := c.fieldVals[prevVal.Value()]; ok {
+					delete(c.fieldVals, prevVal.Value())
+				}
+			}
+		}
+
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
 
-		if c.maxVal.Value() == nil {
-			c.maxVal.Val = val.Value()
-			c.maxVal.ValType = val.ValueType()
-			return
+		if c.first {
+			c.first = false
+			c.valType = val.ValueType()
 		}
 
-		switch val.ValueType() {
-		case message.INT:
-			m, _ := cast.TryInt(val.Value())
-			cmp, _ := cast.TryInt(c.maxVal.Value())
-
-			mx := maxi(m, cmp)
-			c.maxVal.Val = mx
-
-		case message.FLOAT:
-			m, _ := cast.TryFloat(val.Value())
-			cmp, _ := cast.TryFloat(c.maxVal.Value())
-
-			mx := maxf(m, cmp)
-			c.maxVal.Val = mx
-		}
+		c.fieldVals[val.Value()] = true
 	}
 }
 
 func (c *Max) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.maxVal.Value(), c.maxVal.ValueType())
+	var mx interface{}
+	var err error
+
+	for k := range c.fieldVals {
+		if mx == nil {
+			mx = k
+		} else {
+			mx, err = maxIface(c.valType, mx, k)
+			if err != nil {
+				return message.NewFieldValue(nil, message.NONE)
+			}
+		}
+	}
+
+	return message.NewFieldValue(mx, c.valType)
 }
 
 func (c *Max) Name() string {
@@ -58,15 +73,18 @@ func (c *Max) Name() string {
 }
 
 func (c *Max) Reset() {
-	c.maxVal.Val = nil
-	c.maxVal.ValType = message.NONE
 }
 
-func maxi(a, b int64) int64 {
-	if a > b {
-		return a
+func maxIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
+	switch fieldType {
+	case message.INT, message.FLOAT:
+		af,_ := cast.TryFloat(a)
+		bf,_ := cast.TryFloat(b)
+
+		return maxf(af, bf), nil
+
 	}
-	return b
+	return nil, errors.New("unsupported type")
 }
 
 func maxf(a, b float64) float64 {
