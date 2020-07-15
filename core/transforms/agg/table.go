@@ -49,7 +49,6 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 
 func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.OrderedContent, *message.OrderedContent, error) {
 	groupVals := make([]*message.MsgFieldValue, len(t.groupBy))
-
 	for i, grp := range t.groupBy {
 		if v, ok := content.Get(grp); ok {
 			groupVals[i] = v
@@ -57,23 +56,59 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 			return nil, nil, errors.New("required contents unavailable")
 		}
 	}
-
 	values := make([]interface{}, len(groupVals))
 	for i, v := range groupVals {
 		values[i] = v.Val
 	}
-
 	strRep := stringRep(values...)
 
+	gotPContent := false
 	var pContent *message.OrderedContent
+
+	if prevContent != nil {
+		prevGroupVals := make([]*message.MsgFieldValue, len(t.groupBy))
+		for i, grp := range t.groupBy {
+			if v, ok := prevContent.Get(grp); ok {
+				prevGroupVals[i] = v
+			} else {
+				return nil, nil, errors.New("required contents unavailable")
+			}
+		}
+		prevValues := make([]interface{}, len(prevGroupVals))
+		for i, v := range prevGroupVals {
+			prevValues[i] = v.Val
+		}
+
+		prevStrRep := stringRep(prevValues...)
+
+		// Check if previous content exists in table
+		if vals, ok := t.table[prevStrRep]; ok {
+			// Collect previous values
+			pContent = message.NewOrderedContent()
+			// Insert group info to the content
+			for i, grp := range t.groupBy {
+				pContent.Add(grp, vals[i])
+			}
+			gotPContent = true
+
+			// Replace with new content
+			t.table[strRep] = groupVals
+			delete(t.table, prevStrRep)
+			// Update the aggregators
+			t.aggFns[strRep] = t.aggFns[prevStrRep]
+			delete(t.aggFns, prevStrRep)
+		}
+	}
 
 	if vals, ok := t.table[strRep]; ok {
 		// Extract current agg content of the table and
 		// Add the content to the aggregator functions
-		pContent = message.NewOrderedContent()
-		// Insert group info to the content
-		for i, grp := range t.groupBy {
-			pContent.Add(grp, vals[i])
+		if !gotPContent {
+			pContent = message.NewOrderedContent()
+			// Insert group info to the content
+			for i, grp := range t.groupBy {
+				pContent.Add(grp, vals[i])
+			}
 		}
 
 		for _, aggFn := range t.aggFns[strRep] {
