@@ -64,7 +64,8 @@ func (q *Quantile) Add(content, prevContent *message.OrderedContent) {
 }
 
 func (q *Quantile) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(q.quantile(), message.FLOAT)
+	res := q.quantile()
+	return message.NewFieldValue(res, message.FLOAT)
 }
 
 func (q *Quantile) quantile() float64 {
@@ -75,7 +76,6 @@ func (q *Quantile) quantile() float64 {
 	j := math.Floor(i)
 
 	values := q.fqCnt.Values()
-
 	var jth, j1th interface{}
 
 	cf := uint64(0)
@@ -88,7 +88,7 @@ func (q *Quantile) quantile() float64 {
 			break
 		}
 
-		if j < float64(cf) {
+		if j <= float64(cf) {
 			jth = entry
 			if i == j {
 				jthf, _ := cast.TryFloat(jth)
