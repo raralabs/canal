@@ -82,7 +82,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 		prevStrRep := stringRep(prevValues...)
 
 		// Check if previous content exists in table
-		if vals, ok := t.table[prevStrRep]; ok {
+		if vals, ok := t.table[prevStrRep]; ok && prevStrRep != strRep {
 			// Collect previous values
 			pContent = message.NewOrderedContent()
 			// Insert group info to the content
