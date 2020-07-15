@@ -2,25 +2,27 @@ package functions
 
 import (
 	"errors"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 type Min struct {
 	tmpl agg.IAggFuncTemplate
 
-	fieldVals map[interface{}]uint64
-	valType   message.FieldValueType
-	first     bool
+	fqCnt   *stream_math.FreqCounter
+	valType message.FieldValueType
+	first   bool
 }
 
 func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	return &Min{
-		tmpl:      tmpl,
-		valType:   message.NONE,
-		fieldVals: make(map[interface{}]uint64),
-		first:     true,
+		tmpl:    tmpl,
+		valType: message.NONE,
+		first:   true,
+		fqCnt:   stream_math.NewFreqCounter(),
 	}
 }
 
@@ -30,14 +32,7 @@ func (c *Min) Add(content, prevContent *message.OrderedContent) {
 		// Remove the previous fieldVal
 		if prevContent != nil {
 			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
-				k := prevVal.Value()
-				if v, ok := c.fieldVals[k]; ok {
-					if v > 1 {
-						c.fieldVals[k]--
-					} else {
-						delete(c.fieldVals, prevVal.Value())
-					}
-				}
+				c.fqCnt.Remove(prevVal.Value())
 			}
 		}
 
@@ -52,29 +47,15 @@ func (c *Min) Add(content, prevContent *message.OrderedContent) {
 		}
 
 		k := val.Value()
-		if v, ok := c.fieldVals[k]; ok {
-			if v == 0 {
-				c.fieldVals[k] = uint64(1)
-			} else {
-				c.fieldVals[k]++
-			}
-		}
+		c.fqCnt.Add(k)
 	}
 }
 
 func (c *Min) Result() *message.MsgFieldValue {
-	var mn interface{}
-	var err error
 
-	for k := range c.fieldVals {
-		if mn == nil {
-			mn = k
-		} else {
-			mn, err = minIface(c.valType, mn, k)
-			if err != nil {
-				return message.NewFieldValue(nil, message.NONE)
-			}
-		}
+	mn, err := c.calculate(c.fqCnt.Values())
+	if err != nil {
+		return message.NewFieldValue(nil, message.NONE)
 	}
 
 	return message.NewFieldValue(mn, message.FLOAT)
@@ -85,6 +66,27 @@ func (c *Min) Name() string {
 }
 
 func (c *Min) Reset() {
+	c.first = true
+	c.valType = message.NONE
+	c.fqCnt.Reset()
+}
+
+func (c *Min) calculate(m map[interface{}]uint64) (interface{}, error) {
+	var mx interface{}
+	var err error
+
+	for k := range m {
+		if mx == nil {
+			mx = k
+		} else {
+			mx, err = minIface(c.valType, mx, k)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return mx, nil
+
 }
 
 func minIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
