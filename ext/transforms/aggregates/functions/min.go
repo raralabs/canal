@@ -27,14 +27,14 @@ func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 }
 
 func (c *Min) Add(content, prevContent *message.OrderedContent) {
+	// Remove the previous fieldVal
+	if prevContent != nil {
+		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
+			c.fqCnt.Remove(prevVal.Value())
+		}
+	}
 
 	if c.tmpl.Filter(content.Values()) {
-		// Remove the previous fieldVal
-		if prevContent != nil {
-			if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
-				c.fqCnt.Remove(prevVal.Value())
-			}
-		}
 
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
