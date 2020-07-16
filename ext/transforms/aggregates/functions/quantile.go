@@ -32,6 +32,8 @@ func NewQuantile(tmpl agg.IAggFuncTemplate, qth func() float64) *Quantile {
 	}
 }
 
+func (q *Quantile) Remove(prevContent *message.OrderedContent) {}
+
 func (q *Quantile) Add(content, prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
