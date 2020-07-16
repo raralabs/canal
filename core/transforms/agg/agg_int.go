@@ -19,6 +19,8 @@ type IAggFuncTemplate interface {
 }
 
 type IAggFunc interface {
+	Remove(prevContent *message.OrderedContent)
+
 	// Add adds a message content to the aggregator.
 	Add(value, prevContent *message.OrderedContent)
 

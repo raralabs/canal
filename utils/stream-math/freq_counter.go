@@ -36,7 +36,7 @@ func (fc *FreqCounter) Add(v interface{}) interface{} {
 	return nil
 }
 
-// Removes decreases the count for v and returns it if the
+// Remove decreases the count for v and returns it if the
 // count reaches 0
 func (fc *FreqCounter) Remove(v interface{}) interface{} {
 	fc.valMu.Lock()

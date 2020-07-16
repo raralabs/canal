@@ -29,6 +29,8 @@ func NewMax(tmpl agg.IAggFuncTemplate) *Max {
 	return max
 }
 
+func (c *Max) Remove(prevContent *message.OrderedContent) {}
+
 func (c *Max) Add(content, prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {

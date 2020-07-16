@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/raralabs/canal/core/message"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 	"strings"
 )
 
@@ -17,12 +18,12 @@ func stringRep(strs ...interface{}) string {
 	return str.String()
 }
 
-
 type Table struct {
-	groupBy      []string                  // The groups in the table
-	aggFns       map[string][]IAggFunc // The aggregators for each group
-	aggFnTmplts  []IAggFuncTemplate
-	table        map[string][]*message.MsgFieldValue
+	groupBy     []string              // The groups in the table
+	aggFns      map[string][]IAggFunc // The aggregators for each group
+	aggFnTmplts []IAggFuncTemplate
+	table       map[string][]*message.MsgFieldValue
+	msgFreq     *stream_math.FreqCounter
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
@@ -44,6 +45,7 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 		aggFns:      aggFns,
 		aggFnTmplts: aggFnTmplts,
 		table:       table,
+		msgFreq:     stream_math.NewFreqCounter(),
 	}
 }
 
@@ -83,20 +85,26 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 
 		// Check if previous content exists in table
 		if vals, ok := t.table[prevStrRep]; ok && prevStrRep != strRep {
-			// Collect previous values
-			pContent = message.NewOrderedContent()
-			// Insert group info to the content
-			for i, grp := range t.groupBy {
-				pContent.Add(grp, vals[i])
-			}
-			gotPContent = true
+			if t.msgFreq.Remove(prevContent) != nil {
+				// Collect previous values
+				pContent = message.NewOrderedContent()
+				// Insert group info to the content
+				for i, grp := range t.groupBy {
+					pContent.Add(grp, vals[i])
+				}
+				gotPContent = true
 
-			// Replace with new content
-			t.table[strRep] = groupVals
-			delete(t.table, prevStrRep)
-			// Update the aggregators
-			t.aggFns[strRep] = t.aggFns[prevStrRep]
-			delete(t.aggFns, prevStrRep)
+				for _, ag := range t.aggFns[prevStrRep] {
+					ag.Remove(prevContent)
+				}
+
+				// Replace with new content
+				t.table[strRep] = groupVals
+				delete(t.table, prevStrRep)
+				// Update the aggregators
+				t.aggFns[strRep] = t.aggFns[prevStrRep]
+				delete(t.aggFns, prevStrRep)
+			}
 		}
 	}
 
@@ -131,6 +139,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 			aggFn.Add(content, prevContent)
 		}
 	}
+	t.msgFreq.Add(strRep)
 
 	newContent := message.NewOrderedContent()
 	vals := t.table[strRep]

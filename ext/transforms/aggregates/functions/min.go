@@ -26,6 +26,8 @@ func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	}
 }
 
+func (c *Min) Remove(prevContent *message.OrderedContent) {}
+
 func (c *Min) Add(content, prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {

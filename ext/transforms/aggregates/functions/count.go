@@ -18,6 +18,12 @@ func NewCount(tmpl agg.IAggFuncTemplate) *Count {
 	}
 }
 
+func (c *Count) Remove(prevContent *message.OrderedContent) {
+	if prevContent != nil && c.count > 0 {
+		c.count--
+	}
+}
+
 func (c *Count) Add(content, prevContent *message.OrderedContent) {
 	if prevContent == nil {
 		if c.tmpl.Filter(content.Values()) {
