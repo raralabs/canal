@@ -85,7 +85,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 
 		// Check if previous content exists in table
 		if vals, ok := t.table[prevStrRep]; ok && prevStrRep != strRep {
-			if t.msgFreq.Remove(prevContent) != nil {
+			if t.msgFreq.Remove(prevStrRep) != nil {
 				// Collect previous values
 				pContent = message.NewOrderedContent()
 				// Insert group info to the content
