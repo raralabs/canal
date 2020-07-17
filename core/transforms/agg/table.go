@@ -13,7 +13,8 @@ func stringRep(strs ...interface{}) string {
 	var str strings.Builder
 
 	for _, s := range strs {
-		str.WriteString(fmt.Sprintf("%v", s))
+		st := fmt.Sprintf("%v", s)
+		str.WriteString(fmt.Sprintf("%s%d", st, len(st)))
 	}
 
 	return str.String()
