@@ -47,7 +47,7 @@ func (q *Quantile) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (q *Quantile) Add(content, prevContent *message.OrderedContent) {
+func (q *Quantile) Add(content *message.OrderedContent) {
 
 	if q.tmpl.Filter(content.Values()) {
 

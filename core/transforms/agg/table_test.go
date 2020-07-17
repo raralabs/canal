@@ -40,7 +40,7 @@ func newCount(tmpl IAggFuncTemplate) *countFunction {
 	}
 }
 
-func (c *countFunction) Add(value, prevContent *message.OrderedContent) {
+func (c *countFunction) Add(value *message.OrderedContent) {
 	atomic.AddUint64(&c.count, 1)
 }
 
@@ -119,7 +119,7 @@ func TestTable(t *testing.T) {
 
 	value1 := map[string]interface{}{
 
-		"name": "Dahal",
+		"name":  "Dahal",
 		"value": 1,
 		"greet": "Hello",
 	}
@@ -153,7 +153,6 @@ func TestTable(t *testing.T) {
 			assert.Equal(t, uint64(2), v.Values()["Count1"], "")
 		}
 	}
-
 
 	_ = tbl1
 }

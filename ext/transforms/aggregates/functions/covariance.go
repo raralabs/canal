@@ -36,7 +36,7 @@ func (c *Covariance) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Covariance) Add(content, prevContent *message.OrderedContent) {
+func (c *Covariance) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {

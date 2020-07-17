@@ -46,7 +46,7 @@ func (md *Mode) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (md *Mode) Add(content, prevContent *message.OrderedContent) {
+func (md *Mode) Add(content *message.OrderedContent) {
 
 	if md.tmpl.Filter(content.Values()) {
 
