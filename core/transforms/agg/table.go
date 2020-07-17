@@ -113,7 +113,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 
 			for _, aggFn := range t.aggFns[strRep] {
 				pContent.Add(aggFn.Name(), aggFn.Result())
-				aggFn.Add(content, prevContent)
+				aggFn.Add(content)
 			}
 		} else {
 			// Fill the table with new elements
@@ -128,7 +128,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 
 			// Add the content to the aggregator functions
 			for _, aggFn := range t.aggFns[strRep] {
-				aggFn.Add(content, prevContent)
+				aggFn.Add(content)
 			}
 		}
 	}

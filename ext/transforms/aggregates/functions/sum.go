@@ -30,7 +30,7 @@ func (c *Sum) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Sum) Add(content, prevContent *message.OrderedContent) {
+func (c *Sum) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {

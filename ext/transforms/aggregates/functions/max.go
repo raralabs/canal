@@ -38,7 +38,7 @@ func (c *Max) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Max) Add(content, prevContent *message.OrderedContent) {
+func (c *Max) Add(content *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 

@@ -27,7 +27,7 @@ func (c *DCount) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *DCount) Add(content, prevContent *message.OrderedContent) {
+func (c *DCount) Add(content *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 

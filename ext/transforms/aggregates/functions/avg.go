@@ -30,7 +30,7 @@ func (c *Avg) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Avg) Add(content, prevContent *message.OrderedContent) {
+func (c *Avg) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {

@@ -22,7 +22,7 @@ type IAggFunc interface {
 	Remove(prevContent *message.OrderedContent)
 
 	// Add adds a message content to the aggregator.
-	Add(value, prevContent *message.OrderedContent)
+	Add(value *message.OrderedContent)
 
 	// Result returns result of the agg func.
 	Result() *message.MsgFieldValue
