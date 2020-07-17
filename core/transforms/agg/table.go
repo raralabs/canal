@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/raralabs/canal/core/message"
+	"log"
 	"strings"
 )
 
@@ -15,6 +16,27 @@ func stringRep(strs ...interface{}) string {
 	}
 
 	return str.String()
+}
+
+func getStringRep(groupVals []*message.MsgFieldValue) string {
+	values := make([]interface{}, len(groupVals))
+	for i, v := range groupVals {
+		values[i] = v.Val
+	}
+
+	return stringRep(values...)
+}
+
+func extractValues(m *message.OrderedContent, header []string) ([]*message.MsgFieldValue, error) {
+	groupVals := make([]*message.MsgFieldValue, len(header))
+	for i, grp := range header {
+		if v, ok := m.Get(grp); ok {
+			groupVals[i] = v
+		} else {
+			return nil, errors.New("required contents unavailable")
+		}
+	}
+	return groupVals, nil
 }
 
 type Table struct {
@@ -46,75 +68,65 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 	}
 }
 
+// Insert inserts the content to the table and generates at max
+// two contents and prevContents for message to be generated.
+// One pair is for the update info on removal and the other is
+// the info on addition.
 func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message.OrderedContent, []*message.OrderedContent, error) {
-	groupVals := make([]*message.MsgFieldValue, len(t.groupBy))
-	for i, grp := range t.groupBy {
-		if v, ok := content.Get(grp); ok {
-			groupVals[i] = v
-		} else {
-			return nil, nil, errors.New("required contents unavailable")
-		}
+
+	groupVals, err := extractValues(content, t.groupBy)
+	if err != nil {
+		return nil, nil, err
 	}
-	values := make([]interface{}, len(groupVals))
-	for i, v := range groupVals {
-		values[i] = v.Val
-	}
-	strRep := stringRep(values...)
+	strRep := getStringRep(groupVals)
 
 	var pContent *message.OrderedContent
 	var pContentRem, contentRem *message.OrderedContent
 
-	if prevContent != nil && prevContent != content {
-		prevGroupVals := make([]*message.MsgFieldValue, len(t.groupBy))
-		for i, grp := range t.groupBy {
-			if v, ok := prevContent.Get(grp); ok {
-				prevGroupVals[i] = v
-			} else {
-				return nil, nil, errors.New("required contents unavailable")
-			}
-		}
-		prevValues := make([]interface{}, len(prevGroupVals))
-		for i, v := range prevGroupVals {
-			prevValues[i] = v.Val
-		}
-
-		prevStrRep := stringRep(prevValues...)
-
-		// Check if previous content exists in table
-		if vals, ok := t.table[prevStrRep]; ok {
-
-			pContentRem = message.NewOrderedContent()
-			contentRem = message.NewOrderedContent()
-			// Insert group info to the content
-			for i, grp := range t.groupBy {
-				pContentRem.Add(grp, vals[i])
-				contentRem.Add(grp, vals[i])
-			}
-
-			for _, aggFn := range t.aggFns[prevStrRep] {
-				pContentRem.Add(aggFn.Name(), aggFn.Result())
-				aggFn.Remove(prevContent)
-				contentRem.Add(aggFn.Name(), aggFn.Result())
-			}
-
-		} else {
-			return nil, nil, errors.New("previous content vanished from table")
-		}
-	}
-
+	// Skip the insertion and removal of contents, if current content and
+	// the previous content is identical.
 	if prevContent != content {
-		if vals, ok := t.table[strRep]; ok {
-			// Extract current agg content of the table and
-			// Add the content to the aggregator functions
+
+		// If previous content is available, handle it appropriately
+		if prevContent != nil {
+
+			values, err := extractValues(prevContent, t.groupBy)
+			if err != nil {
+				return nil, nil, err
+			}
+			prevStrRep := getStringRep(values)
+
+			// Check if previous content exists in table
+			if _, ok := t.table[prevStrRep]; ok {
+
+				pContentRem = message.NewOrderedContent()
+				contentRem = message.NewOrderedContent()
+				// Insert group info to the content
+				t.fillGroupInfo(pContentRem, prevStrRep)
+				t.fillGroupInfo(contentRem, prevStrRep)
+
+				// Collect contents before removal
+				t.collectResults(pContentRem, prevStrRep)
+				for _, aggFn := range t.aggFns[prevStrRep] {
+					aggFn.Remove(prevContent)
+				}
+				// Collect contents after removal
+				t.collectResults(contentRem, prevStrRep)
+
+			} else {
+				return nil, nil, errors.New("previous content vanished from table")
+			}
+		}
+
+		if _, ok := t.table[strRep]; ok {
 
 			pContent = message.NewOrderedContent()
-			// Insert group info to the content
-			for i, grp := range t.groupBy {
-				pContent.Add(grp, vals[i])
-			}
+			// Insert group info to the content, and collect
+			// results.
+			t.fillGroupInfo(pContent, strRep)
+			t.collectResults(pContent, strRep)
 
 			for _, aggFn := range t.aggFns[strRep] {
-				pContent.Add(aggFn.Name(), aggFn.Result())
 				aggFn.Add(content)
 			}
 		} else {
@@ -136,46 +148,37 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 	}
 
 	newContent := message.NewOrderedContent()
-	vals := t.table[strRep]
+	// Insert group info and results to the newContent
+	t.fillGroupInfo(newContent, strRep)
+	t.collectResults(newContent, strRep)
 
-	// Insert group info to the content
-	for i, grp := range t.groupBy {
-		newContent.Add(grp, vals[i])
-	}
-
-	// Insert aggregator functions' results to the content
-	aggs := t.aggFns[strRep]
-	for _, ag := range aggs {
-		newContent.Add(ag.Name(), ag.Result())
-	}
-
-	nCs := []*message.OrderedContent{newContent}
-	pCs := []*message.OrderedContent{pContent}
+	var nCs, pCs []*message.OrderedContent
 	if pContentRem != nil && contentRem != nil {
-		// Send removed content at the beginning
-		pCs = append([]*message.OrderedContent{pContentRem}, pCs...)
-		nCs = append([]*message.OrderedContent{contentRem}, nCs...)
+		// Place removed content at the beginning
+		pCs = []*message.OrderedContent{pContentRem}
+		nCs = []*message.OrderedContent{contentRem}
 	}
+	// Place added content at the end
+	pCs = append(pCs, pContent)
+	nCs = append(nCs, newContent)
 
 	return nCs, pCs, nil
 }
 
+// Entries provides a way to access the table's content.
+// It returns a slice that contains groups info and
+// aggregator functions' results.
 func (t *Table) Entries() []*message.OrderedContent {
 	var contents []*message.OrderedContent
 
-	for k, v := range t.table {
+	for k, _ := range t.table {
 		content := message.NewOrderedContent()
 
 		// Insert group info to the content
-		for i, grp := range t.groupBy {
-			content.Add(grp, v[i])
-		}
+		t.fillGroupInfo(content, k)
 
 		// Insert aggregator functions' results to the content
-		aggs := t.aggFns[k]
-		for _, ag := range aggs {
-			content.Add(ag.Name(), ag.Result())
-		}
+		t.collectResults(content, k)
 
 		contents = append(contents, content)
 	}
@@ -185,4 +188,25 @@ func (t *Table) Entries() []*message.OrderedContent {
 
 func (t *Table) Reset() {
 	panic("implement me")
+}
+
+// fillGroupInfo fills the group info for the provided
+// group string.
+func (t *Table) fillGroupInfo(m *message.OrderedContent, grpStr string) {
+	values := t.table[grpStr]
+	if len(t.groupBy) != len(values) {
+		log.Panic("Error in filling group info.")
+	}
+	for i, grp := range t.groupBy {
+		m.Add(grp, values[i])
+	}
+}
+
+// collectResults collects the aggregator results for the
+// provided group string.
+func (t *Table) collectResults(m *message.OrderedContent, grpStr string) {
+	aggs := t.aggFns[grpStr]
+	for _, ag := range aggs {
+		m.Add(ag.Name(), ag.Result())
+	}
 }
