@@ -5,35 +5,14 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type DCount struct {
-	name   string
-	filter func(map[string]interface{}) bool
-	field  string
-}
-
-func NewDCount(alias, field string, filter func(map[string]interface{}) bool) *DCount {
+func NewDCount(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
 	if alias == "" {
 		alias = "Distinct_Count"
 	}
-	return &DCount{
-		name:   alias,
-		filter: filter,
-		field:  field,
-	}
-}
 
-func (H *DCount) Name() string {
-	return H.name
-}
+	ag := NewAggTemplate(alias, field, filter)
 
-func (H *DCount) Field() string {
-	return H.field
-}
+	ag.function = func() agg.IAggFunc { return functions.NewDCount(ag) }
 
-func (H *DCount) Filter(m map[string]interface{}) bool {
-	return H.filter(m)
-}
-
-func (H *DCount) Function() agg.IAggFunc {
-	return functions.NewDCount(H)
+	return ag
 }

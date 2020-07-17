@@ -5,35 +5,14 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type Variance struct {
-	name   string
-	filter func(map[string]interface{}) bool
-	field  string
-}
-
-func NewVariance(alias, field string, filter func(map[string]interface{}) bool) *Variance {
+func NewVariance(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
 	if alias == "" {
 		alias = "Var"
 	}
-	return &Variance{
-		name:   alias,
-		filter: filter,
-		field:  field,
-	}
-}
 
-func (c *Variance) Filter(m map[string]interface{}) bool {
-	return c.filter(m)
-}
+	ag := NewAggTemplate(alias, field, filter)
 
-func (c *Variance) Function() agg.IAggFunc {
-	return functions.NewVariance(c)
-}
+	ag.function = func() agg.IAggFunc { return functions.NewVariance(ag) }
 
-func (c *Variance) Name() string {
-	return c.name
-}
-
-func (c *Variance) Field() string {
-	return c.field
+	return ag
 }

@@ -5,33 +5,14 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type Count struct {
-	name   string
-	filter func(map[string]interface{}) bool
-}
-
-func NewCount(alias string, filter func(map[string]interface{}) bool) *Count {
+func NewCount(alias string, filter func(map[string]interface{}) bool) *AggTemplate {
 	if alias == "" {
 		alias = "Count"
 	}
-	return &Count{
-		name:   alias,
-		filter: filter,
-	}
-}
 
-func (c *Count) Filter(m map[string]interface{}) bool {
-	return c.filter(m)
-}
+	ag := NewAggTemplate(alias, "", filter)
 
-func (c *Count) Function() agg.IAggFunc {
-	return functions.NewCount(c)
-}
+	ag.function = func() agg.IAggFunc { return functions.NewCount(ag) }
 
-func (c *Count) Name() string {
-	return c.name
-}
-
-func (c *Count) Field() string {
-	return ""
+	return ag
 }

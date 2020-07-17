@@ -3,9 +3,10 @@ package agg
 import (
 	"errors"
 	"fmt"
-	"github.com/raralabs/canal/core/message"
 	"log"
 	"strings"
+
+	"github.com/raralabs/canal/core/message"
 )
 
 func stringRep(strs ...interface{}) string {
@@ -171,7 +172,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 func (t *Table) Entries() []*message.OrderedContent {
 	var contents []*message.OrderedContent
 
-	for k, _ := range t.table {
+	for k := range t.table {
 		content := message.NewOrderedContent()
 
 		// Insert group info to the content
