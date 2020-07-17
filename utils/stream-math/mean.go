@@ -19,6 +19,17 @@ func (m *Mean) Add(v float64) {
 	m.mean = m.mean + (v-m.mean)/float64(m.num)
 }
 
+func (m *Mean) Remove(v float64) {
+	if m.num > 0 {
+		m.num--
+		if m.num == 0 {
+			m.Reset()
+		} else {
+			m.mean = (m.mean * float64(m.num + 1) - v) / float64(m.num)
+		}
+	}
+}
+
 func (m *Mean) Replace(old, new float64) {
 	m.mean += (new - old) / float64(m.num)
 }

@@ -27,6 +27,13 @@ func (m *PValue) Add(x, y float64) {
 	atomic.AddUint64(&m.num, 1)
 }
 
+func (m *PValue) Remove(x, y float64) {
+	if m.num > 0 {
+		m.corr.Remove(x, y)
+		m.num--
+	}
+}
+
 func (m *PValue) Replace(x1, y1, x2, y2 float64) {
 	m.corr.Replace(x1, y1, x2, y2)
 }

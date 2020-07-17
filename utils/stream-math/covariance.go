@@ -24,6 +24,12 @@ func (m *Covariance) Add(x, y float64) {
 	m.mXY.Add(x * y)
 }
 
+func (m *Covariance) Remove(x, y float64) {
+	m.mX.Remove(x)
+	m.mY.Remove(y)
+	m.mXY.Remove(x * y)
+}
+
 func (m *Covariance) Replace(x1, y1, x2, y2 float64) {
 	m.mX.Replace(x1, x2)
 	m.mY.Replace(y1, y2)
