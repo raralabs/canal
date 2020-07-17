@@ -19,7 +19,16 @@ func NewSum(tmpl agg.IAggFuncTemplate) *Sum {
 	}
 }
 
-func (c *Sum) Remove(prevContent *message.OrderedContent) {}
+func (c *Sum) Remove(prevContent *message.OrderedContent) {
+
+	if prevContent != nil {
+		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+			oldVal, _ := cast.TryFloat(old.Value())
+			v1, _ := cast.TryFloat(c.lastSum.Value())
+			c.lastSum.Val = v1 - oldVal
+		}
+	}
+}
 
 func (c *Sum) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
@@ -40,13 +49,6 @@ func (c *Sum) Add(content, prevContent *message.OrderedContent) {
 			v2, _ := cast.TryFloat(val.Value())
 
 			sum := v1 + v2
-
-			if prevContent != nil {
-				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
-					oldVal, _ := cast.TryFloat(old.Value())
-					sum -= oldVal
-				}
-			}
 
 			c.lastSum.Val = sum
 		}
