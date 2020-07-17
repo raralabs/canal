@@ -20,7 +20,15 @@ func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
 	}
 }
 
-func (c *Avg) Remove(prevContent *message.OrderedContent) {}
+func (c *Avg) Remove(prevContent *message.OrderedContent) {
+	if prevContent != nil {
+		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+			v1, _ := cast.TryFloat(old.Value())
+			c.avg.Remove(v1)
+			return
+		}
+	}
+}
 
 func (c *Avg) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
@@ -32,13 +40,6 @@ func (c *Avg) Add(content, prevContent *message.OrderedContent) {
 		switch val.ValueType() {
 		case message.INT, message.FLOAT:
 			v, _ := cast.TryFloat(val.Value())
-			if prevContent != nil {
-				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
-					v1, _ := cast.TryFloat(old.Value())
-					c.avg.Replace(v1, v)
-					return
-				}
-			}
 			c.avg.Add(v)
 		}
 	}
