@@ -1,22 +1,23 @@
 package agg
 
 import (
+	"log"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
-	"log"
 )
 
 type Operator struct {
 	name    string
 	state   *struct{}
-	aggFunc func(message.Msg, *struct{}) (*message.OrderedContent, *message.OrderedContent, error)
-	after   func(message.Msg, pipeline.IProcessorForExecutor, *message.OrderedContent, *message.OrderedContent)
+	aggFunc func(message.Msg, *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error)
+	after   func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent)
 }
 
 func NewOperator(
 	initialState struct{},
-	af func(message.Msg, *struct{}) (*message.OrderedContent, *message.OrderedContent, error),
-	after func(message.Msg, pipeline.IProcessorForExecutor, *message.OrderedContent, *message.OrderedContent),
+	af func(message.Msg, *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error),
+	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent),
 ) pipeline.Executor {
 	return &Operator{
 		state:   &initialState,
@@ -26,7 +27,7 @@ func NewOperator(
 }
 
 func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-	content, pContent, err := af.aggFunc(m, af.state)
+	contents, pContents, err := af.aggFunc(m, af.state)
 
 	if af.after == nil {
 		if err != nil {
@@ -34,9 +35,11 @@ func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 			return false
 		}
 
-		proc.Result(m, content, pContent)
+		for i := range contents {
+			proc.Result(m, contents[i], pContents[i])
+		}
 	} else {
-		af.after(m, proc, content, pContent)
+		af.after(m, proc, contents, pContents)
 	}
 	return true
 }
