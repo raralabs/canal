@@ -49,7 +49,7 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 	}
 }
 
-func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.OrderedContent, *message.OrderedContent, error) {
+func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message.OrderedContent, []*message.OrderedContent, error) {
 	groupVals := make([]*message.MsgFieldValue, len(t.groupBy))
 	for i, grp := range t.groupBy {
 		if v, ok := content.Get(grp); ok {
@@ -64,8 +64,8 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 	}
 	strRep := stringRep(values...)
 
-	gotPContent := false
 	var pContent *message.OrderedContent
+	var pContentRem, contentRem *message.OrderedContent
 
 	if prevContent != nil {
 		prevGroupVals := make([]*message.MsgFieldValue, len(t.groupBy))
@@ -84,39 +84,33 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 		prevStrRep := stringRep(prevValues...)
 
 		// Check if previous content exists in table
-		if vals, ok := t.table[prevStrRep]; ok && prevStrRep != strRep {
-			if t.msgFreq.Remove(prevStrRep) != nil {
-				// Collect previous values
-				pContent = message.NewOrderedContent()
-				// Insert group info to the content
-				for i, grp := range t.groupBy {
-					pContent.Add(grp, vals[i])
-				}
-				gotPContent = true
+		if vals, ok := t.table[prevStrRep]; ok {
 
-				for _, ag := range t.aggFns[prevStrRep] {
-					ag.Remove(prevContent)
-				}
-
-				// Replace with new content
-				t.table[strRep] = groupVals
-				delete(t.table, prevStrRep)
-				// Update the aggregators
-				t.aggFns[strRep] = t.aggFns[prevStrRep]
-				delete(t.aggFns, prevStrRep)
+			pContentRem = message.NewOrderedContent()
+			contentRem = message.NewOrderedContent()
+			// Insert group info to the content
+			for i, grp := range t.groupBy {
+				pContentRem.Add(grp, vals[i])
+				contentRem.Add(grp, vals[i])
 			}
+
+			for _, aggFn := range t.aggFns[prevStrRep] {
+				pContentRem.Add(aggFn.Name(), aggFn.Result())
+				aggFn.Remove(prevContent)
+				contentRem.Add(aggFn.Name(), aggFn.Result())
+			}
+
 		}
 	}
 
 	if vals, ok := t.table[strRep]; ok {
 		// Extract current agg content of the table and
 		// Add the content to the aggregator functions
-		if !gotPContent {
-			pContent = message.NewOrderedContent()
-			// Insert group info to the content
-			for i, grp := range t.groupBy {
-				pContent.Add(grp, vals[i])
-			}
+
+		pContent = message.NewOrderedContent()
+		// Insert group info to the content
+		for i, grp := range t.groupBy {
+			pContent.Add(grp, vals[i])
 		}
 
 		for _, aggFn := range t.aggFns[strRep] {
@@ -139,7 +133,6 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 			aggFn.Add(content, prevContent)
 		}
 	}
-	t.msgFreq.Add(strRep)
 
 	newContent := message.NewOrderedContent()
 	vals := t.table[strRep]
@@ -155,7 +148,14 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) (*message.O
 		newContent.Add(ag.Name(), ag.Result())
 	}
 
-	return newContent, pContent, nil
+	nCs := []*message.OrderedContent{newContent}
+	pCs := []*message.OrderedContent{pContent}
+	if pContentRem != nil && contentRem != nil {
+		pCs = append(pCs, pContentRem)
+		nCs = append(nCs, contentRem)
+	}
+
+	return nCs, pCs, nil
 }
 
 func (t *Table) Entries() []*message.OrderedContent {

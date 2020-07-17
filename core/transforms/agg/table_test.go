@@ -29,10 +29,9 @@ func (ct *countTemplate) Field() string {
 	return ""
 }
 
-
 type countFunction struct {
 	count uint64
-	tmpl IAggFuncTemplate
+	tmpl  IAggFuncTemplate
 }
 
 func newCount(tmpl IAggFuncTemplate) *countFunction {
@@ -42,8 +41,12 @@ func newCount(tmpl IAggFuncTemplate) *countFunction {
 }
 
 func (c *countFunction) Add(value, prevContent *message.OrderedContent) {
-	if prevContent == nil {
-		atomic.AddUint64(&c.count, 1)
+	atomic.AddUint64(&c.count, 1)
+}
+
+func (c *countFunction) Remove(prevContent *message.OrderedContent) {
+	if c.count > 0 {
+		c.count--
 	}
 }
 
@@ -57,7 +60,6 @@ func (c *countFunction) Name() string {
 
 func (c *countFunction) Reset() {
 }
-
 
 func getValType(v interface{}) (interface{}, message.FieldValueType) {
 
@@ -117,6 +119,7 @@ func TestTable(t *testing.T) {
 
 	value1 := map[string]interface{}{
 
+		"name": "Dahal",
 		"value": 1,
 		"greet": "Hello",
 	}
@@ -128,17 +131,29 @@ func TestTable(t *testing.T) {
 		tbl.Insert(msg, msg)
 		tbl.Insert(msg1, nil)
 
-		tbl1.Insert(msg, nil)
-
 		for _, v := range tbl.Entries() {
 			assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")
 			assert.Equal(t, uint64(i+1), v.Values()["Count2"], "")
-			assert.Equal(t, "Nepal", v.Values()["name"], "")
 		}
 
-		for _, v := range tbl1.Entries() {
-			assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")
-			assert.Equal(t, uint64(i+1), v.Values()["Count2"], "")
+		// for _, v := range tbl1.Entries() {
+		// 	assert.Equal(t, uint64(i+1), v.Values()["Count1"], "")
+		// 	assert.Equal(t, uint64(i+1), v.Values()["Count2"], "")
+		// }
+	}
+	tbl.Insert(msg, msg1)
+
+	for _, v := range tbl.Entries() {
+		values := v.Values()
+		if values["name"] == "Nepal" {
+			assert.Equal(t, uint64(4), v.Values()["Count1"], "")
+		}
+
+		if values["name"] == "Dahal" {
+			assert.Equal(t, uint64(2), v.Values()["Count1"], "")
 		}
 	}
+
+
+	_ = tbl1
 }
