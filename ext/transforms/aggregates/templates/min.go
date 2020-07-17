@@ -5,35 +5,14 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type Min struct {
-	name   string
-	filter func(map[string]interface{}) bool
-	field  string
-}
-
-func NewMin(alias, field string, filter func(map[string]interface{}) bool) *Min {
+func NewMin(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
 	if alias == "" {
 		alias = "Min"
 	}
-	return &Min{
-		name:   alias,
-		filter: filter,
-		field:  field,
-	}
-}
 
-func (c *Min) Filter(m map[string]interface{}) bool {
-	return c.filter(m)
-}
+	ag := NewAggTemplate(alias, field, filter)
 
-func (c *Min) Function() agg.IAggFunc {
-	return functions.NewMin(c)
-}
+	ag.function = func() agg.IAggFunc { return functions.NewMin(ag) }
 
-func (c *Min) Name() string {
-	return c.name
-}
-
-func (c *Min) Field() string {
-	return c.field
+	return ag
 }

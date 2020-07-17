@@ -5,35 +5,14 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type Sum struct {
-	name   string
-	filter func(map[string]interface{}) bool
-	field  string
-}
-
-func NewSum(alias, field string, filter func(map[string]interface{}) bool) *Sum {
+func NewSum(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
 	if alias == "" {
 		alias = "Sum"
 	}
-	return &Sum{
-		name:   alias,
-		filter: filter,
-		field:  field,
-	}
-}
 
-func (c *Sum) Filter(m map[string]interface{}) bool {
-	return c.filter(m)
-}
+	ag := NewAggTemplate(alias, field, filter)
 
-func (c *Sum) Function() agg.IAggFunc {
-	return functions.NewSum(c)
-}
+	ag.function = func() agg.IAggFunc { return functions.NewSum(ag) }
 
-func (c *Sum) Name() string {
-	return c.name
-}
-
-func (c *Sum) Field() string {
-	return c.field
+	return ag
 }

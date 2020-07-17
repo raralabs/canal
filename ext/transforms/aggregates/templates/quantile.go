@@ -8,14 +8,7 @@ import (
 	"github.com/raralabs/canal/ext/transforms/aggregates/functions"
 )
 
-type Quantile struct {
-	name   string
-	filter func(map[string]interface{}) bool
-	field  string
-	q      float64
-}
-
-func NewQuantile(alias, field string, q float64, filter func(map[string]interface{}) bool) *Quantile {
+func NewQuantile(alias, field string, q float64, filter func(map[string]interface{}) bool) *AggTemplate {
 
 	if q < 0 || q > 1 {
 		log.Panic("Quantile range must be (0,1)")
@@ -24,30 +17,14 @@ func NewQuantile(alias, field string, q float64, filter func(map[string]interfac
 	if alias == "" {
 		alias = fmt.Sprintf("%.2fth Quantile", q*100)
 	}
-	return &Quantile{
-		name:   alias,
-		filter: filter,
-		field:  field,
-		q:      q,
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc {
+		return functions.NewQuantile(ag, func() float64 {
+			return q
+		})
 	}
-}
 
-func (q *Quantile) Name() string {
-	return q.name
-}
-
-func (q *Quantile) Field() string {
-	return q.field
-}
-
-func (q *Quantile) Filter(m map[string]interface{}) bool {
-	return q.filter(m)
-}
-
-func (q *Quantile) Function() agg.IAggFunc {
-	return functions.NewQuantile(q, q.Qth)
-}
-
-func (q *Quantile) Qth() float64 {
-	return q.q
+	return ag
 }
