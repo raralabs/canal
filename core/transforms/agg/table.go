@@ -84,7 +84,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 		prevStrRep := stringRep(prevValues...)
 
 		// Check if previous content exists in table
-		if vals, ok := t.table[prevStrRep]; ok {
+		if vals, ok := t.table[prevStrRep]; ok && prevContent != content {
 
 			pContentRem = message.NewOrderedContent()
 			contentRem = message.NewOrderedContent()
@@ -103,34 +103,36 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 		}
 	}
 
-	if vals, ok := t.table[strRep]; ok {
-		// Extract current agg content of the table and
-		// Add the content to the aggregator functions
+	if prevContent != content {
+		if vals, ok := t.table[strRep]; ok {
+			// Extract current agg content of the table and
+			// Add the content to the aggregator functions
 
-		pContent = message.NewOrderedContent()
-		// Insert group info to the content
-		for i, grp := range t.groupBy {
-			pContent.Add(grp, vals[i])
-		}
+			pContent = message.NewOrderedContent()
+			// Insert group info to the content
+			for i, grp := range t.groupBy {
+				pContent.Add(grp, vals[i])
+			}
 
-		for _, aggFn := range t.aggFns[strRep] {
-			pContent.Add(aggFn.Name(), aggFn.Result())
-			aggFn.Add(content, prevContent)
-		}
-	} else {
-		// Fill the table with new elements
-		t.table[strRep] = groupVals
+			for _, aggFn := range t.aggFns[strRep] {
+				pContent.Add(aggFn.Name(), aggFn.Result())
+				aggFn.Add(content, prevContent)
+			}
+		} else {
+			// Fill the table with new elements
+			t.table[strRep] = groupVals
 
-		// Create new aggregator functions for the group
-		aggs := make([]IAggFunc, len(t.aggFnTmplts))
-		for i, tmplt := range t.aggFnTmplts {
-			aggs[i] = tmplt.Function()
-		}
-		t.aggFns[strRep] = aggs
+			// Create new aggregator functions for the group
+			aggs := make([]IAggFunc, len(t.aggFnTmplts))
+			for i, tmplt := range t.aggFnTmplts {
+				aggs[i] = tmplt.Function()
+			}
+			t.aggFns[strRep] = aggs
 
-		// Add the content to the aggregator functions
-		for _, aggFn := range t.aggFns[strRep] {
-			aggFn.Add(content, prevContent)
+			// Add the content to the aggregator functions
+			for _, aggFn := range t.aggFns[strRep] {
+				aggFn.Add(content, prevContent)
+			}
 		}
 	}
 
@@ -151,8 +153,9 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 	nCs := []*message.OrderedContent{newContent}
 	pCs := []*message.OrderedContent{pContent}
 	if pContentRem != nil && contentRem != nil {
-		pCs = append(pCs, pContentRem)
-		nCs = append(nCs, contentRem)
+		// Send removed content at the beginning
+		pCs = append([]*message.OrderedContent{pContentRem}, pCs...)
+		nCs = append([]*message.OrderedContent{contentRem}, nCs...)
 	}
 
 	return nCs, pCs, nil
