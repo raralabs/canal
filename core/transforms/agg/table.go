@@ -167,6 +167,20 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 	return nCs, pCs, nil
 }
 
+// Entry provides the entry corresponding to provided group.
+func (t *Table) Entry(group string) *message.OrderedContent {
+
+	content := message.NewOrderedContent()
+
+	// Insert group info to the content
+	t.fillGroupInfo(content, group)
+
+	// Insert aggregator functions' results to the content
+	t.collectResults(content, group)
+
+	return content
+}
+
 // Entries provides a way to access the table's content.
 // It returns a slice that contains groups info and
 // aggregator functions' results.
@@ -174,15 +188,7 @@ func (t *Table) Entries() []*message.OrderedContent {
 	var contents []*message.OrderedContent
 
 	for k := range t.table {
-		content := message.NewOrderedContent()
-
-		// Insert group info to the content
-		t.fillGroupInfo(content, k)
-
-		// Insert aggregator functions' results to the content
-		t.collectResults(content, k)
-
-		contents = append(contents, content)
+		contents = append(contents, t.Entry(k))
 	}
 
 	return contents
