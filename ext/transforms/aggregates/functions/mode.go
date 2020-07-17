@@ -31,9 +31,7 @@ func NewMode(tmpl agg.IAggFuncTemplate) *Mode {
 	}
 }
 
-func (md *Mode) Remove(prevContent *message.OrderedContent) {}
-
-func (md *Mode) Add(content, prevContent *message.OrderedContent) {
+func (md *Mode) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(md.tmpl.Field()); ok {
@@ -46,6 +44,9 @@ func (md *Mode) Add(content, prevContent *message.OrderedContent) {
 			}
 		}
 	}
+}
+
+func (md *Mode) Add(content, prevContent *message.OrderedContent) {
 
 	if md.tmpl.Filter(content.Values()) {
 
