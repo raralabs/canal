@@ -22,4 +22,21 @@ func TestMean(t *testing.T) {
 
 	res, _ = mean.Result()
 	assert.Equal(t, float64(4), res)
+
+	mean.Remove(2)
+
+	res, _ = mean.Result()
+	assert.Equal(t, 4.5, res)
+
+	mean.Remove(3)
+	mean.Remove(4)
+	mean.Remove(5)
+
+	res, _ = mean.Result()
+	assert.Equal(t, float64(6), res)
+
+	mean.Remove(6)
+
+	res, _ = mean.Result()
+	assert.Equal(t, float64(0), res)
 }

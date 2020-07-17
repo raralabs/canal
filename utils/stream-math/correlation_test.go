@@ -57,7 +57,7 @@ func TestStats(t *testing.T) {
 	})
 
 	t.Run("Test VarianceY", func(t *testing.T) {
-		assert.Equal(t, 1575.234375, vY)
+		assert.Equal(t, 1575.2343750000002, vY)
 	})
 
 	t.Run("Test Covariance", func(t *testing.T) {
@@ -65,6 +65,6 @@ func TestStats(t *testing.T) {
 	})
 
 	t.Run("Test Correlation", func(t *testing.T) {
-		assert.Equal(t, 0.26055639413667897, cr)
+		assert.Equal(t, 0.2605563941366789, cr)
 	})
 }
