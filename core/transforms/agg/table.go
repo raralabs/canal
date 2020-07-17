@@ -64,7 +64,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 	var pContent *message.OrderedContent
 	var pContentRem, contentRem *message.OrderedContent
 
-	if prevContent != nil {
+	if prevContent != nil && prevContent != content {
 		prevGroupVals := make([]*message.MsgFieldValue, len(t.groupBy))
 		for i, grp := range t.groupBy {
 			if v, ok := prevContent.Get(grp); ok {
@@ -81,7 +81,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 		prevStrRep := stringRep(prevValues...)
 
 		// Check if previous content exists in table
-		if vals, ok := t.table[prevStrRep]; ok && prevContent != content {
+		if vals, ok := t.table[prevStrRep]; ok {
 
 			pContentRem = message.NewOrderedContent()
 			contentRem = message.NewOrderedContent()
@@ -97,6 +97,8 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 				contentRem.Add(aggFn.Name(), aggFn.Result())
 			}
 
+		} else {
+			return nil, nil, errors.New("previous content vanished from table")
 		}
 	}
 
