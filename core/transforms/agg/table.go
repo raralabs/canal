@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/raralabs/canal/core/message"
-	stream_math "github.com/raralabs/canal/utils/stream-math"
 	"strings"
 )
 
@@ -23,7 +22,6 @@ type Table struct {
 	aggFns      map[string][]IAggFunc // The aggregators for each group
 	aggFnTmplts []IAggFuncTemplate
 	table       map[string][]*message.MsgFieldValue
-	msgFreq     *stream_math.FreqCounter
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
@@ -45,7 +43,6 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 		aggFns:      aggFns,
 		aggFnTmplts: aggFnTmplts,
 		table:       table,
-		msgFreq:     stream_math.NewFreqCounter(),
 	}
 }
 

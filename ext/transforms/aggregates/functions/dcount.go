@@ -18,15 +18,16 @@ func NewDCount(tmpl agg.IAggFuncTemplate) *DCount {
 	}
 }
 
-func (c *DCount) Remove(prevContent *message.OrderedContent) {}
-
-func (c *DCount) Add(content, prevContent *message.OrderedContent) {
+func (c *DCount) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
 			c.fqCnt.Remove(prevVal.Value())
 		}
 	}
+}
+
+func (c *DCount) Add(content, prevContent *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 

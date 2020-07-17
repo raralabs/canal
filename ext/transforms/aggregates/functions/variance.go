@@ -20,7 +20,15 @@ func NewVariance(tmpl agg.IAggFuncTemplate) *Variance {
 	}
 }
 
-func (c *Variance) Remove(prevContent *message.OrderedContent) {}
+func (c *Variance) Remove(prevContent *message.OrderedContent) {
+	if prevContent != nil {
+		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
+			v1, _ := cast.TryFloat(old.Value())
+			c.variance.Remove(v1)
+			return
+		}
+	}
+}
 
 func (c *Variance) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
@@ -32,13 +40,6 @@ func (c *Variance) Add(content, prevContent *message.OrderedContent) {
 		switch val.ValueType() {
 		case message.INT, message.FLOAT:
 			v, _ := cast.TryFloat(val.Value())
-			if prevContent != nil {
-				if old, ok := prevContent.Get(c.tmpl.Field()); ok {
-					v1, _ := cast.TryFloat(old.Value())
-					c.variance.Replace(v1, v)
-					return
-				}
-			}
 			c.variance.Add(v)
 		}
 	}

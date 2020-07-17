@@ -22,7 +22,19 @@ func NewCovariance(tmpl agg.IAggFuncTemplate, field2 func() string) *Covariance 
 	}
 }
 
-func (c *Covariance) Remove(prevContent *message.OrderedContent) {}
+func (c *Covariance) Remove(prevContent *message.OrderedContent) {
+	if prevContent != nil {
+		vl1, ok1 := prevContent.Get(c.tmpl.Field())
+		vl2, ok2 := prevContent.Get(c.field2())
+
+		if ok1 && ok2 {
+			x2, _ := cast.TryFloat(vl1.Val)
+			y2, _ := cast.TryFloat(vl2.Val)
+
+			c.cov.Remove(x2, y2)
+		}
+	}
+}
 
 func (c *Covariance) Add(content, prevContent *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
@@ -39,19 +51,6 @@ func (c *Covariance) Add(content, prevContent *message.OrderedContent) {
 		case message.INT, message.FLOAT:
 			x1, _ := cast.TryFloat(val1.Val)
 			y1, _ := cast.TryFloat(val2.Val)
-
-			if prevContent != nil {
-				vl1, ok1 := prevContent.Get(c.tmpl.Field())
-				vl2, ok2 := prevContent.Get(c.field2())
-
-				if ok1 && ok2 {
-					x2, _ := cast.TryFloat(vl1.Val)
-					y2, _ := cast.TryFloat(vl2.Val)
-
-					c.cov.Replace(x1, y1, x2, y2)
-				}
-
-			}
 
 			c.cov.Add(x1, y1)
 		}
