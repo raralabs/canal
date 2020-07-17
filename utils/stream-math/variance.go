@@ -6,59 +6,70 @@ import (
 )
 
 func square(x float64) float64 {
-	return x*x
+	return x * x
 }
 
 // Calculates ** Population Variance **
 type Variance struct {
 	num      uint64  // The number of elements that has arrived
-	lastMean float64 // Mean of the last data
-	lastV    float64 // The v
+	mean     float64 // Mean of the last data
+	variance float64 // The v
 }
 
 func NewVariance() *Variance {
 	return &Variance{
-		lastMean: 0,
+		mean:     0,
 		num:      0,
-		lastV:    0,
+		variance: 0,
 	}
 }
 
 func (m *Variance) Add(v float64) {
 
 	atomic.AddUint64(&m.num, 1)
-	newMean := m.lastMean + (v-m.lastMean)/float64(m.num)
+	newMean := m.mean + (v-m.mean)/float64(m.num)
 
-	vk := m.lastV + (v-m.lastMean)*(v-newMean)
+	m.variance = float64(m.num-1) * (m.variance + square(m.mean-v)/float64(m.num)) / float64(m.num)
+	m.mean = newMean
+}
 
-	m.lastMean = newMean
-	m.lastV = vk
+func (m *Variance) Remove(v float64) {
+	if m.num > 0 {
+		m.num--
+		if m.num == 0 {
+			m.Reset()
+		} else {
+			newMean := (m.mean*float64(m.num+1) - v) / float64(m.num)
+			m.variance = (float64(m.num+1)*m.variance)/float64(m.num) - square(newMean-v)/float64(m.num+1)
+			m.mean = newMean
+		}
+	}
 }
 
 func (m *Variance) Replace(old, new float64) {
 	if m.num == 0 {
 		return
 	}
-	v := m.lastV / float64(m.num)
-	mn := m.lastMean
+	v := m.variance
+	mn := m.mean
 
-	m_ := mn + (new - old) / float64(m.num)
+	m_ := mn + (new-old)/float64(m.num)
 
-	v_ := v + square(m_ - mn) + ( square(new - m_) - square(old - m_)) / float64(m.num)
+	v_ := v + square(m_-mn) + (square(new-m_)-square(old-m_))/float64(m.num)
 
-	m.lastMean = m_
-	m.lastV = v_ * float64(m.num)
+	m.mean = m_
+	m.variance = v_
 }
 
 func (m *Variance) Result() (float64, error) {
 	if m.num > 0 {
-		return m.lastV / float64(m.num), nil
+		return m.variance, nil
 	}
 	return 0, errors.New("division by 0 during variance calculation")
 }
 
 func (m *Variance) Reset() {
-	m.lastMean = 0
+	m.mean = 0
 	m.num = 0
-	m.lastV = 0
+	m.variance = 0
 }

@@ -27,6 +27,12 @@ func (m *Correlation) Add(x, y float64) {
 	m.varY.Add(y)
 }
 
+func (m *Correlation) Remove(x, y float64) {
+	m.covXY.Remove(x, y)
+	m.varX.Remove(x)
+	m.varY.Remove(y)
+}
+
 func (m *Correlation) Replace(x1, y1, x2, y2 float64) {
 	m.covXY.Replace(x1, y1, x2, y2)
 	m.varX.Replace(x1, x2)
