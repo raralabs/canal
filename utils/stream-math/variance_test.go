@@ -21,4 +21,8 @@ func TestVariance(t *testing.T) {
 	variance.Replace(1, 3)
 	res, _ = variance.Result()
 	assert.Equal(t, "1.04", fmt.Sprintf("%.2f", res))
+
+	variance.Remove(3)
+	res, _ = variance.Result()
+	assert.Equal(t, "1.25", fmt.Sprintf("%.2f", res))
 }

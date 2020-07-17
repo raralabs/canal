@@ -24,5 +24,5 @@ func TestPValue(t *testing.T) {
 	assert.Nil(t, err)
 	//fmt.Println(res)
 
-	assert.Equal(t, 0.5331177695581131, res)
+	assert.Equal(t, 0.5331177695581133, res)
 }
