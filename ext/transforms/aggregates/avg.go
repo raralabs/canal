@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -7,20 +7,35 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Avg struct {
-	tmpl agg.IAggFuncTemplate
 
+func NewAvg(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "avg"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc {
+		return newAvgFunc(ag)
+	}
+
+	return ag
+}
+
+
+type avg struct {
+	tmpl agg.IAggFuncTemplate
 	avg *stream_math.Mean
 }
 
-func NewAvg(tmpl agg.IAggFuncTemplate) *Avg {
-	return &Avg{
+func newAvgFunc(tmpl agg.IAggFuncTemplate) *avg {
+	return &avg{
 		tmpl: tmpl,
 		avg:  stream_math.NewMean(),
 	}
 }
 
-func (c *Avg) Remove(prevContent *message.OrderedContent) {
+func (c *avg) Remove(prevContent *message.OrderedContent) {
 	if prevContent != nil {
 		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
 			v1, _ := cast.TryFloat(old.Value())
@@ -30,7 +45,7 @@ func (c *Avg) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Avg) Add(content *message.OrderedContent) {
+func (c *avg) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
@@ -45,15 +60,15 @@ func (c *Avg) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *Avg) Result() *message.MsgFieldValue {
+func (c *avg) Result() *message.MsgFieldValue {
 	res, _ := c.avg.Result()
 	return message.NewFieldValue(res, message.FLOAT)
 }
 
-func (c *Avg) Name() string {
+func (c *avg) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Avg) Reset() {
+func (c *avg) Reset() {
 	c.avg.Reset()
 }

@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"errors"
@@ -9,7 +9,20 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Min struct {
+func NewMin(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "min"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc { return newMinFunc(ag) }
+
+	return ag
+}
+
+
+type min struct {
 	tmpl agg.IAggFuncTemplate
 
 	fqCnt   *stream_math.FreqCounter
@@ -17,8 +30,8 @@ type Min struct {
 	first   bool
 }
 
-func NewMin(tmpl agg.IAggFuncTemplate) *Min {
-	return &Min{
+func newMinFunc(tmpl agg.IAggFuncTemplate) *min {
+	return &min{
 		tmpl:    tmpl,
 		valType: message.NONE,
 		first:   true,
@@ -26,7 +39,7 @@ func NewMin(tmpl agg.IAggFuncTemplate) *Min {
 	}
 }
 
-func (c *Min) Remove(prevContent *message.OrderedContent) {
+func (c *min) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -35,7 +48,7 @@ func (c *Min) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Min) Add(content *message.OrderedContent) {
+func (c *min) Add(content *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 
@@ -54,7 +67,7 @@ func (c *Min) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *Min) Result() *message.MsgFieldValue {
+func (c *min) Result() *message.MsgFieldValue {
 
 	mn, err := c.calculate(c.fqCnt.Values())
 	if err != nil {
@@ -64,17 +77,17 @@ func (c *Min) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(mn, message.FLOAT)
 }
 
-func (c *Min) Name() string {
+func (c *min) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Min) Reset() {
+func (c *min) Reset() {
 	c.first = true
 	c.valType = message.NONE
 	c.fqCnt.Reset()
 }
 
-func (c *Min) calculate(m map[interface{}]uint64) (interface{}, error) {
+func (c *min) calculate(m map[interface{}]uint64) (interface{}, error) {
 	var mx interface{}
 	var err error
 

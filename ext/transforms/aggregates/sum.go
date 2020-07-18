@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -6,20 +6,33 @@ import (
 	"github.com/raralabs/canal/utils/cast"
 )
 
-type Sum struct {
+func NewSum(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "sum"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc { return newSumFunc(ag) }
+
+	return ag
+}
+
+
+type sum struct {
 	tmpl agg.IAggFuncTemplate
 
 	lastSum *message.MsgFieldValue
 }
 
-func NewSum(tmpl agg.IAggFuncTemplate) *Sum {
-	return &Sum{
+func newSumFunc(tmpl agg.IAggFuncTemplate) *sum {
+	return &sum{
 		tmpl:    tmpl,
 		lastSum: message.NewFieldValue(nil, message.NONE),
 	}
 }
 
-func (c *Sum) Remove(prevContent *message.OrderedContent) {
+func (c *sum) Remove(prevContent *message.OrderedContent) {
 
 	if prevContent != nil {
 		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -30,7 +43,7 @@ func (c *Sum) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Sum) Add(content *message.OrderedContent) {
+func (c *sum) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val, ok := content.Get(c.tmpl.Field())
 		if !ok {
@@ -55,15 +68,15 @@ func (c *Sum) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *Sum) Result() *message.MsgFieldValue {
+func (c *sum) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(c.lastSum.Value(), c.lastSum.ValueType())
 }
 
-func (c *Sum) Name() string {
+func (c *sum) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Sum) Reset() {
+func (c *sum) Reset() {
 	c.lastSum.Val = nil
 	c.lastSum.ValType = message.NONE
 }

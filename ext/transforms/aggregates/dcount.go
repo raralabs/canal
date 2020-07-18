@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -6,19 +6,32 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type DCount struct {
+func NewDCount(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "dcount"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc { return newDCountFunc(ag) }
+
+	return ag
+}
+
+
+type dcount struct {
 	tmpl  agg.IAggFuncTemplate
 	fqCnt *stream_math.FreqCounter
 }
 
-func NewDCount(tmpl agg.IAggFuncTemplate) *DCount {
-	return &DCount{
+func newDCountFunc(tmpl agg.IAggFuncTemplate) *dcount {
+	return &dcount{
 		tmpl:  tmpl,
 		fqCnt: stream_math.NewFreqCounter(),
 	}
 }
 
-func (c *DCount) Remove(prevContent *message.OrderedContent) {
+func (c *dcount) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -27,7 +40,7 @@ func (c *DCount) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *DCount) Add(content *message.OrderedContent) {
+func (c *dcount) Add(content *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 
@@ -41,7 +54,7 @@ func (c *DCount) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *DCount) Result() *message.MsgFieldValue {
+func (c *dcount) Result() *message.MsgFieldValue {
 	dcnt, err := c.calculate(c.fqCnt.Values())
 	if err != nil {
 		return message.NewFieldValue(nil, message.NONE)
@@ -50,15 +63,15 @@ func (c *DCount) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(dcnt, message.INT)
 }
 
-func (c *DCount) Name() string {
+func (c *dcount) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *DCount) Reset() {
+func (c *dcount) Reset() {
 	c.fqCnt.Reset()
 }
 
-func (c *DCount) calculate(m map[interface{}]uint64) (uint64, error) {
+func (c *dcount) calculate(m map[interface{}]uint64) (uint64, error) {
 	dcnt := uint64(0)
 
 	for _, v := range m {

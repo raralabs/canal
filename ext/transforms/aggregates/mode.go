@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -8,16 +8,29 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Mode struct {
-	tmpl    agg.IAggFuncTemplate
-	fqCnt   *stream_math.FreqCounter
-	valType message.FieldValueType
-	first   bool
+
+func NewMode(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "mode"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc { return newModeFunc(ag) }
+
+	return ag
+}
+
+type mode struct {
+	tmpl        agg.IAggFuncTemplate
+	fqCnt       *stream_math.FreqCounter
+	valType     message.FieldValueType
+	first       bool
 	orderedVals *sort_algo.Insertion
 }
 
-func NewMode(tmpl agg.IAggFuncTemplate) *Mode {
-	return &Mode{
+func newModeFunc(tmpl agg.IAggFuncTemplate) *mode {
+	return &mode{
 		tmpl:    tmpl,
 		valType: message.NONE,
 		first:   true,
@@ -31,7 +44,7 @@ func NewMode(tmpl agg.IAggFuncTemplate) *Mode {
 	}
 }
 
-func (md *Mode) Remove(prevContent *message.OrderedContent) {
+func (md *mode) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(md.tmpl.Field()); ok {
@@ -46,7 +59,7 @@ func (md *Mode) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (md *Mode) Add(content *message.OrderedContent) {
+func (md *mode) Add(content *message.OrderedContent) {
 
 	if md.tmpl.Filter(content.Values()) {
 
@@ -65,7 +78,7 @@ func (md *Mode) Add(content *message.OrderedContent) {
 	}
 }
 
-func (md *Mode) Result() *message.MsgFieldValue {
+func (md *mode) Result() *message.MsgFieldValue {
 	mode, err := md.calculate(md.fqCnt.Values())
 	if err != nil {
 		return message.NewFieldValue(nil, message.NONE)
@@ -74,15 +87,15 @@ func (md *Mode) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(mode, md.valType)
 }
 
-func (md *Mode) Name() string {
+func (md *mode) Name() string {
 	return md.tmpl.Name()
 }
 
-func (md *Mode) Reset() {
+func (md *mode) Reset() {
 	md.fqCnt.Reset()
 }
 
-func (md *Mode) calculate(m map[interface{}]uint64) (interface{}, error) {
+func (md *mode) calculate(m map[interface{}]uint64) (interface{}, error) {
 
 	var mode interface{}
 	mx := uint64(0)
