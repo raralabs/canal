@@ -4,11 +4,11 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	stream_math "github.com/raralabs/canal/utils/stream-math"
 	"log"
 	"strings"
 
 	"github.com/raralabs/canal/core/message"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 func stringRep(strs ...interface{}) string {

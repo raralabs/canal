@@ -1,15 +1,41 @@
-package functions
+package aggregates
 
 import (
+	"fmt"
+	"log"
+	"math"
+	"strings"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	sort_algo "github.com/raralabs/canal/utils/sort-algo"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
-	"math"
 )
 
-type Quantile struct {
+func NewQuantile(alias, field string, q float64, filter func(map[string]interface{}) bool) *AggTemplate {
+
+	if q < 0 || q > 1 {
+		log.Panic("quantile range must be (0,1)")
+	}
+
+	if alias == "" {
+		qth := strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.2f", q*100), "0"), ".")
+		alias = fmt.Sprintf("%sth quantile", qth)
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc {
+		return newQuantileFunc(ag, func() float64 {
+			return q
+		})
+	}
+
+	return ag
+}
+
+type quantile struct {
 	tmpl  agg.IAggFuncTemplate
 	qth   func() float64
 	fqCnt *stream_math.FreqCounter
@@ -17,9 +43,9 @@ type Quantile struct {
 	orderedVals *sort_algo.Insertion
 }
 
-func NewQuantile(tmpl agg.IAggFuncTemplate, qth func() float64) *Quantile {
+func newQuantileFunc(tmpl agg.IAggFuncTemplate, qth func() float64) *quantile {
 
-	return &Quantile{
+	return &quantile{
 		tmpl:  tmpl,
 		qth:   qth,
 		fqCnt: stream_math.NewFreqCounter(),
@@ -32,7 +58,7 @@ func NewQuantile(tmpl agg.IAggFuncTemplate, qth func() float64) *Quantile {
 	}
 }
 
-func (q *Quantile) Remove(prevContent *message.OrderedContent) {
+func (q *quantile) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(q.tmpl.Field()); ok {
@@ -47,7 +73,7 @@ func (q *Quantile) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (q *Quantile) Add(content *message.OrderedContent) {
+func (q *quantile) Add(content *message.OrderedContent) {
 
 	if q.tmpl.Filter(content.Values()) {
 
@@ -66,12 +92,12 @@ func (q *Quantile) Add(content *message.OrderedContent) {
 	}
 }
 
-func (q *Quantile) Result() *message.MsgFieldValue {
+func (q *quantile) Result() *message.MsgFieldValue {
 	res := q.quantile()
 	return message.NewFieldValue(res, message.FLOAT)
 }
 
-func (q *Quantile) quantile() float64 {
+func (q *quantile) quantile() float64 {
 	qth := q.qth()
 	n := q.fqCnt.TotalFreq()
 
@@ -86,7 +112,7 @@ func (q *Quantile) quantile() float64 {
 		entry := e.Value
 		cf += values[entry]
 
-		if (j+1) <= float64(cf) {
+		if (j + 1) <= float64(cf) {
 			j1th = entry
 			break
 		}
@@ -107,12 +133,12 @@ func (q *Quantile) quantile() float64 {
 	jthf, _ := cast.TryFloat(jth)
 	j1thf, _ := cast.TryFloat(j1th)
 
-	return jthf + (j1thf - jthf)*(i - j)
+	return jthf + (j1thf-jthf)*(i-j)
 }
 
-func (q *Quantile) Name() string {
+func (q *quantile) Name() string {
 	return q.tmpl.Name()
 }
 
-func (q *Quantile) Reset() {
+func (q *quantile) Reset() {
 }

@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"errors"
@@ -9,7 +9,20 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Max struct {
+func NewMax(alias, field string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "max"
+	}
+
+	ag := NewAggTemplate(alias, field, filter)
+
+	ag.function = func() agg.IAggFunc { return newMaxFunc(ag) }
+
+	return ag
+}
+
+
+type max struct {
 	tmpl agg.IAggFuncTemplate
 
 	fqCnt   *stream_math.FreqCounter
@@ -17,19 +30,19 @@ type Max struct {
 	first   bool
 }
 
-func NewMax(tmpl agg.IAggFuncTemplate) *Max {
+func newMaxFunc(tmpl agg.IAggFuncTemplate) *max {
 
-	max := &Max{
+	mx := &max{
 		tmpl:    tmpl,
 		valType: message.NONE,
 		first:   true,
 		fqCnt:   stream_math.NewFreqCounter(),
 	}
 
-	return max
+	return mx
 }
 
-func (c *Max) Remove(prevContent *message.OrderedContent) {
+func (c *max) Remove(prevContent *message.OrderedContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -38,7 +51,7 @@ func (c *Max) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Max) Add(content *message.OrderedContent) {
+func (c *max) Add(content *message.OrderedContent) {
 
 	if c.tmpl.Filter(content.Values()) {
 
@@ -57,7 +70,7 @@ func (c *Max) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *Max) Result() *message.MsgFieldValue {
+func (c *max) Result() *message.MsgFieldValue {
 
 	mx, err := c.calculate(c.fqCnt.Values())
 	if err != nil {
@@ -67,17 +80,17 @@ func (c *Max) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(mx, message.FLOAT)
 }
 
-func (c *Max) Name() string {
+func (c *max) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Max) Reset() {
+func (c *max) Reset() {
 	c.first = true
 	c.valType = message.NONE
 	c.fqCnt.Reset()
 }
 
-func (c *Max) calculate(m map[interface{}]uint64) (interface{}, error) {
+func (c *max) calculate(m map[interface{}]uint64) (interface{}, error) {
 	var mx interface{}
 	var err error
 

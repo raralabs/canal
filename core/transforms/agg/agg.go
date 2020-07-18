@@ -6,7 +6,7 @@ import (
 )
 
 type Aggregator struct {
-	table *Table                                                                                              // The table that holds all the aggregator's info
+	table *Table                                                                                                  // The table that holds all the aggregator's info
 	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent) // This function is called after execute on each message is called
 }
 

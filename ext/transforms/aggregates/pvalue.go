@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -7,22 +7,37 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Covariance struct {
+func NewPValue(alias, field1, field2 string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "pvalue"
+	}
+
+	ag := NewAggTemplate(alias, field1, filter)
+
+	ag.function = func() agg.IAggFunc {
+		return newPValueFunc(ag, func() string {
+			return field2
+		})
+	}
+	return ag
+}
+
+type pvalue struct {
 	tmpl agg.IAggFuncTemplate
 
-	cov    *stream_math.Covariance
+	pv     *stream_math.PValue
 	field2 func() string
 }
 
-func NewCovariance(tmpl agg.IAggFuncTemplate, field2 func() string) *Covariance {
-	return &Covariance{
+func newPValueFunc(tmpl agg.IAggFuncTemplate, field2 func() string) *pvalue {
+	return &pvalue{
 		tmpl:   tmpl,
-		cov:    stream_math.NewCovariance(),
+		pv:     stream_math.NewPValue(),
 		field2: field2,
 	}
 }
 
-func (c *Covariance) Remove(prevContent *message.OrderedContent) {
+func (c *pvalue) Remove(prevContent *message.OrderedContent) {
 	if prevContent != nil {
 		vl1, ok1 := prevContent.Get(c.tmpl.Field())
 		vl2, ok2 := prevContent.Get(c.field2())
@@ -31,12 +46,12 @@ func (c *Covariance) Remove(prevContent *message.OrderedContent) {
 			x2, _ := cast.TryFloat(vl1.Val)
 			y2, _ := cast.TryFloat(vl2.Val)
 
-			c.cov.Remove(x2, y2)
+			c.pv.Remove(x2, y2)
 		}
 	}
 }
 
-func (c *Covariance) Add(content *message.OrderedContent) {
+func (c *pvalue) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {
@@ -52,20 +67,23 @@ func (c *Covariance) Add(content *message.OrderedContent) {
 			x1, _ := cast.TryFloat(val1.Val)
 			y1, _ := cast.TryFloat(val2.Val)
 
-			c.cov.Add(x1, y1)
+			c.pv.Add(x1, y1)
 		}
 	}
 }
 
-func (c *Covariance) Result() *message.MsgFieldValue {
-	res, _ := c.cov.Result()
+func (c *pvalue) Result() *message.MsgFieldValue {
+	res, err := c.pv.Result()
+	if err != nil {
+		return message.NewFieldValue(nil, message.NONE)
+	}
 	return message.NewFieldValue(res, message.FLOAT)
 }
 
-func (c *Covariance) Name() string {
+func (c *pvalue) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Covariance) Reset() {
-	c.cov.Reset()
+func (c *pvalue) Reset() {
+	c.pv.Reset()
 }

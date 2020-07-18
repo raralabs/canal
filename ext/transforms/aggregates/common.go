@@ -1,4 +1,4 @@
-package templates
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/transforms/agg"

@@ -1,4 +1,4 @@
-package functions
+package aggregates
 
 import (
 	"github.com/raralabs/canal/core/message"
@@ -7,22 +7,38 @@ import (
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
-type Correlation struct {
+func NewCorrelation(alias, field1, field2 string, filter func(map[string]interface{}) bool) *AggTemplate {
+	if alias == "" {
+		alias = "correlation"
+	}
+
+	ag := NewAggTemplate(alias, field1, filter)
+
+	ag.function = func() agg.IAggFunc {
+		return newCorrelationFunc(ag, func() string {
+			return field2
+		})
+	}
+
+	return ag
+}
+
+type correlation struct {
 	tmpl agg.IAggFuncTemplate
 
 	cor    *stream_math.Correlation
 	field2 func() string
 }
 
-func NewCorrelation(tmpl agg.IAggFuncTemplate, field2 func() string) *Correlation {
-	return &Correlation{
+func newCorrelationFunc(tmpl agg.IAggFuncTemplate, field2 func() string) *correlation {
+	return &correlation{
 		tmpl:   tmpl,
 		cor:    stream_math.NewCorrelation(),
 		field2: field2,
 	}
 }
 
-func (c *Correlation) Remove(prevContent *message.OrderedContent) {
+func (c *correlation) Remove(prevContent *message.OrderedContent) {
 	if prevContent != nil {
 		vl1, ok1 := prevContent.Get(c.tmpl.Field())
 		vl2, ok2 := prevContent.Get(c.field2())
@@ -36,7 +52,7 @@ func (c *Correlation) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *Correlation) Add(content *message.OrderedContent) {
+func (c *correlation) Add(content *message.OrderedContent) {
 	if c.tmpl.Filter(content.Values()) {
 		val1, ok := content.Get(c.tmpl.Field())
 		if !ok {
@@ -57,7 +73,7 @@ func (c *Correlation) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *Correlation) Result() *message.MsgFieldValue {
+func (c *correlation) Result() *message.MsgFieldValue {
 	res, err := c.cor.Result()
 	if err != nil {
 		return message.NewFieldValue(nil, message.NONE)
@@ -65,10 +81,10 @@ func (c *Correlation) Result() *message.MsgFieldValue {
 	return message.NewFieldValue(res, message.FLOAT)
 }
 
-func (c *Correlation) Name() string {
+func (c *correlation) Name() string {
 	return c.tmpl.Name()
 }
 
-func (c *Correlation) Reset() {
+func (c *correlation) Reset() {
 	c.cor.Reset()
 }
