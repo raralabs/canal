@@ -20,6 +20,16 @@ func NewOrderedContent() *OrderedContent {
 	}
 }
 
+func (oc *OrderedContent) Copy() *OrderedContent {
+	cpy := NewOrderedContent()
+	for e := oc.First(); e != nil; e = e.Next() {
+		k, _ := e.Value.(string)
+		v, _ := oc.Get(k)
+		cpy.Add(k, v)
+	}
+	return cpy
+}
+
 func (oc *OrderedContent) Get(key string) (*MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok

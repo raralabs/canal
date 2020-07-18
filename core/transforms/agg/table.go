@@ -90,6 +90,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 
 	var pContent *message.OrderedContent
 	var pContentRem, contentRem *message.OrderedContent
+	replaceRemoved := false
 
 	// Skip the insertion and removal of contents, if current content and
 	// the previous content is identical.
@@ -122,7 +123,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 				t.collectResults(contentRem, prevStrRep)
 
 				// Remove the group from table
-				if v := t.mesFq.Remove(prevContent); v != nil {
+				if v := t.mesFq.Remove(prevStrRep); v != nil {
 					for e := t.mesList.Front(); e != nil; e = e.Next() {
 						k, _ := e.Value.(string)
 						if k == prevStrRep {
@@ -130,6 +131,9 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 							break
 						}
 					}
+					// Replace the removed message from subsequent stages
+					replaceRemoved = true
+
 					delete(t.table, prevStrRep)
 					delete(t.aggFns, prevStrRep)
 				}
@@ -181,6 +185,20 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 		// Place removed content at the beginning
 		pCs = []*message.OrderedContent{pContentRem}
 		nCs = []*message.OrderedContent{contentRem}
+	}
+	if replaceRemoved {
+		var newC *message.OrderedContent
+
+		toReplace := contentRem.Copy()
+
+		if pContent != nil {
+			newC = pContent.Copy()
+		} else {
+			newC = newContent.Copy()
+		}
+
+		pCs = append(pCs, toReplace)
+		nCs = append(nCs, newC)
 	}
 	// Place added content at the end
 	pCs = append(pCs, pContent)
