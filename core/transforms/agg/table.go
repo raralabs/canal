@@ -1,6 +1,7 @@
 package agg
 
 import (
+	"container/list"
 	"errors"
 	"fmt"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
@@ -48,6 +49,7 @@ type Table struct {
 	aggFnTmplts []IAggFuncTemplate
 	table       map[string][]*message.MsgFieldValue
 	mesFq       *stream_math.FreqCounter
+	mesList     *list.List
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
@@ -70,6 +72,7 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 		aggFnTmplts: aggFnTmplts,
 		table:       table,
 		mesFq:       stream_math.NewFreqCounter(),
+		mesList:     list.New(),
 	}
 }
 
@@ -120,6 +123,13 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 
 				// Remove the group from table
 				if v := t.mesFq.Remove(prevContent); v != nil {
+					for e := t.mesList.Front(); e != nil; e = e.Next() {
+						k, _ := e.Value.(string)
+						if k == prevStrRep {
+							t.mesList.Remove(e)
+							break
+						}
+					}
 					delete(t.table, prevStrRep)
 					delete(t.aggFns, prevStrRep)
 				}
@@ -156,7 +166,9 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 				aggFn.Add(content)
 			}
 		}
-		t.mesFq.Add(strRep)
+		if v := t.mesFq.Add(strRep); v != nil {
+			t.mesList.PushBack(strRep)
+		}
 	}
 
 	newContent := message.NewOrderedContent()
@@ -197,7 +209,8 @@ func (t *Table) Entry(group string) *message.OrderedContent {
 func (t *Table) Entries() []*message.OrderedContent {
 	var contents []*message.OrderedContent
 
-	for k := range t.table {
+	for e := t.mesList.Front(); e != nil; e = e.Next() {
+		k, _ := e.Value.(string)
 		contents = append(contents, t.Entry(k))
 	}
 
