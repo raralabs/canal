@@ -31,7 +31,7 @@ func (ag *Aggregator) Reset() {
 	ag.table.Reset()
 }
 
-func (ag *Aggregator) aggFunc(m message.Msg, s *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error) {
+func (ag *Aggregator) AggFunc(m message.Msg, s *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error) {
 
 	content := m.Content()
 	prevContent := m.PrevContent()
@@ -40,5 +40,13 @@ func (ag *Aggregator) aggFunc(m message.Msg, s *struct{}) ([]*message.OrderedCon
 
 func (ag *Aggregator) Function() pipeline.Executor {
 	var s struct{}
-	return NewOperator(s, ag.aggFunc, ag.after)
+	return NewOperator(s, ag.AggFunc, ag.after)
+}
+
+func (ag *Aggregator) Entry(group string) *message.OrderedContent {
+	return ag.table.Entry(group)
+}
+
+func (ag *Aggregator) Entries() []*message.OrderedContent {
+	return ag.table.Entries()
 }
