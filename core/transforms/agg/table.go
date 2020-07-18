@@ -3,6 +3,7 @@ package agg
 import (
 	"errors"
 	"fmt"
+	stream_math "github.com/raralabs/canal/utils/stream-math"
 	"log"
 	"strings"
 
@@ -46,6 +47,7 @@ type Table struct {
 	aggFns      map[string][]IAggFunc // The aggregators for each group
 	aggFnTmplts []IAggFuncTemplate
 	table       map[string][]*message.MsgFieldValue
+	mesFq       *stream_math.FreqCounter
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
@@ -67,6 +69,7 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 		aggFns:      aggFns,
 		aggFnTmplts: aggFnTmplts,
 		table:       table,
+		mesFq:       stream_math.NewFreqCounter(),
 	}
 }
 
@@ -115,6 +118,12 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 				// Collect contents after removal
 				t.collectResults(contentRem, prevStrRep)
 
+				// Remove the group from table
+				if v := t.mesFq.Remove(prevContent); v != nil {
+					delete(t.table, prevStrRep)
+					delete(t.aggFns, prevStrRep)
+				}
+
 			} else {
 				return nil, nil, errors.New("previous content vanished from table")
 			}
@@ -147,6 +156,7 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 				aggFn.Add(content)
 			}
 		}
+		t.mesFq.Add(strRep)
 	}
 
 	newContent := message.NewOrderedContent()
