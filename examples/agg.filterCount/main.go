@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/raralabs/canal/ext/transforms/aggregates/templates"
-
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/agg"
@@ -15,6 +13,7 @@ import (
 
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
+	"github.com/raralabs/canal/ext/transforms/aggregates"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"github.com/raralabs/canal/utils/cast"
 )
@@ -62,7 +61,7 @@ func main() {
 	f1 := filt.AddProcessor(opts, do.NewOperator(ageFilter), "path2")
 
 	// Count Last Names
-	count := templates.NewCount("Count", func(m map[string]interface{}) bool {
+	count := aggregates.NewCount("Count", func(m map[string]interface{}) bool {
 		return true
 	})
 	aggs := []agg.IAggFuncTemplate{count}

@@ -4,8 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/raralabs/canal/ext/transforms/aggregates/templates"
-
+	"github.com/raralabs/canal/ext/transforms/aggregates"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 
 	"github.com/raralabs/canal/core/pipeline"
@@ -25,11 +24,11 @@ func main() {
 	delay := p.AddTransform("Delay")
 	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 
-	count := templates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
+	count := aggregates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	avg := templates.NewVariance("Sample-Variance", "value", func(m map[string]interface{}) bool {
+	avg := aggregates.NewVariance("Sample-Variance", "value", func(m map[string]interface{}) bool {
 		return true
 	})
 
