@@ -36,7 +36,9 @@ func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 		}
 
 		for i := range contents {
-			proc.Result(m, contents[i], pContents[i])
+			if !(contents[i] == nil && pContents[i] == nil) {
+				proc.Result(m, contents[i], pContents[i])
+			}
 		}
 	} else {
 		af.after(m, proc, contents, pContents)
