@@ -9,7 +9,7 @@ import (
 func PassFunction() pipeline.Executor {
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-		proc.Result(m, m.Content(), nil)
+		proc.Result(m, m.Content(), m.PrevContent())
 		return true
 	}
 

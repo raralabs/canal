@@ -20,9 +20,9 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 				}
 			}
 
-			proc.Result(m, content, nil)
+			proc.Result(m, content, m.PrevContent())
 		} else {
-			proc.Result(m, mContent, nil)
+			proc.Result(m, mContent, m.PrevContent())
 			proc.Done()
 		}
 

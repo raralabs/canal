@@ -13,7 +13,7 @@ func DelayFunction(delay time.Duration) pipeline.Executor {
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		time.Sleep(delay)
-		proc.Result(m, m.Content(), nil)
+		proc.Result(m, m.Content(), m.PrevContent())
 		return true
 	}
 
