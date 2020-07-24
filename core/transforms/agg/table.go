@@ -82,6 +82,29 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 // the info on addition.
 func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message.OrderedContent, []*message.OrderedContent, error) {
 
+	if content == nil {
+		if prevContent != nil {
+			values, err := extractValues(prevContent, t.groupBy)
+			if err != nil {
+				return nil, nil, err
+			}
+			prevStrRep := getStringRep(values)
+
+			t.mesFq.Remove(prevStrRep)
+			for e := t.mesList.Front(); e != nil; e = e.Next() {
+				k, _ := e.Value.(string)
+				if k == prevStrRep {
+					t.mesList.Remove(e)
+					break
+				}
+			}
+
+			delete(t.table, prevStrRep)
+			delete(t.aggFns, prevStrRep)
+		}
+		return nil, nil, nil
+	}
+
 	groupVals, err := extractValues(content, t.groupBy)
 	if err != nil {
 		return nil, nil, err
@@ -137,9 +160,6 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 					delete(t.table, prevStrRep)
 					delete(t.aggFns, prevStrRep)
 				}
-
-			} else {
-				return nil, nil, errors.New("previous content vanished from table")
 			}
 		}
 
@@ -182,23 +202,12 @@ func (t *Table) Insert(content, prevContent *message.OrderedContent) ([]*message
 
 	var nCs, pCs []*message.OrderedContent
 	if pContentRem != nil && contentRem != nil {
+		if replaceRemoved {
+			contentRem = nil
+		}
 		// Place removed content at the beginning
 		pCs = []*message.OrderedContent{pContentRem}
 		nCs = []*message.OrderedContent{contentRem}
-	}
-	if replaceRemoved {
-		var newC *message.OrderedContent
-
-		toReplace := contentRem.Copy()
-
-		if pContent != nil {
-			newC = pContent.Copy()
-		} else {
-			newC = newContent.Copy()
-		}
-
-		pCs = append(pCs, toReplace)
-		nCs = append(nCs, newC)
 	}
 	// Place added content at the end
 	pCs = append(pCs, pContent)
