@@ -1,10 +1,9 @@
 package sources
 
 import (
-	"strconv"
-
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/utils/cast"
 )
 
 type MapValue struct {
@@ -14,36 +13,12 @@ type MapValue struct {
 	times  int                     // The number of times the values should be passed
 }
 
-func getValType(v interface{}) (interface{}, message.FieldValueType) {
-	switch val := v.(type) {
-	case bool:
-		return val, message.BOOL
-
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return val, message.INT
-
-	case float32, float64:
-		return val, message.FLOAT
-
-	case string:
-		if value, err := strconv.ParseInt(val, 10, 64); err == nil {
-			return value, message.INT
-		} else if value, err := strconv.ParseFloat(val, 64); err == nil {
-			return value, message.FLOAT
-		}
-
-		return val, message.STRING
-	}
-
-	return v, message.NONE
-}
-
 func preprocess(m map[string]interface{}) *message.OrderedContent {
 
 	mVal := message.NewOrderedContent()
 
 	for k, v := range m {
-		val, valType := getValType(v)
+		val, valType := cast.ValType(v)
 		mVal.Add(k, message.NewFieldValue(val, valType))
 	}
 
@@ -56,7 +31,7 @@ func NewMapValueSource(val map[string]interface{}, times int) pipeline.Executor 
 	mv.values = message.NewOrderedContent()
 
 	for k, v := range val {
-		value, valType := getValType(v)
+		value, valType := cast.ValType(v)
 		mv.values.Add(k, message.NewFieldValue(value, valType))
 	}
 

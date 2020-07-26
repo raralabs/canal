@@ -3,7 +3,7 @@ module github.com/raralabs/canal
 go 1.14
 
 require (
-	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
+	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/antonmedv/expr v1.8.2 // indirect
 	github.com/cespare/xxhash v1.1.0
 	github.com/clarkduvall/hyperloglog v0.0.0-20171127014514-a0107a5d8004
