@@ -22,7 +22,6 @@ func NewFileWriter(path, key string) pipeline.Executor {
 		log.Panicf("Couldn't open file for writing. Error: %v", err)
 	}
 
-	//w := bufio.NewWriter(f)
 	return &FileWriter{name: "FileWriter", writer: f, key: key}
 }
 

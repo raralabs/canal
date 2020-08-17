@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"github.com/raralabs/canal/core/message/content"
 	"log"
 	"sync/atomic"
 
@@ -58,7 +59,7 @@ func (pr *Processor) process(msg message.Msg) bool {
 	return pr.executor.Execute(msg, pr)
 }
 
-func (pr *Processor) Result(srcMsg message.Msg, content, pContent *message.OrderedContent) {
+func (pr *Processor) Result(srcMsg message.Msg, content, pContent content.IContent) {
 	if pr.IsClosed() || pr.executor.ExecutorType() == SINK {
 		return
 	}
@@ -127,7 +128,7 @@ func (pr *Processor) processorPool() IProcessorPool {
 
 // statusMessage creates a new msg with certain variables of interest.
 func (pr *Processor) statusMessage(withTrace bool) message.Msg {
-	status := message.NewOrderedContent()
+	status := content.New()
 	mes := pr.mesFactory.NewExecuteRoot(status, withTrace)
 	return mes
 }

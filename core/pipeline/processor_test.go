@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"github.com/raralabs/canal/core/message/content"
 	"testing"
 
 	"github.com/raralabs/canal/core/message"
@@ -9,7 +10,7 @@ import (
 type dummyProcessorExecutor struct {
 	exec       Executor
 	resSrcMsg  message.Msg
-	resContent *message.OrderedContent
+	resContent content.IContent
 }
 
 func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
@@ -18,7 +19,7 @@ func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
 func (dp *dummyProcessorExecutor) process(msg message.Msg) bool {
 	return dp.exec.Execute(msg, dp)
 }
-func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content, prevContent *message.OrderedContent) {
+func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content, prevContent content.IContent) {
 	dp.resSrcMsg = srcMsg
 	dp.resContent = content
 }
@@ -49,7 +50,7 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 		meta:   newMetadata(),
 	}
 }
-func (d *dummyProcessor) Result(msg message.Msg, content, prevContent *message.OrderedContent) {
+func (d *dummyProcessor) Result(msg message.Msg, content, prevContent content.IContent) {
 	msgPack := msgPod{
 		msg:   msg,
 		route: d.outRoute.route,

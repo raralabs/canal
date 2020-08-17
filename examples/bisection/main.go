@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"math"
 	"sync/atomic"
 	"time"
@@ -69,7 +70,7 @@ func main() {
 		c := (af + bf) / 2.0
 		fc := f(c)
 		if math.Abs(fc) < tol {
-			content.Add("root", message.NewFieldValue(c, message.FLOAT))
+			content.Add("root", content2.NewFieldValue(c, content2.FLOAT))
 			proc.Result(m, content, nil)
 			proc.Done()
 			return true
@@ -80,14 +81,14 @@ func main() {
 		} else {
 			b = c
 		}
-		content.Add("lowerEnd", message.NewFieldValue(a, message.FLOAT))
-		content.Add("upperEnd", message.NewFieldValue(b, message.FLOAT))
+		content.Add("lowerEnd", content2.NewFieldValue(a, content2.FLOAT))
+		content.Add("upperEnd", content2.NewFieldValue(b, content2.FLOAT))
 
 		atomic.AddUint64(&iter, 1)
 		it, _ := content.Get("maxIters")
 		if iter > it.Value().(uint64) {
-			content.Add("error", message.NewFieldValue("Iterations over before result", message.STRING))
-			content.Add("bestRoot", message.NewFieldValue(c, message.FLOAT))
+			content.Add("error", content2.NewFieldValue("Iterations over before result", content2.STRING))
+			content.Add("bestRoot", content2.NewFieldValue(c, content2.FLOAT))
 			proc.Result(m, content, nil)
 			proc.Done()
 			return true
@@ -103,7 +104,7 @@ func main() {
 	filter := p.AddTransform("Filter Info")
 	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions, do.NewOperator(func(msg message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		msgContent := msg.Content()
-		content := message.NewOrderedContent()
+		content := content2.New()
 
 		uniqueInfo := []string{
 			"root", "error", "bestRoot",

@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"testing"
 	"time"
 
@@ -25,8 +26,8 @@ func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) boo
 	}
 
 	s.curVal++
-	content := message.NewOrderedContent()
-	content.Add("value", message.NewFieldValue(s.curVal, message.INT))
+	content := content2.New()
+	content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
 	proc.Result(m, content, nil)
 	return false
 }

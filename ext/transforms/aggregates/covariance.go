@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
@@ -39,7 +39,7 @@ func newCovarianceFunc(tmpl agg.IAggFuncTemplate, field2 func() string) *covaria
 	}
 }
 
-func (c *covariance) Remove(prevContent *message.OrderedContent) {
+func (c *covariance) Remove(prevContent content.IContent) {
 	if prevContent != nil {
 		vl1, ok1 := prevContent.Get(c.tmpl.Field())
 		vl2, ok2 := prevContent.Get(c.field2())
@@ -53,19 +53,19 @@ func (c *covariance) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *covariance) Add(content *message.OrderedContent) {
-	if c.tmpl.Filter(content.Values()) {
-		val1, ok := content.Get(c.tmpl.Field())
+func (c *covariance) Add(cntnt content.IContent) {
+	if c.tmpl.Filter(cntnt.Values()) {
+		val1, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
-		val2, ok := content.Get(c.field2())
+		val2, ok := cntnt.Get(c.field2())
 		if !ok {
 			return
 		}
 
 		switch val1.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			x1, _ := cast.TryFloat(val1.Val)
 			y1, _ := cast.TryFloat(val2.Val)
 
@@ -74,9 +74,9 @@ func (c *covariance) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *covariance) Result() *message.MsgFieldValue {
+func (c *covariance) Result() *content.MsgFieldValue {
 	res, _ := c.cov.Result()
-	return message.NewFieldValue(res, message.FLOAT)
+	return content.NewFieldValue(res, content.FLOAT)
 }
 
 func (c *covariance) Name() string {

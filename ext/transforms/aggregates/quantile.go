@@ -2,11 +2,11 @@ package aggregates
 
 import (
 	"fmt"
+	"github.com/raralabs/canal/core/message/content"
 	"log"
 	"math"
 	"strings"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	sort_algo "github.com/raralabs/canal/utils/sort-algo"
@@ -58,12 +58,12 @@ func newQuantileFunc(tmpl agg.IAggFuncTemplate, qth func() float64) *quantile {
 	}
 }
 
-func (q *quantile) Remove(prevContent *message.OrderedContent) {
+func (q *quantile) Remove(prevContent content.IContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(q.tmpl.Field()); ok {
 			switch prevVal.ValueType() {
-			case message.INT, message.FLOAT:
+			case content.INT, content.FLOAT:
 				val, _ := cast.TryFloat(prevVal.Value())
 				if v := q.fqCnt.Remove(val); v != nil {
 					q.orderedVals.Remove(v)
@@ -73,17 +73,17 @@ func (q *quantile) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (q *quantile) Add(content *message.OrderedContent) {
+func (q *quantile) Add(cntnt content.IContent) {
 
-	if q.tmpl.Filter(content.Values()) {
+	if q.tmpl.Filter(cntnt.Values()) {
 
-		val, ok := content.Get(q.tmpl.Field())
+		val, ok := cntnt.Get(q.tmpl.Field())
 		if !ok {
 			return
 		}
 
 		switch val.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			vl, _ := cast.TryFloat(val.Value())
 			if v := q.fqCnt.Add(vl); v != nil {
 				q.orderedVals.Add(v)
@@ -92,9 +92,9 @@ func (q *quantile) Add(content *message.OrderedContent) {
 	}
 }
 
-func (q *quantile) Result() *message.MsgFieldValue {
+func (q *quantile) Result() *content.MsgFieldValue {
 	res := q.quantile()
-	return message.NewFieldValue(res, message.FLOAT)
+	return content.NewFieldValue(res, content.FLOAT)
 }
 
 func (q *quantile) quantile() float64 {

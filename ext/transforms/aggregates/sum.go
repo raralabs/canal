@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 )
@@ -22,17 +22,17 @@ func NewSum(alias, field string, filter func(map[string]interface{}) bool) *AggT
 type sum struct {
 	tmpl agg.IAggFuncTemplate
 
-	lastSum *message.MsgFieldValue
+	lastSum *content.MsgFieldValue
 }
 
 func newSumFunc(tmpl agg.IAggFuncTemplate) *sum {
 	return &sum{
 		tmpl:    tmpl,
-		lastSum: message.NewFieldValue(nil, message.NONE),
+		lastSum: content.NewFieldValue(nil, content.NONE),
 	}
 }
 
-func (c *sum) Remove(prevContent *message.OrderedContent) {
+func (c *sum) Remove(prevContent content.IContent) {
 
 	if prevContent != nil {
 		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -43,21 +43,21 @@ func (c *sum) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *sum) Add(content *message.OrderedContent) {
-	if c.tmpl.Filter(content.Values()) {
-		val, ok := content.Get(c.tmpl.Field())
+func (c *sum) Add(cntnt content.IContent) {
+	if c.tmpl.Filter(cntnt.Values()) {
+		val, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
 
 		if c.lastSum.Value() == nil {
 			c.lastSum.Val = val.Value()
-			c.lastSum.ValType = message.FLOAT
+			c.lastSum.ValType = content.FLOAT
 			return
 		}
 
 		switch val.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			v1, _ := cast.TryFloat(c.lastSum.Value())
 			v2, _ := cast.TryFloat(val.Value())
 
@@ -68,8 +68,8 @@ func (c *sum) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *sum) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.lastSum.Value(), c.lastSum.ValueType())
+func (c *sum) Result() *content.MsgFieldValue {
+	return content.NewFieldValue(c.lastSum.Value(), c.lastSum.ValueType())
 }
 
 func (c *sum) Name() string {
@@ -78,5 +78,5 @@ func (c *sum) Name() string {
 
 func (c *sum) Reset() {
 	c.lastSum.Val = nil
-	c.lastSum.ValType = message.NONE
+	c.lastSum.ValType = content.NONE
 }

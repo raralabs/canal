@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
+	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/antonmedv/expr v1.8.2 // indirect
 	github.com/cespare/xxhash v1.1.0
 	github.com/clarkduvall/hyperloglog v0.0.0-20171127014514-a0107a5d8004
@@ -16,5 +17,5 @@ require (
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/stretchr/testify v1.5.1
 	gonum.org/v1/gonum v0.7.0
-	google.golang.org/api v0.28.0 // indirect
+	google.golang.org/api v0.28.0
 )

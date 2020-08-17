@@ -2,6 +2,7 @@ package sources
 
 import (
 	"github.com/raralabs/canal/core/message"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 )
 
@@ -22,8 +23,8 @@ func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 	}
 
 	s.curVal++
-	content := message.NewOrderedContent()
-	content.Add("value", message.NewFieldValue(s.curVal, message.INT))
+	content := content2.New()
+	content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
 	proc.Result(m, content, nil)
 	return false
 }

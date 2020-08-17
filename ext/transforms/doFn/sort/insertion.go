@@ -2,8 +2,8 @@ package sort
 
 import (
 	"container/list"
+	"github.com/raralabs/canal/core/message/content"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/utils/cast"
 	"github.com/raralabs/canal/utils/extract"
 )
@@ -12,7 +12,7 @@ type Insertion struct {
 	cols      []string
 	first     bool
 	ordered   *list.List
-	fieldType message.FieldValueType
+	fieldType content.FieldValueType
 	field     string
 }
 
@@ -24,7 +24,7 @@ func NewInsertion(field string) *Insertion {
 	}
 }
 
-func (ins *Insertion) Add(mContent *message.OrderedContent) {
+func (ins *Insertion) Add(mContent content.IContent) {
 	if ins.first {
 		ins.first = false
 		ins.cols = extract.Columns(mContent)
@@ -33,7 +33,7 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 		}
 	}
 
-	items := make([]*message.MsgFieldValue, len(ins.cols))
+	items := make([]*content.MsgFieldValue, len(ins.cols))
 	keyIndex := 0
 	for i, key := range ins.cols {
 		if v, ok := mContent.Get(key); !ok {
@@ -54,9 +54,9 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 	}
 
 	for e := ins.ordered.Front(); e != nil; e = e.Next() {
-		currContent, _ := e.Value.([]*message.MsgFieldValue)
+		currContent, _ := e.Value.([]*content.MsgFieldValue)
 		switch ins.fieldType {
-		case message.INT:
+		case content.INT:
 			v1 := items[keyIndex].Value()
 			v2 := currContent[keyIndex].Value()
 			newVal, ok1 := cast.TryInt(v1)
@@ -79,7 +79,7 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 				return
 			}
 
-		case message.FLOAT:
+		case content.FLOAT:
 			newVal, _ := cast.TryFloat(items[keyIndex].Value())
 			currVal, _ := cast.TryFloat(currContent[keyIndex].Value())
 
@@ -88,7 +88,7 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 				return
 			}
 
-		case message.STRING:
+		case content.STRING:
 			newVal, _ := cast.TryString(items[keyIndex].Value())
 			currVal, _ := cast.TryString(currContent[keyIndex].Value())
 
@@ -102,14 +102,14 @@ func (ins *Insertion) Add(mContent *message.OrderedContent) {
 	ins.ordered.PushBack(items)
 }
 
-func (ins *Insertion) Iterate() chan []*message.MsgFieldValue {
-	ch := make(chan []*message.MsgFieldValue)
+func (ins *Insertion) Iterate() chan []*content.MsgFieldValue {
+	ch := make(chan []*content.MsgFieldValue)
 
 	go func() {
 		defer close(ch)
 
 		for e := ins.ordered.Front(); e != nil; e = e.Next() {
-			ch <- e.Value.([]*message.MsgFieldValue)
+			ch <- e.Value.([]*content.MsgFieldValue)
 		}
 	}()
 

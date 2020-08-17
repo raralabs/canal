@@ -2,6 +2,7 @@ package doFn
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/core/transforms/do"
@@ -13,7 +14,7 @@ func BatchAgg(done func(m message.Msg) bool) pipeline.Executor {
 	var batch *agg.Aggregator
 	first := true
 
-	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, contents, prevContents []*message.OrderedContent) {
+	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, contents, prevContents []content.IContent) {
 		if done(m) {
 			entries := batch.Entries()
 			for _, e := range entries {

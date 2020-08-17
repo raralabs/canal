@@ -1,6 +1,8 @@
 package agg
 
-import "github.com/raralabs/canal/core/message"
+import (
+	"github.com/raralabs/canal/core/message/content"
+)
 
 type IAggFuncTemplate interface {
 	// Name returns the name of the aggregator template.
@@ -19,13 +21,13 @@ type IAggFuncTemplate interface {
 }
 
 type IAggFunc interface {
-	Remove(prevContent *message.OrderedContent)
+	Remove(prevContent content.IContent)
 
 	// Add adds a message content to the aggregator.
-	Add(value *message.OrderedContent)
+	Add(value content.IContent)
 
 	// Result returns result of the agg func.
-	Result() *message.MsgFieldValue
+	Result() *content.MsgFieldValue
 
 	// Name returns the name of the agg func.
 	Name() string

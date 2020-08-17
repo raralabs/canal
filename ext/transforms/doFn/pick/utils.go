@@ -1,13 +1,15 @@
 package pick
 
-import "github.com/raralabs/canal/core/message"
+import (
+	"github.com/raralabs/canal/core/message/content"
+)
 
-func insertMessage(appendFunc func(string, interface{}), cols []string, content *message.OrderedContent) {
+func insertMessage(appendFunc func(string, interface{}), cols []string, cntnt content.IContent) {
 	for _, key := range cols {
-		if val, ok := content.Get(key); ok {
+		if val, ok := cntnt.Get(key); ok {
 			appendFunc(key, val)
 		} else {
-			appendFunc(key, message.NewFieldValue(nil, message.NONE))
+			appendFunc(key, content.NewFieldValue(nil, content.NONE))
 		}
 	}
 }

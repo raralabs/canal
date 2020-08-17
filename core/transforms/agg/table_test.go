@@ -1,11 +1,11 @@
 package agg
 
 import (
+	"github.com/raralabs/canal/core/message/content"
 	"strconv"
 	"sync/atomic"
 	"testing"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,18 +40,18 @@ func newCount(tmpl IAggFuncTemplate) *countFunction {
 	}
 }
 
-func (c *countFunction) Add(value *message.OrderedContent) {
+func (c *countFunction) Add(value content.IContent) {
 	atomic.AddUint64(&c.count, 1)
 }
 
-func (c *countFunction) Remove(prevContent *message.OrderedContent) {
+func (c *countFunction) Remove(prevContent content.IContent) {
 	if c.count > 0 {
 		c.count--
 	}
 }
 
-func (c *countFunction) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.count, message.INT)
+func (c *countFunction) Result() *content.MsgFieldValue {
+	return content.NewFieldValue(c.count, content.INT)
 }
 
 func (c *countFunction) Name() string {
@@ -61,38 +61,38 @@ func (c *countFunction) Name() string {
 func (c *countFunction) Reset() {
 }
 
-func getValType(v interface{}) (interface{}, message.FieldValueType) {
+func getValType(v interface{}) (interface{}, content.FieldValueType) {
 
 	switch val := v.(type) {
 	case bool:
-		return val, message.BOOL
+		return val, content.BOOL
 
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return val, message.INT
+		return val, content.INT
 
 	case float32, float64:
-		return val, message.FLOAT
+		return val, content.FLOAT
 
 	case string:
 		if value, err := strconv.ParseInt(val, 10, 64); err == nil {
-			return value, message.INT
+			return value, content.INT
 		} else if value, err := strconv.ParseFloat(val, 64); err == nil {
-			return value, message.FLOAT
+			return value, content.FLOAT
 		}
 
-		return val, message.STRING
+		return val, content.STRING
 	}
 
-	return v, message.NONE
+	return v, content.NONE
 }
 
-func preprocess(m map[string]interface{}) *message.OrderedContent {
+func preprocess(m map[string]interface{}) content.IContent {
 
-	mVal := message.NewOrderedContent()
+	mVal := content.New()
 
 	for k, v := range m {
 		val, valType := getValType(v)
-		mVal.Add(k, message.NewFieldValue(val, valType))
+		mVal.Add(k, content.NewFieldValue(val, valType))
 	}
 
 	return mVal

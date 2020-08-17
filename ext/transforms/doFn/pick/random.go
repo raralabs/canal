@@ -1,10 +1,10 @@
 package pick
 
 import (
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/utils/extract"
 	"log"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/utils/maths"
 )
 
@@ -25,15 +25,15 @@ func NewRandomPick(maxRows uint64) *randomPick {
 	}
 }
 
-func (rt *randomPick) Pick(content *message.OrderedContent) {
+func (rt *randomPick) Pick(cntnt content.IContent) {
 	if rt.first {
 		rt.first = false
-		rt.cols = extract.Columns(content)
+		rt.cols = extract.Columns(cntnt)
 	}
 	if rt.count < rt.maxRows {
 		insertMessage(func(key string, val interface{}) {
 			rt.table[key] = append(rt.table[key], val)
-		}, rt.cols, content)
+		}, rt.cols, cntnt)
 	} else {
 		if len(rt.cols) > 0 {
 			depth := len(rt.table[rt.cols[0]])
@@ -44,10 +44,10 @@ func (rt *randomPick) Pick(content *message.OrderedContent) {
 			if index, ok := maths.ReservoirSample(rt.maxRows, rt.count); ok {
 				// Replace the item at index with current item
 				for _, key := range rt.cols {
-					if val, ok := content.Get(key); ok {
+					if val, ok := cntnt.Get(key); ok {
 						rt.table[key][index] = val
 					} else {
-						rt.table[key][index] = message.NewFieldValue(nil, message.NONE)
+						rt.table[key][index] = content.NewFieldValue(nil, content.NONE)
 					}
 				}
 			}
@@ -56,17 +56,17 @@ func (rt *randomPick) Pick(content *message.OrderedContent) {
 	rt.count++
 }
 
-func (rt *randomPick) Messages() []*message.OrderedContent {
-	var contents []*message.OrderedContent
+func (rt *randomPick) Messages() []content.IContent {
+	var contents []content.IContent
 
 	if len(rt.cols) > 0 {
 		depth := len(rt.table[rt.cols[0]])
 		for i := 0; i < depth; i++ {
-			content := message.NewOrderedContent()
+			cntnt := content.New()
 			for _, col := range rt.cols {
-				content.Add(col, rt.table[col][i].(*message.MsgFieldValue))
+				cntnt.Add(col, rt.table[col][i].(*content.MsgFieldValue))
 			}
-			contents = append(contents, content)
+			contents = append(contents, cntnt)
 		}
 	}
 

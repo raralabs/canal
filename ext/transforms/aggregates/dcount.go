@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
@@ -31,7 +31,7 @@ func newDCountFunc(tmpl agg.IAggFuncTemplate) *dcount {
 	}
 }
 
-func (c *dcount) Remove(prevContent *message.OrderedContent) {
+func (c *dcount) Remove(prevContent content.IContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -40,11 +40,11 @@ func (c *dcount) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *dcount) Add(content *message.OrderedContent) {
+func (c *dcount) Add(cntnt content.IContent) {
 
-	if c.tmpl.Filter(content.Values()) {
+	if c.tmpl.Filter(cntnt.Values()) {
 
-		val, ok := content.Get(c.tmpl.Field())
+		val, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
@@ -54,13 +54,13 @@ func (c *dcount) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *dcount) Result() *message.MsgFieldValue {
+func (c *dcount) Result() *content.MsgFieldValue {
 	dcnt, err := c.calculate(c.fqCnt.Values())
 	if err != nil {
-		return message.NewFieldValue(nil, message.NONE)
+		return content.NewFieldValue(nil, content.NONE)
 	}
 
-	return message.NewFieldValue(dcnt, message.INT)
+	return content.NewFieldValue(dcnt, content.INT)
 }
 
 func (c *dcount) Name() string {

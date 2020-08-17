@@ -2,24 +2,25 @@ package sources
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/utils/cast"
+	"github.com/raralabs/canal/utils/extract"
 )
 
 type MapValue struct {
 	name string // The name of the source
 
-	values *message.OrderedContent // The values to be passed
-	times  int                     // The number of times the values should be passed
+	values content.IContent // The values to be passed
+	times  int              // The number of times the values should be passed
 }
 
-func preprocess(m map[string]interface{}) *message.OrderedContent {
+func preprocess(m map[string]interface{}) content.IContent {
 
-	mVal := message.NewOrderedContent()
+	mVal := content.New()
 
 	for k, v := range m {
-		val, valType := cast.ValType(v)
-		mVal.Add(k, message.NewFieldValue(val, valType))
+		val, valType := extract.ValType(v)
+		mVal.Add(k, content.NewFieldValue(val, valType))
 	}
 
 	return mVal
@@ -28,11 +29,11 @@ func preprocess(m map[string]interface{}) *message.OrderedContent {
 func NewMapValueSource(val map[string]interface{}, times int) pipeline.Executor {
 
 	mv := &MapValue{}
-	mv.values = message.NewOrderedContent()
+	mv.values = content.New()
 
 	for k, v := range val {
-		value, valType := cast.ValType(v)
-		mv.values.Add(k, message.NewFieldValue(value, valType))
+		value, valType := extract.ValType(v)
+		mv.values.Add(k, content.NewFieldValue(value, valType))
 	}
 
 	mv.times = times

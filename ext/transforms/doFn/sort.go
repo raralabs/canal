@@ -2,6 +2,7 @@ package doFn
 
 import (
 	"github.com/raralabs/canal/core/message"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
 	"github.com/raralabs/canal/ext/transforms/doFn/sort"
@@ -17,7 +18,7 @@ func SortFunction(field string, done func(m message.Msg) bool) pipeline.Executor
 		if done(m) {
 			cols := sorter.Columns()
 			for output := range sorter.Iterate() {
-				content := message.NewOrderedContent()
+				content := content2.New()
 				for i, c := range cols {
 					content.Add(c, output[i])
 				}

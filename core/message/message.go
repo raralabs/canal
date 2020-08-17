@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/raralabs/canal/core/message/content"
 )
 
 // MsgType represents the supported types for message
@@ -17,29 +18,30 @@ const (
 )
 
 type Msg struct {
-	id             uint64          // id of the Msg
-	pipelineId     uint32          // id of the pipeline from which the message was created
-	stageId        uint32          // id of the latest stage through which the message has passed
-	processorId    uint32          // id of the latest processor which has generated the message
-	srcStageId     uint32          //
-	srcProcessorId uint32          //
-	srcMessageId   uint64          //
-	mtype          MsgType         // MsgType of the message
-	mcontent       *OrderedContent // MsgContent of the message
-	prevContent    *OrderedContent // Content of previous message
-	trace          trace           // trace of the message
+	id             uint64           // id of the Msg
+	pipelineId     uint32           // id of the pipeline from which the message was created
+	stageId        uint32           // id of the latest stage through which the message has passed
+	processorId    uint32           // id of the latest processor which has generated the message
+	srcStageId     uint32           //
+	srcProcessorId uint32           //
+	srcMessageId   uint64           //
+	mtype          MsgType          // MsgType of the message
+	mcontent       content.IContent // MsgContent of the message
+	prevContent    content.IContent // Content of previous message
+	trace          trace            // trace of the message
 }
 
 func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
-	content := NewOrderedContent()
-	content.Add("text", NewFieldValue(text, STRING))
-	content.Add("code", NewFieldValue(code, INT))
+
+	contents := content.New()
+	contents.Add("text", content.NewFieldValue(text, content.STRING))
+	contents.Add("code", content.NewFieldValue(code, content.INT))
 
 	return Msg{
 		pipelineId:  pipelineId,
 		stageId:     stageId,
 		processorId: processorId,
-		mcontent:    content,
+		mcontent:    contents,
 	}
 }
 
@@ -64,23 +66,23 @@ func (m *Msg) Id() uint64 {
 
 // SetField adds a (key, value) pair to the data stored by the Msg and
 // returns it.
-func (m *Msg) SetField(key string, value *MsgFieldValue) *Msg {
+func (m *Msg) SetField(key string, value *content.MsgFieldValue) *Msg {
 	m.mcontent.Add(key, value)
 	return m
 }
 
 // MsgContent returns the data stored by the message.
-func (m *Msg) Content() *OrderedContent {
+func (m *Msg) Content() content.IContent {
 	return m.mcontent
 }
 
 // MsgContent returns the data stored by the message.
-func (m *Msg) PrevContent() *OrderedContent {
+func (m *Msg) PrevContent() content.IContent {
 	return m.prevContent
 }
 
 // MsgContent returns the data stored by the message.
-func (m *Msg) SetPrevContent(content *OrderedContent) {
+func (m *Msg) SetPrevContent(content content.IContent) {
 	m.prevContent = content
 }
 
@@ -97,7 +99,7 @@ func (m *Msg) Trace() *trace {
 // Types returns a map with just keys and values types in the message, without
 // actual values.
 //? Caching the map might lead to better performance
-func (m *Msg) Types() map[string]FieldValueType {
+func (m *Msg) Types() map[string]content.FieldValueType {
 	return m.mcontent.Types()
 }
 
@@ -114,8 +116,12 @@ func (m *Msg) AsBytes() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *Msg) GetStageId() uint32 {
+func (m *Msg) StageId() uint32 {
 	return m.stageId
+}
+
+func (m *Msg) ProcessorId() uint32 {
+	return m.processorId
 }
 
 func (m *Msg) String() string {

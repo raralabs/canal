@@ -3,9 +3,10 @@ package doFn
 import (
 	"github.com/Knetic/govaluate"
 	"github.com/raralabs/canal/core/message"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
-	"github.com/raralabs/canal/utils/cast"
+	"github.com/raralabs/canal/utils/extract"
 )
 
 func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func(m message.Msg) bool) pipeline.Executor {
@@ -24,16 +25,16 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 				if err != nil {
 					return false
 				}
-				v, vt := cast.ValType(val)
-				content.Add(field, message.NewFieldValue(v, vt))
+				v, vt := extract.ValType(val)
+				content.Add(field, content2.NewFieldValue(v, vt))
 			}
 
 			if pContent != nil {
 				pValues := pContent.Values()
 				pVal, _ := expr.Evaluate(pValues)
 
-				v, vt := cast.ValType(pVal)
-				pContent.Add(field, message.NewFieldValue(v, vt))
+				v, vt := extract.ValType(pVal)
+				pContent.Add(field, content2.NewFieldValue(v, vt))
 			}
 
 			proc.Result(m, content, pContent)
@@ -45,4 +46,3 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 		return false
 	})
 }
-

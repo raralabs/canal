@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"reflect"
 	"testing"
 	"time"
@@ -120,8 +121,8 @@ func TestStage(t *testing.T) {
 			})
 
 			msgF := message.NewFactory(pipelineId, 3, 1)
-			content := message.NewOrderedContent()
-			content.Add("value", message.NewFieldValue(12, message.INT))
+			content := content2.New()
+			content.Add("value", content2.NewFieldValue(12, content2.INT))
 
 			msg := msgF.NewExecuteRoot(content, false)
 

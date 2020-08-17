@@ -1,9 +1,9 @@
 package aggregates
 
 import (
+	"github.com/raralabs/canal/core/message/content"
 	"sync/atomic"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 )
 
@@ -31,20 +31,20 @@ func newCountFunc(tmpl agg.IAggFuncTemplate) *count {
 	}
 }
 
-func (c *count) Remove(prevContent *message.OrderedContent) {
+func (c *count) Remove(prevContent content.IContent) {
 	if prevContent != nil && c.count > 0 {
 		c.count--
 	}
 }
 
-func (c *count) Add(content *message.OrderedContent) {
-	if c.tmpl.Filter(content.Values()) {
+func (c *count) Add(cntnt content.IContent) {
+	if c.tmpl.Filter(cntnt.Values()) {
 		atomic.AddUint64(&c.count, 1)
 	}
 }
 
-func (c *count) Result() *message.MsgFieldValue {
-	return message.NewFieldValue(c.count, message.INT)
+func (c *count) Result() *content.MsgFieldValue {
+	return content.NewFieldValue(c.count, content.INT)
 }
 
 func (c *count) Name() string {

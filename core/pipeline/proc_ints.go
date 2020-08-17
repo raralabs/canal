@@ -1,6 +1,9 @@
 package pipeline
 
-import "github.com/raralabs/canal/core/message"
+import (
+	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
+)
 
 // IProcessorCommon defines the basic interface for a processor
 type IProcessorCommon interface {
@@ -19,7 +22,7 @@ type IProcessorCommon interface {
 // IProcessorExecutor defines the interface for a processor from the perspective of an Executor.
 type IProcessorExecutor interface {
 	// An Executor expects a processor to be able to handle the results it produce.
-	Result(m message.Msg, content, pContent *message.OrderedContent)
+	Result(m message.Msg, content, pContent content.IContent)
 
 	// Returns the persistor held by the processor.
 	Persistor() IPersistor
