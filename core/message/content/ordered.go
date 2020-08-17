@@ -1,28 +1,28 @@
-package message
+package content
 
 import (
 	"container/list"
 	"fmt"
 )
 
-type OrderedContent struct {
+type Ordered struct {
 	keyList *list.List
 	content map[string]*MsgFieldValue
 }
 
-func NewOrderedContent() *OrderedContent {
+func NewOrdered() IContent {
 	kl := list.New()
 	c := make(map[string]*MsgFieldValue)
 
-	return &OrderedContent{
+	return &Ordered{
 		keyList: kl,
 		content: c,
 	}
 }
 
-func (oc *OrderedContent) Copy() *OrderedContent {
-	cpy := NewOrderedContent()
-	for e := oc.First(); e != nil; e = e.Next() {
+func (oc *Ordered) Copy() IContent {
+	cpy := New()
+	for e := oc.first(); e != nil; e = e.Next() {
 		k, _ := e.Value.(string)
 		v, _ := oc.Get(k)
 		cpy.Add(k, v)
@@ -30,12 +30,12 @@ func (oc *OrderedContent) Copy() *OrderedContent {
 	return cpy
 }
 
-func (oc *OrderedContent) Get(key string) (*MsgFieldValue, bool) {
+func (oc *Ordered) Get(key string) (*MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-func (oc *OrderedContent) Add(key string, value *MsgFieldValue) {
+func (oc *Ordered) Add(key string, value *MsgFieldValue) {
 	// Add the key to list if it is new
 	if _, ok := oc.content[key]; !ok {
 		oc.keyList.PushBack(key)
@@ -43,27 +43,40 @@ func (oc *OrderedContent) Add(key string, value *MsgFieldValue) {
 	oc.content[key] = value
 }
 
-func (oc *OrderedContent) Len() int {
+func (oc *Ordered) Len() int {
 	return len(oc.content)
 }
 
-func (oc *OrderedContent) First() *list.Element {
+func (oc *Ordered) first() *list.Element {
 	return oc.keyList.Front()
 }
 
-func (oc *OrderedContent) Last() *list.Element {
+func (oc *Ordered) last() *list.Element {
 	return oc.keyList.Back()
+}
+
+func (oc *Ordered) Keys() []string {
+	keys := make([]string, oc.keyList.Len())
+
+	i := 0
+	for e := oc.first(); e != nil; e = e.Next() {
+		k, _ := e.Value.(string)
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }
 
 // Values returns a map with just keys and values in the message, without type
 // information in order.
-func (oc *OrderedContent) Values() map[string]interface{} {
+func (oc *Ordered) Values() map[string]interface{} {
 	if oc.content == nil {
 		return nil
 	}
 
 	values := make(map[string]interface{})
-	for e := oc.First(); e != nil; e = e.Next() {
+	for e := oc.first(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
@@ -79,14 +92,14 @@ func (oc *OrderedContent) Values() map[string]interface{} {
 
 // Types returns a map with just keys and values types in the message, without
 // actual in order.
-func (oc *OrderedContent) Types() map[string]FieldValueType {
+func (oc *Ordered) Types() map[string]FieldValueType {
 
 	if oc.content == nil {
 		return nil
 	}
 
 	types := make(map[string]FieldValueType)
-	for e := oc.First(); e != nil; e = e.Next() {
+	for e := oc.first(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
@@ -101,9 +114,9 @@ func (oc *OrderedContent) Types() map[string]FieldValueType {
 }
 
 // String returns string representation in order
-func (oc *OrderedContent) String() string {
+func (oc *Ordered) String() string {
 	var values string
-	for e := oc.First(); e != nil; e = e.Next() {
+	for e := oc.first(); e != nil; e = e.Next() {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
