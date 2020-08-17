@@ -1,6 +1,7 @@
 package doFn
 
 import (
+	content2 "github.com/raralabs/canal/core/message/content"
 	"log"
 	"regexp"
 
@@ -31,7 +32,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 
 		str, _ := content.Get(key)
 
-		if types[key] != message.STRING {
+		if types[key] != content2.STRING {
 			log.Panicf("Could not parse non-string values: %v", str)
 		}
 

@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	content2 "github.com/raralabs/canal/core/message/content"
 	"reflect"
 	"sync"
 	"testing"
@@ -81,8 +82,8 @@ func TestReceivePool(t *testing.T) {
 		pipelineId := uint32(1)
 
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.NewOrderedContent()
-		content.Add("value", message.NewFieldValue(12, message.INT))
+		content := content2.New()
+		content.Add("value", content2.NewFieldValue(12, content2.INT))
 
 		msg := msgF.NewExecuteRoot(content, false)
 
@@ -144,8 +145,8 @@ func BenchmarkReceivePool(b *testing.B) {
 		pipelineId := uint32(1)
 
 		msgF := message.NewFactory(pipelineId, 1, 1)
-		content := message.NewOrderedContent()
-		content.Add("value", message.NewFieldValue(12, message.INT))
+		content := content2.New()
+		content.Add("value", content2.NewFieldValue(12, content2.INT))
 
 		msg := msgF.NewExecuteRoot(content, false)
 

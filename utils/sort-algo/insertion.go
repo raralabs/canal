@@ -3,13 +3,13 @@ package sort_algo
 import "container/list"
 
 type Insertion struct {
-	less func(old, new interface{}) bool
-	ordered   *list.List
+	less    func(old, new interface{}) bool
+	ordered *list.List
 }
 
 func NewInsertion(less func(old, new interface{}) bool) *Insertion {
 	return &Insertion{
-		less: less,
+		less:    less,
 		ordered: list.New(),
 	}
 }

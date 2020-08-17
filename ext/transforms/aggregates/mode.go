@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	sort_algo "github.com/raralabs/canal/utils/sort-algo"
@@ -24,7 +24,7 @@ func NewMode(alias, field string, filter func(map[string]interface{}) bool) *Agg
 type mode struct {
 	tmpl        agg.IAggFuncTemplate
 	fqCnt       *stream_math.FreqCounter
-	valType     message.FieldValueType
+	valType     content.FieldValueType
 	first       bool
 	orderedVals *sort_algo.Insertion
 }
@@ -32,7 +32,7 @@ type mode struct {
 func newModeFunc(tmpl agg.IAggFuncTemplate) *mode {
 	return &mode{
 		tmpl:    tmpl,
-		valType: message.NONE,
+		valType: content.NONE,
 		first:   true,
 		fqCnt:   stream_math.NewFreqCounter(),
 		orderedVals: sort_algo.NewInsertion(func(old, new interface{}) bool {
@@ -44,12 +44,12 @@ func newModeFunc(tmpl agg.IAggFuncTemplate) *mode {
 	}
 }
 
-func (md *mode) Remove(prevContent *message.OrderedContent) {
+func (md *mode) Remove(prevContent content.IContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(md.tmpl.Field()); ok {
 			switch prevVal.ValueType() {
-			case message.INT, message.FLOAT:
+			case content.INT, content.FLOAT:
 				val, _ := cast.TryFloat(prevVal.Value())
 				if v := md.fqCnt.Remove(val); v != nil {
 					md.orderedVals.Remove(v)
@@ -59,17 +59,17 @@ func (md *mode) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (md *mode) Add(content *message.OrderedContent) {
+func (md *mode) Add(cntnt content.IContent) {
 
-	if md.tmpl.Filter(content.Values()) {
+	if md.tmpl.Filter(cntnt.Values()) {
 
-		val, ok := content.Get(md.tmpl.Field())
+		val, ok := cntnt.Get(md.tmpl.Field())
 		if !ok {
 			return
 		}
 
 		switch val.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			vl, _ := cast.TryFloat(val.Value())
 			if v := md.fqCnt.Add(vl); v != nil {
 				md.orderedVals.Add(v)
@@ -78,13 +78,13 @@ func (md *mode) Add(content *message.OrderedContent) {
 	}
 }
 
-func (md *mode) Result() *message.MsgFieldValue {
+func (md *mode) Result() *content.MsgFieldValue {
 	mode, err := md.calculate(md.fqCnt.Values())
 	if err != nil {
-		return message.NewFieldValue(nil, message.NONE)
+		return content.NewFieldValue(nil, content.NONE)
 	}
 
-	return message.NewFieldValue(mode, md.valType)
+	return content.NewFieldValue(mode, md.valType)
 }
 
 func (md *mode) Name() string {

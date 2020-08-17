@@ -1,7 +1,7 @@
 package pick
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/utils/dstr"
 	"github.com/raralabs/canal/utils/extract"
 	"log"
@@ -22,7 +22,7 @@ func NewLastPick(maxRows uint64) *lastPick {
 	}
 }
 
-func (lt *lastPick) Pick(content *message.OrderedContent) {
+func (lt *lastPick) Pick(content content.IContent) {
 	if lt.first {
 		lt.first = false
 		lt.cols = extract.Columns(content)
@@ -36,22 +36,22 @@ func (lt *lastPick) Pick(content *message.OrderedContent) {
 	}, lt.cols, content)
 }
 
-func (lt *lastPick) Messages() []*message.OrderedContent {
-	var contents []*message.OrderedContent
+func (lt *lastPick) Messages() []content.IContent {
+	var contents []content.IContent
 
 	if len(lt.cols) > 0 {
 		depth := lt.table[lt.cols[0]].Len()
 		for i := uint64(0); i < depth; i++ {
-			content := message.NewOrderedContent()
+			cntnt := content.New()
 			for _, col := range lt.cols {
 				val, err := lt.table[col].Get(i)
 				if err != nil {
 					log.Printf("[ERROR] %v", err)
 					return nil
 				}
-				content.Add(col, val.(*message.MsgFieldValue))
+				cntnt.Add(col, val.(*content.MsgFieldValue))
 			}
-			contents = append(contents, content)
+			contents = append(contents, cntnt)
 		}
 	}
 

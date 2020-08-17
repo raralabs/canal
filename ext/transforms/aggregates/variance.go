@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
@@ -32,7 +32,7 @@ func newVarianceFunc(tmpl agg.IAggFuncTemplate) *variance {
 	}
 }
 
-func (c *variance) Remove(prevContent *message.OrderedContent) {
+func (c *variance) Remove(prevContent content.IContent) {
 	if prevContent != nil {
 		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
 			v1, _ := cast.TryFloat(old.Value())
@@ -42,27 +42,27 @@ func (c *variance) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *variance) Add(content *message.OrderedContent) {
-	if c.tmpl.Filter(content.Values()) {
-		val, ok := content.Get(c.tmpl.Field())
+func (c *variance) Add(cntnt content.IContent) {
+	if c.tmpl.Filter(cntnt.Values()) {
+		val, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
 
 		switch val.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			v, _ := cast.TryFloat(val.Value())
 			c.variance.Add(v)
 		}
 	}
 }
 
-func (c *variance) Result() *message.MsgFieldValue {
+func (c *variance) Result() *content.MsgFieldValue {
 	res, err := c.variance.Result()
 	if err != nil {
-		return message.NewFieldValue(nil, message.NONE)
+		return content.NewFieldValue(nil, content.NONE)
 	}
-	return message.NewFieldValue(res, message.FLOAT)
+	return content.NewFieldValue(res, content.FLOAT)
 }
 
 func (c *variance) Name() string {

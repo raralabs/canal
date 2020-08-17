@@ -1,6 +1,7 @@
 package agg
 
 import (
+	"github.com/raralabs/canal/core/message/content"
 	"log"
 
 	"github.com/raralabs/canal/core/message"
@@ -10,14 +11,14 @@ import (
 type Operator struct {
 	name    string
 	state   *struct{}
-	aggFunc func(message.Msg, *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error)
-	after   func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent)
+	aggFunc func(message.Msg, *struct{}) ([]content.IContent, []content.IContent, error)
+	after   func(message.Msg, pipeline.IProcessorForExecutor, []content.IContent, []content.IContent)
 }
 
 func NewOperator(
 	initialState struct{},
-	af func(message.Msg, *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error),
-	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent),
+	af func(message.Msg, *struct{}) ([]content.IContent, []content.IContent, error),
+	after func(message.Msg, pipeline.IProcessorForExecutor, []content.IContent, []content.IContent),
 ) pipeline.Executor {
 	return &Operator{
 		state:   &initialState,

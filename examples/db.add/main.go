@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/raralabs/canal/core/message/content"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
@@ -29,8 +31,8 @@ func main() {
 	count := 0
 	add := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		content := m.Content()
-		vl, _ := content.Get("value")
+		contents := m.Content()
+		vl, _ := contents.Get("value")
 		v := vl.Val
 		sum, _ := v.(uint64)
 
@@ -50,8 +52,8 @@ func main() {
 		count++
 		if count >= bucket {
 			count = 0
-			msgContent := message.NewOrderedContent()
-			msgContent.Add("sum", message.NewFieldValue(sum, message.INT))
+			msgContent := content.New()
+			msgContent.Add("sum", content.NewFieldValue(sum, content.INT))
 			proc.Result(m, msgContent, nil)
 		}
 		return true

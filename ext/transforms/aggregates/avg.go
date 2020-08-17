@@ -1,7 +1,7 @@
 package aggregates
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
@@ -35,7 +35,7 @@ func newAvgFunc(tmpl agg.IAggFuncTemplate) *avg {
 	}
 }
 
-func (c *avg) Remove(prevContent *message.OrderedContent) {
+func (c *avg) Remove(prevContent content.IContent) {
 	if prevContent != nil {
 		if old, ok := prevContent.Get(c.tmpl.Field()); ok {
 			v1, _ := cast.TryFloat(old.Value())
@@ -45,24 +45,24 @@ func (c *avg) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *avg) Add(content *message.OrderedContent) {
-	if c.tmpl.Filter(content.Values()) {
-		val, ok := content.Get(c.tmpl.Field())
+func (c *avg) Add(cntnt content.IContent) {
+	if c.tmpl.Filter(cntnt.Values()) {
+		val, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
 
 		switch val.ValueType() {
-		case message.INT, message.FLOAT:
+		case content.INT, content.FLOAT:
 			v, _ := cast.TryFloat(val.Value())
 			c.avg.Add(v)
 		}
 	}
 }
 
-func (c *avg) Result() *message.MsgFieldValue {
+func (c *avg) Result() *content.MsgFieldValue {
 	res, _ := c.avg.Result()
-	return message.NewFieldValue(res, message.FLOAT)
+	return content.NewFieldValue(res, content.FLOAT)
 }
 
 func (c *avg) Name() string {

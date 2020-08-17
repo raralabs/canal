@@ -2,18 +2,19 @@ package agg
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 )
 
 type Aggregator struct {
-	table *Table                                                                                                  // The table that holds all the aggregator's info
-	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent) // This function is called after execute on each message is called
+	table *Table                                                                                    // The table that holds all the aggregator's info
+	after func(message.Msg, pipeline.IProcessorForExecutor, []content.IContent, []content.IContent) // This function is called after execute on each message is called
 }
 
 // NewAggregator creates a new aggregator with the provided events, aggregators
 // and the groups and returns it.
 func NewAggregator(aggs []IAggFuncTemplate,
-	after func(message.Msg, pipeline.IProcessorForExecutor, []*message.OrderedContent, []*message.OrderedContent),
+	after func(message.Msg, pipeline.IProcessorForExecutor, []content.IContent, []content.IContent),
 	groupBy ...string) *Aggregator {
 
 	ag := &Aggregator{
@@ -31,7 +32,7 @@ func (ag *Aggregator) Reset() {
 	ag.table.Reset()
 }
 
-func (ag *Aggregator) AggFunc(m message.Msg, s *struct{}) ([]*message.OrderedContent, []*message.OrderedContent, error) {
+func (ag *Aggregator) AggFunc(m message.Msg, s *struct{}) ([]content.IContent, []content.IContent, error) {
 
 	content := m.Content()
 	prevContent := m.PrevContent()
@@ -43,10 +44,10 @@ func (ag *Aggregator) Function() pipeline.Executor {
 	return NewOperator(s, ag.AggFunc, ag.after)
 }
 
-func (ag *Aggregator) Entry(group string) *message.OrderedContent {
+func (ag *Aggregator) Entry(group string) content.IContent {
 	return ag.table.Entry(group)
 }
 
-func (ag *Aggregator) Entries() []*message.OrderedContent {
+func (ag *Aggregator) Entries() []content.IContent {
 	return ag.table.Entries()
 }

@@ -1,7 +1,7 @@
 package pick
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/utils/extract"
 )
 
@@ -22,30 +22,30 @@ func NewFirstPick(maxRows uint64) *firstPick {
 	}
 }
 
-func (ft *firstPick) Pick(content *message.OrderedContent) {
+func (ft *firstPick) Pick(cntnt content.IContent) {
 	if ft.first {
 		ft.first = false
-		ft.cols = extract.Columns(content)
+		ft.cols = extract.Columns(cntnt)
 	}
 	if ft.count < ft.maxRows {
 		insertMessage(func(key string, val interface{}) {
 			ft.table[key] = append(ft.table[key], val)
-		}, ft.cols, content)
+		}, ft.cols, cntnt)
 	}
 	ft.count++
 }
 
-func (ft *firstPick) Messages() []*message.OrderedContent {
-	var contents []*message.OrderedContent
+func (ft *firstPick) Messages() []content.IContent {
+	var contents []content.IContent
 
 	if len(ft.cols) > 0 {
 		depth := len(ft.table[ft.cols[0]])
 		for i := 0; i < depth; i++ {
-			content := message.NewOrderedContent()
+			cntnt := content.New()
 			for _, col := range ft.cols {
-				content.Add(col, ft.table[col][i].(*message.MsgFieldValue))
+				cntnt.Add(col, ft.table[col][i].(*content.MsgFieldValue))
 			}
-			contents = append(contents, content)
+			contents = append(contents, cntnt)
 		}
 	}
 

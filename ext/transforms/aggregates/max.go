@@ -2,8 +2,8 @@ package aggregates
 
 import (
 	"errors"
+	"github.com/raralabs/canal/core/message/content"
 
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/utils/cast"
 	stream_math "github.com/raralabs/canal/utils/stream-math"
@@ -26,7 +26,7 @@ type max struct {
 	tmpl agg.IAggFuncTemplate
 
 	fqCnt   *stream_math.FreqCounter
-	valType message.FieldValueType
+	valType content.FieldValueType
 	first   bool
 }
 
@@ -34,7 +34,7 @@ func newMaxFunc(tmpl agg.IAggFuncTemplate) *max {
 
 	mx := &max{
 		tmpl:    tmpl,
-		valType: message.NONE,
+		valType: content.NONE,
 		first:   true,
 		fqCnt:   stream_math.NewFreqCounter(),
 	}
@@ -42,7 +42,7 @@ func newMaxFunc(tmpl agg.IAggFuncTemplate) *max {
 	return mx
 }
 
-func (c *max) Remove(prevContent *message.OrderedContent) {
+func (c *max) Remove(prevContent content.IContent) {
 	// Remove the previous fieldVal
 	if prevContent != nil {
 		if prevVal, ok := prevContent.Get(c.tmpl.Field()); ok {
@@ -51,11 +51,11 @@ func (c *max) Remove(prevContent *message.OrderedContent) {
 	}
 }
 
-func (c *max) Add(content *message.OrderedContent) {
+func (c *max) Add(cntnt content.IContent) {
 
-	if c.tmpl.Filter(content.Values()) {
+	if c.tmpl.Filter(cntnt.Values()) {
 
-		val, ok := content.Get(c.tmpl.Field())
+		val, ok := cntnt.Get(c.tmpl.Field())
 		if !ok {
 			return
 		}
@@ -70,14 +70,14 @@ func (c *max) Add(content *message.OrderedContent) {
 	}
 }
 
-func (c *max) Result() *message.MsgFieldValue {
+func (c *max) Result() *content.MsgFieldValue {
 
 	mx, err := c.calculate(c.fqCnt.Values())
 	if err != nil {
-		return message.NewFieldValue(nil, message.NONE)
+		return content.NewFieldValue(nil, content.NONE)
 	}
 
-	return message.NewFieldValue(mx, message.FLOAT)
+	return content.NewFieldValue(mx, content.FLOAT)
 }
 
 func (c *max) Name() string {
@@ -86,7 +86,7 @@ func (c *max) Name() string {
 
 func (c *max) Reset() {
 	c.first = true
-	c.valType = message.NONE
+	c.valType = content.NONE
 	c.fqCnt.Reset()
 }
 
@@ -110,9 +110,9 @@ func (c *max) calculate(m map[interface{}]uint64) (interface{}, error) {
 
 }
 
-func maxIface(fieldType message.FieldValueType, a, b interface{}) (interface{}, error) {
+func maxIface(fieldType content.FieldValueType, a, b interface{}) (interface{}, error) {
 	switch fieldType {
-	case message.INT, message.FLOAT:
+	case content.INT, content.FLOAT:
 		af, _ := cast.TryFloat(a)
 		bf, _ := cast.TryFloat(b)
 

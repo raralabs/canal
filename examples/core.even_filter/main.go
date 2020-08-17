@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/core/message/content"
 	"sync"
 
 	"github.com/raralabs/canal/ext/transforms/doFn"
@@ -31,7 +32,7 @@ func main() {
 	ef := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 		val, _ := m.Content().Get("value")
-		if val.ValType == message.INT {
+		if val.ValType == content.INT {
 			v := val.Val.(uint64)
 			if v%2 == 0 {
 				proc.Result(m, m.Content(), nil)

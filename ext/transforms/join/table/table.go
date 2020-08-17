@@ -1,7 +1,7 @@
 package table
 
 import (
-	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 )
 
 // A Table is a data structure that holds the data in tabular format. It supports
@@ -12,13 +12,13 @@ type Table interface {
 
 	// Insertable checks if the given message value is insertable to the
 	// table on the basis of it's context.
-	Insertable(*message.OrderedContent) bool
+	Insertable(content.IContent) bool
 
 	// Insert inserts the message value to the table.
-	Insert(*message.OrderedContent)
+	Insert(content.IContent)
 
 	// Append appends a row of values to the table.
-	Append([]message.MsgFieldValue)
+	Append([]content.MsgFieldValue)
 
 	// Len returns the number of rows in the table.
 	Len() int
@@ -35,5 +35,5 @@ type Table interface {
 
 	// Iterate through the rows of the table. The values are in the same
 	// order as the fields of the table.
-	IterRows() <-chan []*message.MsgFieldValue
+	IterRows() <-chan []*content.MsgFieldValue
 }

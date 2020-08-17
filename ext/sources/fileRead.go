@@ -2,6 +2,7 @@ package sources
 
 import (
 	"bufio"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"log"
 	"os"
 
@@ -48,13 +49,13 @@ func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 	}
 
 	if fr.scanner.Scan() {
-		content := message.NewOrderedContent()
+		content := content2.New()
 		line := fr.scanner.Text()
-		content.Add(fr.key, message.NewFieldValue(line, message.STRING))
+		content.Add(fr.key, content2.NewFieldValue(line, content2.STRING))
 		proc.Result(m, content, nil)
 	} else {
-		content := message.NewOrderedContent()
-		content.Add("eof", message.NewFieldValue(true, message.BOOL))
+		content := content2.New()
+		content.Add("eof", content2.NewFieldValue(true, content2.BOOL))
 		proc.Result(m, content, nil)
 
 		proc.Done()

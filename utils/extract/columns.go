@@ -1,13 +1,9 @@
 package extract
 
-import "github.com/raralabs/canal/core/message"
+import (
+	"github.com/raralabs/canal/core/message/content"
+)
 
-func Columns(content *message.OrderedContent) []string {
-	var cols []string
-	for e := content.First(); e != nil; e = e.Next() {
-		k, _ := e.Value.(string)
-		cols = append(cols, k)
-	}
-
-	return cols
+func Columns(content content.IContent) []string {
+	return content.Keys()
 }
