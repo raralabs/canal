@@ -8,11 +8,15 @@ import (
 )
 
 type StdoutSink struct {
-	name string
+	name   string
+	header []string
 }
 
-func NewStdoutSink() pipeline.Executor {
-	return &StdoutSink{name: "StdOut"}
+func NewStdoutSink(header ...string) pipeline.Executor {
+	return &StdoutSink{
+		name: "StdOut",
+		header: header,
+	}
 }
 
 func (s *StdoutSink) ExecutorType() pipeline.ExecutorType {
@@ -24,8 +28,20 @@ func (s *StdoutSink) Execute(m message.Msg, _ pipeline.IProcessorForExecutor) bo
 	if m.Trace() != nil {
 		trace = m.Trace().String()
 	}
+	contents := m.Content()
 
-	fmt.Println(fmt.Sprintf("[StdoutSink] %s %s", m.String(), trace))
+	fmt.Print("[StdoutSink] ")
+	if s.header == nil || len(s.header) == 0 {
+		fmt.Println(fmt.Sprintf("%s %s", m.String(), trace))
+	} else {
+		fmt.Printf("Msg[Id:%d, Stg:%d, Prc:%d; Contents:{", m.Id(), m.StageId(), m.ProcessorId())
+		for _, k := range s.header {
+			if v, ok := contents.Get(k); ok {
+				fmt.Printf(" %s: %v ", k, v)
+			}
+		}
+		fmt.Println("}]", trace)
+	}
 
 	return false
 }

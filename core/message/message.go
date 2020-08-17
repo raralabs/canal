@@ -116,8 +116,12 @@ func (m *Msg) AsBytes() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *Msg) GetStageId() uint32 {
+func (m *Msg) StageId() uint32 {
 	return m.stageId
+}
+
+func (m *Msg) ProcessorId() uint32 {
+	return m.processorId
 }
 
 func (m *Msg) String() string {
