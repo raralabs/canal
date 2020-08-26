@@ -35,8 +35,8 @@ func (mf *Factory) NewExecuteRoot(content content.IContent, withTrace bool) Msg 
 }
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
-func (mf *Factory) NewExecute(srcMessage Msg, contents content.IContent, pContent content.IContent) Msg {
-	m := Msg{
+func (mf *Factory) NewExecute(srcMessage Msg, content content.IContent, pContent content.IContent) Msg {
+	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
 		pipelineId:     mf.pipelineId,
 		stageId:        mf.stageId,
@@ -45,16 +45,10 @@ func (mf *Factory) NewExecute(srcMessage Msg, contents content.IContent, pConten
 		srcProcessorId: srcMessage.processorId,
 		srcMessageId:   srcMessage.id,
 		mtype:          EXECUTE,
+		mcontent:       content.Copy(),
 		trace:          newTrace(srcMessage),
+		prevContent:    pContent,
 	}
-	if contents != nil {
-		m.mcontent = contents.Copy()
-	}
-	if pContent != nil {
-		m.prevContent = pContent.Copy()
-	}
-
-	return m
 }
 
 // NewError creates a new message with the 'value' as actual data and returns it.
