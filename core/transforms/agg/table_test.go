@@ -1,10 +1,11 @@
 package agg
 
 import (
-	"github.com/raralabs/canal/core/message/content"
 	"strconv"
 	"sync/atomic"
 	"testing"
+
+	"github.com/raralabs/canal/core/message/content"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +51,7 @@ func (c *countFunction) Remove(prevContent content.IContent) {
 	}
 }
 
-func (c *countFunction) Result() *content.MsgFieldValue {
+func (c *countFunction) Result() content.MsgFieldValue {
 	return content.NewFieldValue(c.count, content.INT)
 }
 
