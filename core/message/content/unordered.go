@@ -5,11 +5,11 @@ import (
 )
 
 type Unordered struct {
-	content map[string]*MsgFieldValue
+	content map[string]MsgFieldValue
 }
 
 func NewUnordered() IContent {
-	c := make(map[string]*MsgFieldValue)
+	c := make(map[string]MsgFieldValue)
 
 	return &Unordered{
 		content: c,
@@ -25,12 +25,12 @@ func (oc *Unordered) Copy() IContent {
 	return cpy
 }
 
-func (oc *Unordered) Get(key string) (*MsgFieldValue, bool) {
+func (oc *Unordered) Get(key string) (MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-func (oc *Unordered) Add(key string, value *MsgFieldValue) {
+func (oc *Unordered) Add(key string, value MsgFieldValue) {
 	oc.content[key] = value
 }
 
@@ -57,11 +57,7 @@ func (oc *Unordered) Values() map[string]interface{} {
 
 	for _, k := range oc.Keys() {
 		v := oc.content[k]
-		if v == nil {
-			values[k] = nil
-		} else {
-			values[k] = v.Value()
-		}
+		values[k] = v.Value()
 	}
 
 	return values
@@ -79,11 +75,7 @@ func (oc *Unordered) Types() map[string]FieldValueType {
 
 	for _, k := range oc.Keys() {
 		v := oc.content[k]
-		if v == nil {
-			types[k] = NONE
-		} else {
-			types[k] = v.ValueType()
-		}
+		types[k] = v.ValueType()
 	}
 
 	return types

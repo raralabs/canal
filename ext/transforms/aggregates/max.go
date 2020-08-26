@@ -70,7 +70,7 @@ func (c *max) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *max) Result() *content.MsgFieldValue {
+func (c *max) Result() content.MsgFieldValue {
 
 	mx, err := c.calculate(c.fqCnt.Values())
 	if err != nil {

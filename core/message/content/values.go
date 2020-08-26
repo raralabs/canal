@@ -39,30 +39,23 @@ type MsgFieldValue struct {
 }
 
 // Creates a new MsgFieldValue and returns it.
-func NewFieldValue(value interface{}, valueType FieldValueType) *MsgFieldValue {
-	m := &MsgFieldValue{}
-	m.SetValue(value)
-	m.SetType(valueType)
+func NewFieldValue(value interface{}, valueType FieldValueType) MsgFieldValue {
+	m := MsgFieldValue{
+		Val:     value,
+		ValType: valueType,
+	}
 
 	return m
 }
 
-func (mfv *MsgFieldValue) Value() interface{} {
+func (mfv MsgFieldValue) Value() interface{} {
 	return mfv.Val
 }
 
-func (mfv *MsgFieldValue) ValueType() FieldValueType {
+func (mfv MsgFieldValue) ValueType() FieldValueType {
 	return mfv.ValType
 }
 
-func (mfv *MsgFieldValue) SetValue(value interface{}) {
-	mfv.Val = value
-}
-
-func (mfv *MsgFieldValue) SetType(valueType FieldValueType) {
-	mfv.ValType = valueType
-}
-
-func (mfv *MsgFieldValue) String() string {
+func (mfv MsgFieldValue) String() string {
 	return fmt.Sprintf("%s(%v)", mfv.ValType, mfv.Val)
 }

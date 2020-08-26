@@ -1,10 +1,9 @@
-package benchs
+package simple
 
 import (
 	"context"
 	"io/ioutil"
 	"log"
-	"runtime"
 	"testing"
 	"time"
 
@@ -35,10 +34,6 @@ func benchSimple(b *testing.B, n int64) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p.Start(c, cancel)
-		runtime.GC()
-		runtime.GC()
-		runtime.GC()
-		runtime.GC()
 	}
 
 	cancel()

@@ -60,7 +60,7 @@ func (c *avg) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *avg) Result() *content.MsgFieldValue {
+func (c *avg) Result() content.MsgFieldValue {
 	res, _ := c.avg.Result()
 	return content.NewFieldValue(res, content.FLOAT)
 }

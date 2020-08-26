@@ -22,7 +22,7 @@ func stringRep(strs ...interface{}) string {
 	return str.String()
 }
 
-func getStringRep(groupVals []*content.MsgFieldValue) string {
+func getStringRep(groupVals []content.MsgFieldValue) string {
 	values := make([]interface{}, len(groupVals))
 	for i, v := range groupVals {
 		values[i] = v.Val
@@ -31,8 +31,8 @@ func getStringRep(groupVals []*content.MsgFieldValue) string {
 	return stringRep(values...)
 }
 
-func extractValues(m content.IContent, header []string) ([]*content.MsgFieldValue, error) {
-	groupVals := make([]*content.MsgFieldValue, len(header))
+func extractValues(m content.IContent, header []string) ([]content.MsgFieldValue, error) {
+	groupVals := make([]content.MsgFieldValue, len(header))
 	for i, grp := range header {
 		if v, ok := m.Get(grp); ok {
 			groupVals[i] = v
@@ -47,13 +47,13 @@ type Table struct {
 	groupBy     []string              // The groups in the table
 	aggFns      map[string][]IAggFunc // The aggregators for each group
 	aggFnTmplts []IAggFuncTemplate
-	table       map[string][]*content.MsgFieldValue
+	table       map[string][]content.MsgFieldValue
 	mesFq       *stream_math.FreqCounter
 	mesList     *list.List
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
-	table := make(map[string][]*content.MsgFieldValue)
+	table := make(map[string][]content.MsgFieldValue)
 	groups := make([]string, len(groupBy))
 	for i, s := range groupBy {
 		groups[i] = s
