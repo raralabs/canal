@@ -34,9 +34,15 @@ func (ag *Aggregator) Reset() {
 
 func (ag *Aggregator) AggFunc(m message.Msg, s *struct{}) ([]content.IContent, []content.IContent, error) {
 
-	content := m.Content()
-	prevContent := m.PrevContent()
-	return ag.table.Insert(content, prevContent)
+	var contents, pContent content.IContent
+	if m.Content() != nil {
+		contents = m.Content().Copy()
+	}
+	if m.PrevContent() != nil {
+		pContent = m.PrevContent().Copy()
+	}
+
+	return ag.table.Insert(contents, pContent)
 }
 
 func (ag *Aggregator) Function() pipeline.Executor {

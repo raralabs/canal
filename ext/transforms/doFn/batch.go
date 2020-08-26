@@ -14,7 +14,7 @@ func BatchAgg(done func(m message.Msg) bool) pipeline.Executor {
 	var batch *agg.Aggregator
 	first := true
 
-	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, contents, prevContents []content.IContent) {
+	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, _, _ []content.IContent) {
 		if done(m) {
 			entries := batch.Entries()
 			for _, e := range entries {
@@ -29,9 +29,9 @@ func BatchAgg(done func(m message.Msg) bool) pipeline.Executor {
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 		if first {
-			content := m.Content()
-			if content != nil {
-				groups := extract.Columns(content)
+			contents := m.Content()
+			if contents != nil {
+				groups := extract.Columns(contents)
 
 				batch = agg.NewAggregator([]agg.IAggFuncTemplate{}, after, groups...)
 				first = false
