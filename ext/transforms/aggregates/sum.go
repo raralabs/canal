@@ -22,7 +22,7 @@ func NewSum(alias, field string, filter func(map[string]interface{}) bool) *AggT
 type sum struct {
 	tmpl agg.IAggFuncTemplate
 
-	lastSum *content.MsgFieldValue
+	lastSum content.MsgFieldValue
 }
 
 func newSumFunc(tmpl agg.IAggFuncTemplate) *sum {
@@ -68,7 +68,7 @@ func (c *sum) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *sum) Result() *content.MsgFieldValue {
+func (c *sum) Result() content.MsgFieldValue {
 	return content.NewFieldValue(c.lastSum.Value(), c.lastSum.ValueType())
 }
 

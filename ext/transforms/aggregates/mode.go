@@ -78,7 +78,7 @@ func (md *mode) Add(cntnt content.IContent) {
 	}
 }
 
-func (md *mode) Result() *content.MsgFieldValue {
+func (md *mode) Result() content.MsgFieldValue {
 	mode, err := md.calculate(md.fqCnt.Values())
 	if err != nil {
 		return content.NewFieldValue(nil, content.NONE)

@@ -27,7 +27,7 @@ type IAggFunc interface {
 	Add(value content.IContent)
 
 	// Result returns result of the agg func.
-	Result() *content.MsgFieldValue
+	Result() content.MsgFieldValue
 
 	// Name returns the name of the agg func.
 	Name() string

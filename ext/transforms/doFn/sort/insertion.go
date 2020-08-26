@@ -33,7 +33,7 @@ func (ins *Insertion) Add(mContent content.IContent) {
 		}
 	}
 
-	items := make([]*content.MsgFieldValue, len(ins.cols))
+	items := make([]content.MsgFieldValue, len(ins.cols))
 	keyIndex := 0
 	for i, key := range ins.cols {
 		if v, ok := mContent.Get(key); !ok {
@@ -54,7 +54,7 @@ func (ins *Insertion) Add(mContent content.IContent) {
 	}
 
 	for e := ins.ordered.Front(); e != nil; e = e.Next() {
-		currContent, _ := e.Value.([]*content.MsgFieldValue)
+		currContent, _ := e.Value.([]content.MsgFieldValue)
 		switch ins.fieldType {
 		case content.INT:
 			v1 := items[keyIndex].Value()
@@ -102,14 +102,14 @@ func (ins *Insertion) Add(mContent content.IContent) {
 	ins.ordered.PushBack(items)
 }
 
-func (ins *Insertion) Iterate() chan []*content.MsgFieldValue {
-	ch := make(chan []*content.MsgFieldValue)
+func (ins *Insertion) Iterate() chan []content.MsgFieldValue {
+	ch := make(chan []content.MsgFieldValue)
 
 	go func() {
 		defer close(ch)
 
 		for e := ins.ordered.Front(); e != nil; e = e.Next() {
-			ch <- e.Value.([]*content.MsgFieldValue)
+			ch <- e.Value.([]content.MsgFieldValue)
 		}
 	}()
 

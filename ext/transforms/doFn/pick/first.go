@@ -43,7 +43,7 @@ func (ft *firstPick) Messages() []content.IContent {
 		for i := 0; i < depth; i++ {
 			cntnt := content.New()
 			for _, col := range ft.cols {
-				cntnt.Add(col, ft.table[col][i].(*content.MsgFieldValue))
+				cntnt.Add(col, ft.table[col][i].(content.MsgFieldValue))
 			}
 			contents = append(contents, cntnt)
 		}

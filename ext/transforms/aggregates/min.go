@@ -67,7 +67,7 @@ func (c *min) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *min) Result() *content.MsgFieldValue {
+func (c *min) Result() content.MsgFieldValue {
 
 	mn, err := c.calculate(c.fqCnt.Values())
 	if err != nil {

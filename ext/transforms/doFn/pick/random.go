@@ -64,7 +64,7 @@ func (rt *randomPick) Messages() []content.IContent {
 		for i := 0; i < depth; i++ {
 			cntnt := content.New()
 			for _, col := range rt.cols {
-				cntnt.Add(col, rt.table[col][i].(*content.MsgFieldValue))
+				cntnt.Add(col, rt.table[col][i].(content.MsgFieldValue))
 			}
 			contents = append(contents, cntnt)
 		}

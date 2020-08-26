@@ -73,7 +73,7 @@ func (c *correlation) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *correlation) Result() *content.MsgFieldValue {
+func (c *correlation) Result() content.MsgFieldValue {
 	res, err := c.cor.Result()
 	if err != nil {
 		return content.NewFieldValue(nil, content.NONE)
