@@ -256,7 +256,7 @@ func (t *Table) fillGroupInfo(m content.IContent, grpStr string) {
 		log.Panic("Error in filling group info.")
 	}
 	for i, grp := range t.groupBy {
-		m.Add(grp, values[i])
+		m = m.Add(grp, values[i])
 	}
 }
 
@@ -265,6 +265,6 @@ func (t *Table) fillGroupInfo(m content.IContent, grpStr string) {
 func (t *Table) collectResults(m content.IContent, grpStr string) {
 	aggs := t.aggFns[grpStr]
 	for _, ag := range aggs {
-		m.Add(ag.Name(), ag.Result())
+		m = m.Add(ag.Name(), ag.Result())
 	}
 }

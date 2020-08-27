@@ -42,7 +42,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 			s := f(reg, st)
 			str.Val = s
 
-			content.Add(key, str)
+			content = content.Add(key, str)
 		}
 
 		proc.Result(m, content, nil)

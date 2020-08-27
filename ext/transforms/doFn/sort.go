@@ -20,7 +20,7 @@ func SortFunction(field string, done func(m message.Msg) bool) pipeline.Executor
 			for output := range sorter.Iterate() {
 				content := content2.New()
 				for i, c := range cols {
-					content.Add(c, output[i])
+					content = content.Add(c, output[i])
 				}
 				proc.Result(m, content, nil)
 			}

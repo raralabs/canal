@@ -53,7 +53,7 @@ func main() {
 		if count >= bucket {
 			count = 0
 			msgContent := content.New()
-			msgContent.Add("sum", content.NewFieldValue(sum, content.INT))
+			msgContent = msgContent.Add("sum", content.NewFieldValue(sum, content.INT))
 			proc.Result(m, msgContent, nil)
 		}
 		return true

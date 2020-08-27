@@ -43,7 +43,7 @@ func (f *Fake) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool 
 
 	for k, v := range f.random {
 		value, valType := extract.ValType(v)
-		contents.Add(k, content.NewFieldValue(value, valType))
+		contents = contents.Add(k, content.NewFieldValue(value, valType))
 	}
 	proc.Result(m, contents, nil)
 	f.currRow++
@@ -54,7 +54,7 @@ func (f *Fake) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool 
 func (f *Fake) done(m message.Msg, proc pipeline.IProcessorForExecutor) {
 	// Send eof if done
 	contents := content.New()
-	contents.Add("eof", content.NewFieldValue(true, content.BOOL))
+	contents = contents.Add("eof", content.NewFieldValue(true, content.BOOL))
 	proc.Result(m, contents, nil)
 	proc.Done()
 }

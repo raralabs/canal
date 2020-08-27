@@ -11,34 +11,30 @@ type Unordered struct {
 func NewUnordered() IContent {
 	c := make(map[string]MsgFieldValue)
 
-	return &Unordered{
+	return Unordered{
 		content: c,
 	}
 }
 
-func (oc *Unordered) Copy() IContent {
-	cpy := New()
-	for _, k := range oc.Keys() {
-		v, _ := oc.Get(k)
-		cpy.Add(k, v)
-	}
-	return cpy
+func (oc Unordered) Copy() IContent {
+	return oc
 }
 
-func (oc *Unordered) Get(key string) (MsgFieldValue, bool) {
+func (oc Unordered) Get(key string) (MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-func (oc *Unordered) Add(key string, value MsgFieldValue) {
+func (oc Unordered) Add(key string, value MsgFieldValue) IContent {
 	oc.content[key] = value
+	return oc
 }
 
-func (oc *Unordered) Len() int {
+func (oc Unordered) Len() int {
 	return len(oc.content)
 }
 
-func (oc *Unordered) Keys() []string {
+func (oc Unordered) Keys() []string {
 	keys := make([]string, 0, len(oc.content))
 	for k := range oc.content {
 		keys = append(keys, k)
@@ -48,7 +44,7 @@ func (oc *Unordered) Keys() []string {
 
 // Values returns a map with just keys and values in the message, without type
 // information in order.
-func (oc *Unordered) Values() map[string]interface{} {
+func (oc Unordered) Values() map[string]interface{} {
 	if oc.content == nil {
 		return nil
 	}
@@ -65,7 +61,7 @@ func (oc *Unordered) Values() map[string]interface{} {
 
 // Types returns a map with just keys and values types in the message, without
 // actual in order.
-func (oc *Unordered) Types() map[string]FieldValueType {
+func (oc Unordered) Types() map[string]FieldValueType {
 
 	if oc.content == nil {
 		return nil
@@ -82,7 +78,7 @@ func (oc *Unordered) Types() map[string]FieldValueType {
 }
 
 // String returns string representation in order
-func (oc *Unordered) String() string {
+func (oc Unordered) String() string {
 	var values string
 
 	for _, k := range oc.Keys() {
