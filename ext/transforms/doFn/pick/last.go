@@ -49,7 +49,7 @@ func (lt *lastPick) Messages() []content.IContent {
 					log.Printf("[ERROR] %v", err)
 					return nil
 				}
-				cntnt.Add(col, val.(content.MsgFieldValue))
+				cntnt = cntnt.Add(col, val.(content.MsgFieldValue))
 			}
 			contents = append(contents, cntnt)
 		}

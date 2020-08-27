@@ -22,9 +22,9 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 			contents := content.New()
 			for _, fld := range fields {
 				if v, ok := oldContents.Get(fld); ok {
-					contents.Add(fld, v)
+					contents = contents.Add(fld, v)
 				} else {
-					contents.Add(fld, content.NewFieldValue(nil, content.NONE))
+					contents = contents.Add(fld, content.NewFieldValue(nil, content.NONE))
 				}
 			}
 

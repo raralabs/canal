@@ -93,7 +93,7 @@ func preprocess(m map[string]interface{}) content.IContent {
 
 	for k, v := range m {
 		val, valType := getValType(v)
-		mVal.Add(k, content.NewFieldValue(val, valType))
+		mVal = mVal.Add(k, content.NewFieldValue(val, valType))
 	}
 
 	return mVal
