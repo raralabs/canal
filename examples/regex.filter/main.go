@@ -5,10 +5,8 @@ import (
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"os/exec"
-	"regexp"
 	"strings"
 	"time"
-
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
@@ -23,21 +21,16 @@ func main() {
 	readFile := dir + "user_info.txt"
 	newPipeline:= pipeline.NewPipeline(1)
 	src := newPipeline.AddSource("File Reader")
-	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewFileReader(readFile, "Phone Num", -1))
+	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewFileReader(readFile, "userInfo", -1))
 	delay := newPipeline.AddTransform("Delay")
 	f1 := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	regexFilter := newPipeline.AddTransform("regexFilter")
 	m1 := regexFilter.AddProcessor(pipeline.DefaultProcessorOptions,
-		doFn.RegExp(`\(?\+?\d{0,3}\)?\-?\d{10}`, "Phone Num", func(reg *regexp.Regexp, str string) string{
-			s := reg.MatchString(str)
-			if s==true{
-				return str
-			}
-			return "invalid number"
-		}),
+		//`(?P<Year>\d{4})-(?P<Month>\d{2})-(?P<Day>\d{2})`
+		doFn.RegExParser(`is\s+(?P<first_name>\w+).*?am\s+(?P<age>\d+)`, "userInfo"),
 		"path2")
 
-	validated := newPipeline.AddTransform("Proper Phone Number")
+	validated := newPipeline.AddTransform("namecount")
 	v1:=validated.AddProcessor(pipeline.DefaultProcessorOptions,doFn.PassFunction(),"path3")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
