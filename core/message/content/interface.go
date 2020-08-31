@@ -6,10 +6,10 @@ type IContent interface {
 
 	// Get returns the value associated with the key and a flag to denote if
 	// the value exists.
-	Get(key string) (*MsgFieldValue, bool)
+	Get(key string) (MsgFieldValue, bool)
 
 	// Add adds a key-value pair to the IContent.
-	Add(key string, value *MsgFieldValue)
+	Add(key string, value MsgFieldValue)
 
 	// Keys returns the keys of the IContent.
 	Keys() []string

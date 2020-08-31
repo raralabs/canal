@@ -7,12 +7,12 @@ import (
 
 type Ordered struct {
 	keyList *list.List
-	content map[string]*MsgFieldValue
+	content map[string]MsgFieldValue
 }
 
 func NewOrdered() IContent {
 	kl := list.New()
-	c := make(map[string]*MsgFieldValue)
+	c := make(map[string]MsgFieldValue)
 
 	return &Ordered{
 		keyList: kl,
@@ -30,12 +30,12 @@ func (oc *Ordered) Copy() IContent {
 	return cpy
 }
 
-func (oc *Ordered) Get(key string) (*MsgFieldValue, bool) {
+func (oc *Ordered) Get(key string) (MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-func (oc *Ordered) Add(key string, value *MsgFieldValue) {
+func (oc *Ordered) Add(key string, value MsgFieldValue) {
 	// Add the key to list if it is new
 	if _, ok := oc.content[key]; !ok {
 		oc.keyList.PushBack(key)
@@ -80,11 +80,7 @@ func (oc *Ordered) Values() map[string]interface{} {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
-		if v == nil {
-			values[k] = nil
-		} else {
-			values[k] = v.Value()
-		}
+		values[k] = v.Value()
 	}
 
 	return values
@@ -103,11 +99,7 @@ func (oc *Ordered) Types() map[string]FieldValueType {
 		// Since we are only inserting strings, so no check required
 		k, _ := e.Value.(string)
 		v := oc.content[k]
-		if v == nil {
-			types[k] = NONE
-		} else {
-			types[k] = v.ValueType()
-		}
+		types[k] = v.ValueType()
 	}
 
 	return types

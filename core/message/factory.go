@@ -45,7 +45,7 @@ func (mf *Factory) NewExecute(srcMessage Msg, content content.IContent, pContent
 		srcProcessorId: srcMessage.processorId,
 		srcMessageId:   srcMessage.id,
 		mtype:          EXECUTE,
-		mcontent:       content,
+		mcontent:       content.Copy(),
 		trace:          newTrace(srcMessage),
 		prevContent:    pContent,
 	}

@@ -43,7 +43,7 @@ func (c *count) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *count) Result() *content.MsgFieldValue {
+func (c *count) Result() content.MsgFieldValue {
 	return content.NewFieldValue(c.count, content.INT)
 }
 

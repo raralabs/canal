@@ -72,7 +72,7 @@ func (c *pvalue) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *pvalue) Result() *content.MsgFieldValue {
+func (c *pvalue) Result() content.MsgFieldValue {
 	res, err := c.pv.Result()
 	if err != nil {
 		return content.NewFieldValue(nil, content.NONE)

@@ -74,7 +74,7 @@ func (c *covariance) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *covariance) Result() *content.MsgFieldValue {
+func (c *covariance) Result() content.MsgFieldValue {
 	res, _ := c.cov.Result()
 	return content.NewFieldValue(res, content.FLOAT)
 }

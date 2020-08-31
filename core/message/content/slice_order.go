@@ -6,11 +6,11 @@ import (
 
 type SliceOrdered struct {
 	keys    []string
-	content map[string]*MsgFieldValue
+	content map[string]MsgFieldValue
 }
 
 func NewSliceOrdered() IContent {
-	c := make(map[string]*MsgFieldValue)
+	c := make(map[string]MsgFieldValue)
 
 	return &SliceOrdered{
 		keys:    make([]string, 8),
@@ -27,12 +27,12 @@ func (oc *SliceOrdered) Copy() IContent {
 	return cpy
 }
 
-func (oc *SliceOrdered) Get(key string) (*MsgFieldValue, bool) {
+func (oc *SliceOrdered) Get(key string) (MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-func (oc *SliceOrdered) Add(key string, value *MsgFieldValue) {
+func (oc *SliceOrdered) Add(key string, value MsgFieldValue) {
 	if _, ok := oc.content[key]; !ok {
 		oc.keys = append(oc.keys, key)
 	}
@@ -58,11 +58,7 @@ func (oc *SliceOrdered) Values() map[string]interface{} {
 
 	for _, k := range oc.Keys() {
 		v := oc.content[k]
-		if v == nil {
-			values[k] = nil
-		} else {
-			values[k] = v.Value()
-		}
+		values[k] = v.Value()
 	}
 
 	return values
@@ -80,11 +76,7 @@ func (oc *SliceOrdered) Types() map[string]FieldValueType {
 
 	for _, k := range oc.Keys() {
 		v := oc.content[k]
-		if v == nil {
-			types[k] = NONE
-		} else {
-			types[k] = v.ValueType()
-		}
+		types[k] = v.ValueType()
 	}
 
 	return types

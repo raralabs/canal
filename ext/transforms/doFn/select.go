@@ -2,7 +2,7 @@ package doFn
 
 import (
 	"github.com/raralabs/canal/core/message"
-	content2 "github.com/raralabs/canal/core/message/content"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
 )
@@ -10,20 +10,27 @@ import (
 func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Executor {
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		mContent := m.Content()
+		var oldContents, pContent content.IContent
+		if m.Content() != nil {
+			oldContents = m.Content().Copy()
+		}
+		if m.PrevContent() != nil {
+			pContent = m.PrevContent().Copy()
+		}
+
 		if !done(m) {
-			content := content2.New()
+			contents := content.New()
 			for _, fld := range fields {
-				if v, ok := mContent.Get(fld); ok {
-					content.Add(fld, v)
+				if v, ok := oldContents.Get(fld); ok {
+					contents.Add(fld, v)
 				} else {
-					content.Add(fld, content2.NewFieldValue(nil, content2.NONE))
+					contents.Add(fld, content.NewFieldValue(nil, content.NONE))
 				}
 			}
 
-			proc.Result(m, content, m.PrevContent())
+			proc.Result(m, contents, pContent)
 		} else {
-			proc.Result(m, mContent, m.PrevContent())
+			proc.Result(m, oldContents, pContent)
 			proc.Done()
 		}
 

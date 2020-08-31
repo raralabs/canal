@@ -57,7 +57,7 @@ func (c *variance) Add(cntnt content.IContent) {
 	}
 }
 
-func (c *variance) Result() *content.MsgFieldValue {
+func (c *variance) Result() content.MsgFieldValue {
 	res, err := c.variance.Result()
 	if err != nil {
 		return content.NewFieldValue(nil, content.NONE)

@@ -92,7 +92,7 @@ func (q *quantile) Add(cntnt content.IContent) {
 	}
 }
 
-func (q *quantile) Result() *content.MsgFieldValue {
+func (q *quantile) Result() content.MsgFieldValue {
 	res := q.quantile()
 	return content.NewFieldValue(res, content.FLOAT)
 }

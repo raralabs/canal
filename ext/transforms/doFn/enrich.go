@@ -3,7 +3,7 @@ package doFn
 import (
 	"github.com/Knetic/govaluate"
 	"github.com/raralabs/canal/core/message"
-	content2 "github.com/raralabs/canal/core/message/content"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
 	"github.com/raralabs/canal/utils/extract"
@@ -13,20 +13,25 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		content := m.Content()
-		pContent := m.PrevContent()
+		var contents, pContent content.IContent
+		if m.Content() != nil {
+			contents = m.Content().Copy()
+		}
+		if m.PrevContent() != nil {
+			pContent = m.PrevContent().Copy()
+		}
 
 		if !done(m) {
 			// Enrich here
 
-			if content != nil {
-				values := content.Values()
+			if contents != nil {
+				values := contents.Values()
 				val, err := expr.Evaluate(values)
 				if err != nil {
 					return false
 				}
 				v, vt := extract.ValType(val)
-				content.Add(field, content2.NewFieldValue(v, vt))
+				contents.Add(field, content.NewFieldValue(v, vt))
 			}
 
 			if pContent != nil {
@@ -34,14 +39,14 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 				pVal, _ := expr.Evaluate(pValues)
 
 				v, vt := extract.ValType(pVal)
-				pContent.Add(field, content2.NewFieldValue(v, vt))
+				pContent.Add(field, content.NewFieldValue(v, vt))
 			}
 
-			proc.Result(m, content, pContent)
+			proc.Result(m, contents, pContent)
 			return false
 		}
 
-		proc.Result(m, content, pContent)
+		proc.Result(m, contents, pContent)
 		proc.Done()
 		return false
 	})
