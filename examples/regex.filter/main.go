@@ -30,13 +30,13 @@ func main() {
 		doFn.RegExParser(`is\s+(?P<first_name>\w+).*?am\s+(?P<age>\d+)`, "userInfo"),
 		"path2")
 
-	validated := newPipeline.AddTransform("namecount")
-	v1:=validated.AddProcessor(pipeline.DefaultProcessorOptions,doFn.PassFunction(),"path3")
+	counter := newPipeline.AddTransform("namecount")
+	v1:=counter.AddProcessor(pipeline.DefaultProcessorOptions,doFn.(),"path3")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 	delay.ReceiveFrom("path1", sp)
 	regexFilter.ReceiveFrom("path2", f1)
-	validated.ReceiveFrom("path3",m1)
+	counter.ReceiveFrom("path3",m1)
 	sink.ReceiveFrom("sink", v1)
 	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	newPipeline.Validate()
