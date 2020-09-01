@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/raralabs/canal/core/transforms/agg"
+	"github.com/raralabs/canal/ext/transforms/aggregates"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"os/exec"
@@ -26,18 +28,24 @@ func main() {
 	f1 := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	regexFilter := newPipeline.AddTransform("regexFilter")
 	m1 := regexFilter.AddProcessor(pipeline.DefaultProcessorOptions,
-		//`(?P<Year>\d{4})-(?P<Month>\d{2})-(?P<Day>\d{2})`
 		doFn.RegExParser(`is\s+(?P<first_name>\w+).*?am\s+(?P<age>\d+)`, "userInfo"),
 		"path2")
 
-	counter := newPipeline.AddTransform("namecount")
-	v1:=counter.AddProcessor(pipeline.DefaultProcessorOptions,doFn.(),"path3")
+
+	count := aggregates.NewCount("Count", func(m map[string]interface{}) bool {
+		return true
+	})
+	aggs := []agg.IAggFuncTemplate{count}
+	aggregator := agg.NewAggregator(aggs, nil, "first_name")
+
+	counter := newPipeline.AddTransform("Aggregator")
+	cnt := counter.AddProcessor(pipeline.DefaultProcessorOptions, aggregator.Function(), "path3")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 	delay.ReceiveFrom("path1", sp)
 	regexFilter.ReceiveFrom("path2", f1)
 	counter.ReceiveFrom("path3",m1)
-	sink.ReceiveFrom("sink", v1)
+	sink.ReceiveFrom("sink", cnt)
 	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	newPipeline.Validate()
 	newPipeline.Start(c, cancel)
