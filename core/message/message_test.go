@@ -1,29 +1,100 @@
 package message
 
+import (
+	"bytes"
+	"encoding/gob"
+	"github.com/raralabs/canal/core/message/content"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func init() {
+	// Register the message attribute to gob
+	gob.Register(content.MsgFieldValue{})
+	//gob.Register(cMsgFieldValue{})
+}
+
+//Tests:
+//	-SetField
+func TestMsg_SetField(t *testing.T) {
+	var msg = &Msg{mcontent: content.New()}
+	keys := []string{"name", "roll"}
+	msgValues := []interface{}{
+		content.NewFieldValue("xyz", content.STRING),
+		content.NewFieldValue(12, content.INT),
+	}
+
+	t.Run("SetField", func(t *testing.T) {
+		for idx, msgValue := range (msgValues) {
+			msg = msg.SetField(keys[idx], msgValue.(content.MsgFieldValue))
+		}
+		msgkeys := msg.Content().Keys()
+		assert.Equal(t,len(keys),len(msg.Content().Values()),
+			"length must be equal to the number of item added")
+		assert.ElementsMatch(t,keys, msgkeys, "keys must be Same")
+
+
+	})
+
+}
+
+//Tests:
+	//content()
+func TestMsg_Content(t *testing.T) {
+	var msg = &Msg{mcontent: content.New()}
+	keys := []string{"name", "roll","msg"}
+	msgValues := []content.MsgFieldValue{
+		content.NewFieldValue("This is testing", content.STRING),
+		content.NewFieldValue(12, content.INT),
+		content.NewFieldValue("xyz", content.STRING),
+	}
+	t.Run("Content", func(t *testing.T) {
+		for idx, msgValue := range (msgValues) {
+			msg.mcontent.Add(keys[idx], msgValue)
+		}
+		assert.Equal(t,len(keys),len(msg.Content().Values()),
+			"length must be equal to the number of item added")
+	})
+}
+
+func NewFromBytes(bts []byte) (*Msg, error) {
+	var m Msg
+	var buf bytes.Buffer
+	buf.Write(bts)
+	decoder := gob.NewDecoder(&buf)
+	err := decoder.Decode(&m)
+	if err != nil {
+		return nil, err
+	}
+
+	return &m, err
+}
+
+
+//Tests:
+//	- NewFromBytes
+//	- Message_AsBytes
+
+func TestNewFromBytes(t *testing.T) {
+	var msg *Msg
+
+
+}
+
+//func Test_NewMessageFromBytes(t *testing.T) {
+//	//var msg *Msg
+//	msgValue1 := content.NewFieldValue("xyz", content.STRING)
+//	msgValue2 := content.NewFieldValue(12, content.INT)
+//	msgContent := content.New()
+//	msgContent.Add("name",msgValue1)
+//	msgContent.Add("roll",msgValue2)
 //
-//import (
-//	"encoding/gob"
-//	"fmt"
-//	"github.com/stretchr/testify/assert"
-//	"reflect"
-//	"testing"
-//)
+//	//msgMap.AddMessageValue("name", "Nischal", STRING)
 //
-//func init() {
-//	// Register the message attribute to gob
-//	gob.Register(&MsgFieldValue{})
-//}
 //
-//// Tests:
-////	- NewFromBytes
-////	- Message_AsBytes
-//func TestNewMessageFromBytes(t *testing.T) {
-//	msgMap := make(MsgContent)
-//	msgMap.AddMessageValue("name", "Nischal", STRING)
-//	msgMap.AddMessageValue("roll", 22, INT)
-//
-//	assert.Equal(t, "Nischal", msgMap["name"].Value(), "Name should be same")
-//	assert.Equal(t, STRING, msgMap["name"].ValueType(), "ValueType must be string")
+//	//assert.Equal(t, STRING, msgMap["name"].ValueType(), "ValueType must be string")
+//	//assert.Equal(t, "Nischal", msgMap["name"].Value(), "Name should be same")
+//	//assert.Equal(t, STRING, msgMap["name"].ValueType(), "ValueType must be string")
 //
 //	tests := []struct {
 //		name     string
@@ -31,10 +102,19 @@ package message
 //		wantErr  bool
 //	}{
 //		// TODO: add test cases.
-//		{"Empty Msg", &Msg{}, false},
-//		{"Only id", &Msg{id: 2}, false},
-//		{"id and Key", &Msg{id: 1, Key: "one"}, false},
-//		{"Only val Map", &Msg{mcontent: msgMap}, false},
+//		//{"Empty Msg", &Msg{}, false},
+//		//{"Only id", &Msg{id: 2}, false},
+//		//{"id and type execute", &Msg{id: 2,mtype: EXECUTE}, false},
+//		//{"id and type execute", &Msg{id: 2,mtype: CONTROL}, false},
+//		//{"id and type execute", &Msg{id: 2,mtype: ERROR}, false},
+//		//{"id,processorId and stageId", &Msg{id: 1, processorId: 1,stageId:1}, false},
+//		//{"with ids and content",&Msg{id: 1, processorId: 99,stageId:100,mcontent: msgContent},false},
+//		//{"Only content", &Msg{mcontent: msgContent}, false},
+//		//{"Only content with trace enabled", &Msg{mcontent: msgContent,trace: trace{true,[]tracePath{}}}, false},
+//		//{"complete message Control type", &Msg{id: 1,mtype:CONTROL,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
+//		//{"complete message Execute type", &Msg{id: 1,mtype:EXECUTE,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
+//		{"complete message Execute type", &Msg{id: 1,mtype:ERROR,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
+//
 //	}
 //
 //	for _, tt := range tests {
@@ -42,10 +122,9 @@ package message
 //			// Encode the message to an array of bytes
 //			bts, err := tt.inAndOut.AsBytes()
 //
-//			fmt.Println(err)
-//
 //			// Decode the array of bytes to message
 //			got, err := NewFromBytes(bts)
+//			fmt.Println(got,err)
 //			if (err != nil) != tt.wantErr {
 //				t.Errorf("NewFromBytes() error = %v, wantErr %v", err, tt.wantErr)
 //				return
@@ -66,9 +145,10 @@ package message
 //		t.Errorf("NewFromBytes() = %v, want %v", got, nil)
 //	}
 //}
+
 //
-//// Tests:
-////	- Message_SetKey
+//Tests:
+//	- Message_SetKey
 //func TestMessage_SetKey(t *testing.T) {
 //	tests := []struct {
 //		name  string
@@ -92,8 +172,8 @@ package message
 //	}
 //}
 //
-//// Tests:
-////	- Message_SetField
+//Tests:
+//	- Message_SetField
 //func TestMessage_SetField(t *testing.T) {
 //	type args struct {
 //		key   string

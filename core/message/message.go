@@ -12,9 +12,13 @@ type MsgType uint8
 
 // These are the currently supported types
 const (
-	CONTROL MsgType = iota + 1 // CONTROL message tells the processors to persist the current state in the disk
+	CONTROL MsgType = iota + 1 // CONTROL message tells the processors to persist the
+							   // current state in the disk
+
 	ERROR                      // ERROR message is used for reporting errors in the pipeline
-	EXECUTE                    // EXECUTE type messages are for the messages that are unbound (indefinitely streaming)
+
+	EXECUTE                    // EXECUTE type messages are for the messages that are unbound
+								// (indefinitely streaming)
 )
 
 type Msg struct {
@@ -31,12 +35,10 @@ type Msg struct {
 	trace          trace            // trace of the message
 }
 
-func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
-
+func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string)Msg{
 	contents := content.New()
 	contents.Add("text", content.NewFieldValue(text, content.STRING))
 	contents.Add("code", content.NewFieldValue(code, content.INT))
-
 	return Msg{
 		pipelineId:  pipelineId,
 		stageId:     stageId,
@@ -76,12 +78,12 @@ func (m *Msg) Content() content.IContent {
 	return m.mcontent
 }
 
-// MsgContent returns the data stored by the message.
+// returns the previous data stored by the message.
 func (m *Msg) PrevContent() content.IContent {
 	return m.prevContent
 }
 
-// MsgContent returns the data stored by the message.
+// sets content of time (t) as previous content for (t+1) message.
 func (m *Msg) SetPrevContent(content content.IContent) {
 	m.prevContent = content
 }
@@ -91,6 +93,7 @@ func (m *Msg) SetPrevContent(content content.IContent) {
 func (m *Msg) Values() map[string]interface{} {
 	return m.mcontent.Values()
 }
+
 
 func (m *Msg) Trace() *trace {
 	return &m.trace

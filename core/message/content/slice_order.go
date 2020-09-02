@@ -17,6 +17,9 @@ func NewSliceOrdered() IContent {
 		content: c,
 	}
 }
+func (oc *SliceOrdered) Remove(key string){
+	delete(oc.content,key)
+}
 
 func (oc *SliceOrdered) Copy() IContent {
 	cpy := New()

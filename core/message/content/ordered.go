@@ -34,6 +34,9 @@ func (oc *Ordered) Get(key string) (MsgFieldValue, bool) {
 	val, ok := oc.content[key]
 	return val, ok
 }
+func (oc *Ordered) Remove(key string){
+	delete(oc.content,key)
+}
 
 func (oc *Ordered) Add(key string, value MsgFieldValue) {
 	// Add the key to list if it is new
@@ -55,9 +58,9 @@ func (oc *Ordered) last() *list.Element {
 	return oc.keyList.Back()
 }
 
+//returns only the keys of a map
 func (oc *Ordered) Keys() []string {
 	keys := make([]string, oc.keyList.Len())
-
 	i := 0
 	for e := oc.first(); e != nil; e = e.Next() {
 		k, _ := e.Value.(string)
@@ -87,7 +90,7 @@ func (oc *Ordered) Values() map[string]interface{} {
 }
 
 // Types returns a map with just keys and values types in the message, without
-// actual in order.
+// actual data in order.
 func (oc *Ordered) Types() map[string]FieldValueType {
 
 	if oc.content == nil {

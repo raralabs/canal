@@ -33,7 +33,9 @@ func (oc *Unordered) Get(key string) (MsgFieldValue, bool) {
 func (oc *Unordered) Add(key string, value MsgFieldValue) {
 	oc.content[key] = value
 }
-
+func (oc *Unordered) Remove(key string){
+	delete(oc.content,key)
+}
 func (oc *Unordered) Len() int {
 	return len(oc.content)
 }

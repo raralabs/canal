@@ -1,6 +1,7 @@
 package doFn
 
 import (
+	"fmt"
 	"github.com/raralabs/canal/core/message/content"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 func DelayFunction(delay time.Duration) pipeline.Executor {
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-
+		fmt.Println(m.Content(),m.PrevContent())
 		var contents, pContent content.IContent
 		if m.Content() != nil {
 			contents = m.Content().Copy()
