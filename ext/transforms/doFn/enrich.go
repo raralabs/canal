@@ -9,17 +9,13 @@ import (
 	"github.com/raralabs/canal/utils/extract"
 )
 
+// EnrichFunction adds values to the messages and send them out.
 func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func(m message.Msg) bool) pipeline.Executor {
 
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		var contents, pContent content.IContent
-		if m.Content() != nil {
-			contents = m.Content().Copy()
-		}
-		if m.PrevContent() != nil {
-			pContent = m.PrevContent().Copy()
-		}
+		contents := content.Builder(m.Content())
+		pContent := content.Builder(m.PrevContent())
 
 		if !done(m) {
 			// Enrich here

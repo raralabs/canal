@@ -13,14 +13,8 @@ import (
 func DelayFunction(delay time.Duration) pipeline.Executor {
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-
-		var contents, pContent content.IContent
-		if m.Content() != nil {
-			contents = m.Content().Copy()
-		}
-		if m.PrevContent() != nil {
-			pContent = m.PrevContent().Copy()
-		}
+		contents := content.Builder(m.Content())
+		pContent := content.Builder(m.PrevContent())
 
 		time.Sleep(delay)
 		proc.Result(m, contents, pContent)
