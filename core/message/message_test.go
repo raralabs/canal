@@ -3,6 +3,7 @@ package message
 import (
 	//"bytes"
 	"encoding/gob"
+	"fmt"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -48,8 +49,8 @@ func TestMsg_SetField(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			msg := &Msg{mcontent:content.New()}
-			msg.mcontent.Add("test",test.prev)
+			msg := &Msg{msgContent:content.New()}
+			msg.msgContent.Add("test",test.prev)
 			want := msg
 			if got := msg.SetField(test.args.key, test.args.msgValue); !reflect.DeepEqual(got, want) {
 
@@ -63,7 +64,7 @@ func TestMsg_SetField(t *testing.T) {
 //Tests:
 	//content()
 func TestMsg_Content(t *testing.T){
-	var msg = &Msg{mcontent: content.New()}
+	var msg = &Msg{msgContent: content.New()}
 	keys := []string{"name", "roll","msg"}
 	msgValues := []content.MsgFieldValue{
 		content.NewFieldValue("This is testing", content.STRING),
@@ -72,7 +73,7 @@ func TestMsg_Content(t *testing.T){
 	}
 	t.Run("Content", func(t *testing.T) {
 		for idx, msgValue := range (msgValues) {
-			msg.mcontent.Add(keys[idx], msgValue)
+			msg.msgContent.Add(keys[idx], msgValue)
 		}
 		assert.Equal(t,len(keys),len(msg.Content().Values()),
 			"length must be equal to the number of item added")
@@ -104,22 +105,22 @@ func TestMsg_AsBytes(t *testing.T) {
 		//{"message id only",&Msg{id:1}},
 		{"complete EXECUTE msg with empty content",&Msg{id:1,processorId: 1,
 			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
-			mtype: EXECUTE,mcontent: content.New(),prevContent: content.New(),
+			msgType: EXECUTE,msgContent: content.New(),prevContent: content.New(),
 			trace:trace{false,[]tracePath{}},
 		}},
 		{"complete CONTROL msg with empty content",&Msg{id:1,processorId: 1,
 			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
-			mtype: CONTROL,mcontent: content.New(),prevContent: content.New(),
+			msgType: CONTROL,msgContent: content.New(),prevContent: content.New(),
 			trace:trace{false,[]tracePath{}},
 		}},
 		{"complete ERROR msg with content",&Msg{id:1,processorId: 1,
 			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
-			mtype: ERROR,mcontent:cont,prevContent: content.New(),
+			msgType: ERROR,msgContent:cont,prevContent: content.New(),
 			trace:trace{false,[]tracePath{}},
 		}},
 		{"complete ERROR msg with prevcontent trace enabled",&Msg{id:1,processorId: 1,
 			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
-			mtype: ERROR,mcontent:content.New(),prevContent: cont,
+			msgType: ERROR,msgContent:content.New(),prevContent: cont,
 			trace:trace{false,[]tracePath{}},
 		}},
 						}
@@ -133,6 +134,54 @@ func TestMsg_AsBytes(t *testing.T) {
 }
 
 
+func TestNewFromBytes(t *testing.T) {
+	var cont content.IContent
+	cont = content.New()
+	cont.Add("key", content.NewFieldValue("hello", content.STRING))
+	tests := []struct {
+		testName string
+		inAndOut *Msg
+		wantErr  bool
+	}{
+		{"complete EXECUTE msg with empty content", &Msg{id: 1, processorId: 1,
+			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
+			msgType: EXECUTE, msgContent: content.New(), prevContent: content.New(),
+			trace: trace{false, []tracePath{}},
+		}, false},
+		{"complete CONTROL msg with empty content", &Msg{id: 1, processorId: 1,
+			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
+			msgType: CONTROL, msgContent: content.New(), prevContent: content.New(),
+			trace: trace{false, []tracePath{}},
+		}, false},
+		{"complete ERROR msg with content", &Msg{id: 1, processorId: 1,
+			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
+			msgType: ERROR, msgContent: cont, prevContent: content.New(),
+			trace: trace{false, []tracePath{}},
+		}, false},
+		{"complete ERROR msg with prevcontent trace enabled", &Msg{id: 1, processorId: 1,
+			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
+			msgType: ERROR, msgContent: content.New(), prevContent: cont,
+			trace: trace{false, []tracePath{}},
+		}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.testName, func(t *testing.T) {
+			// Encode the message to an array of bytes
+			bts, err := tt.inAndOut.AsBytes()
+			//Decode the array of bytes to message
+			got, err := NewFromBytes(bts)
+			fmt.Print("Got",got,err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewFromBytes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.inAndOut) {
+				t.Errorf("NewFromBytes() = %v, want %v", got, tt.inAndOut)
+			}
+		})
+	}
+}
 
 //func Test_NewMessageFromBytes(t *testing.T) {
 //	//var msg *Msg

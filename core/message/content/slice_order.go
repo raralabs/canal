@@ -29,20 +29,16 @@ func (oc SliceOrdered) Copy() IContent {
 	return cpy
 }
 
-<<<<<<< HEAD
-func (oc *SliceOrdered) Get(key string) (MsgFieldValue, bool) {
-=======
+
 func (oc SliceOrdered) Get(key string) (MsgFieldValue, bool) {
->>>>>>> 7b6541c0d10060fbd196b5a16582db4ba2b785d8
+
 	val, ok := oc.content[key]
 	return val, ok
 }
 
-<<<<<<< HEAD
-func (oc *SliceOrdered) Add(key string, value MsgFieldValue) {
-=======
+
 func (oc SliceOrdered) Add(key string, value MsgFieldValue) IContent {
->>>>>>> 7b6541c0d10060fbd196b5a16582db4ba2b785d8
+
 	if _, ok := oc.content[key]; !ok {
 		oc.keys = append(oc.keys, key)
 	}

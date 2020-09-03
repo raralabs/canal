@@ -2,8 +2,8 @@ package message
 
 import (
 	"bytes"
-	"fmt"
 	"encoding/gob"
+	"fmt"
 	"github.com/raralabs/canal/core/message/content"
 )
 
@@ -20,6 +20,21 @@ const (
 	EXECUTE                    // EXECUTE type messages are for the messages that are unbound
 								// (indefinitely streaming)
 )
+
+type msgHolder struct{
+	Id 			   uint64
+	PipelineId     uint32
+	StageId        uint32
+	ProcessorId    uint32
+	SrcStageId     uint32
+	SrcProcessorId uint32
+	SrcMessageId   uint64
+	Mtype          MsgType
+	Mcontent       map[string]interface{}
+	PrevContent    map[string]interface{}
+	TraceFlag	   bool
+	TracePath 	[]tracePath
+}
 
 type Msg struct {
 	id             uint64           // id of the Msg
@@ -53,7 +68,7 @@ func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8,
 // NewFromBytes creates a new message on the basis of the byte array 'bts'.
 // The byte array MUST be gob-encoded.
 func NewFromBytes(bts []byte) (*Msg, error) {
-	var m Msg
+	var m *msgHolder
 	var buf bytes.Buffer
 	buf.Write(bts)
 	decoder := gob.NewDecoder(&buf)
@@ -61,8 +76,21 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	if err != nil {
 		return nil, err
 	}
+	decodedMsgContent := content.New()
+	for key,value :=range m.Mcontent{
+		if _,ok:= value.(string);ok==true{
+			decodedMsgContent.Add(key,content.NewFieldValue(value,content.STRING))
+		}else if _,ok:= value.(int);ok==true{
+			decodedMsgContent.Add(key,content.NewFieldValue(value,content.STRING))
+		}
+	}
 
-	return &m, err
+	message := &Msg{id:m.Id,pipelineId: m.PipelineId,stageId: m.StageId,
+		processorId: m.ProcessorId,srcStageId: m.SrcStageId,
+		srcProcessorId: m.SrcProcessorId,srcMessageId: m.SrcMessageId,
+		msgType: m.Mtype,msgContent: decodedMsgContent,prevContent: decodedMsgContent,
+		trace:trace{m.TraceFlag,m.TracePath},}
+	return message, err
 }
 
 func (m *Msg) Id() uint64 {
@@ -153,26 +181,11 @@ func (m *Msg) IsExecute() bool {
 //AsBytes returns the gob-encoded byte array of the message.
 func (m *Msg) AsBytes() ([]byte, error) {
 	var buf bytes.Buffer
-	type msgholder struct{
-		Id 			   uint64
-		PipelineId     uint32
-		StageId        uint32
-		ProcessorId    uint32
-		SrcStageId     uint32
-		SrcProcessorId uint32
-		SrcMessageId   uint64
-		Mtype          MsgType
-		Mcontent       map[string]interface{}
-		PrevContent    map[string]interface{}
-		TraceFlag	   bool
-		TracePath 	[]tracePath
-		}
-
-	MessageHolder := &msgholder{
+	MessageHolder := &msgHolder{
 			Id:m.id,PipelineId: m.pipelineId,StageId: m.stageId,
 			ProcessorId: m.processorId,SrcStageId: m.srcStageId,
 			SrcProcessorId: m.srcProcessorId,SrcMessageId: m.srcMessageId,
-			Mtype: m.msgType, Mcontent: m.msgContent.Values(),//PrevContent: m.prevContent.Values(),
+			Mtype: m.msgType, Mcontent: m.msgContent.Values(),PrevContent: m.prevContent.Values(),
 			TraceFlag: m.trace.enabled,TracePath:m.trace.path,
 		}
 
@@ -181,6 +194,5 @@ func (m *Msg) AsBytes() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return buf.Bytes(), nil
 }
