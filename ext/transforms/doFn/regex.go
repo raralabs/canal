@@ -32,7 +32,7 @@ func RegExParser(exp, key string, f func(*regexp.Regexp, string) map[string]stri
 		st, _ := str.Val.(string)
 		s := f(reg, st)
 		var digitCheck = regexp.MustCompile(`^[0-9]+$`)
-		contents.Remove(key)
+		//contents.Remove(key)
 		for key,value := range (s){
 			yes := digitCheck.MatchString(string(value))
 			str.Val = value
@@ -75,8 +75,7 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 			s := f(reg, st)
 			str.Val = s
 
-			content.Add(key, str)
-		//}
+			content = content.Add(key, str)
 		proc.Result(m, content, nil)
 		return true
 	}

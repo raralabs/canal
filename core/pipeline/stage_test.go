@@ -122,7 +122,7 @@ func TestStage(t *testing.T) {
 
 			msgF := message.NewFactory(pipelineId, 3, 1)
 			content := content2.New()
-			content.Add("value", content2.NewFieldValue(12, content2.INT))
+			content = content.Add("value", content2.NewFieldValue(12, content2.INT))
 
 			msg := msgF.NewExecuteRoot(content, false)
 

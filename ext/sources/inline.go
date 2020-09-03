@@ -24,7 +24,7 @@ func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 
 	s.curVal++
 	content := content2.New()
-	content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
+	content = content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
 	proc.Result(m, content, nil)
 	return false
 }

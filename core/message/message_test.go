@@ -155,19 +155,12 @@ func TestMsg_AsBytes(t *testing.T) {
 //		wantErr  bool
 //	}{
 //		// TODO: add test cases.
-//		//{"Empty Msg", &Msg{}, false},
-//		//{"Only id", &Msg{id: 2}, false},
-//		//{"id and type execute", &Msg{id: 2,mtype: EXECUTE}, false},
-//		//{"id and type execute", &Msg{id: 2,mtype: CONTROL}, false},
-//		//{"id and type execute", &Msg{id: 2,mtype: ERROR}, false},
-//		//{"id,processorId and stageId", &Msg{id: 1, processorId: 1,stageId:1}, false},
-//		//{"with ids and content",&Msg{id: 1, processorId: 99,stageId:100,mcontent: msgContent},false},
-//		//{"Only content", &Msg{mcontent: msgContent}, false},
-//		//{"Only content with trace enabled", &Msg{mcontent: msgContent,trace: trace{true,[]tracePath{}}}, false},
-//		//{"complete message Control type", &Msg{id: 1,mtype:CONTROL,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
-//		//{"complete message Execute type", &Msg{id: 1,mtype:EXECUTE,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
-//		{"complete message Execute type", &Msg{id: 1,mtype:ERROR,mcontent: msgContent,prevContent: msgContent,trace: trace{true,[]tracePath{}}}, false},
-//
+
+//		{"Empty Msg", &Msg{}, false},
+//		{"Only id", &Msg{id: 2}, false},
+//		{"id and Key", &Msg{id: 1, Key: "one"}, false},
+//		{"Only val Map", &Msg{msgContent: msgMap}, false},
+
 //	}
 //
 //	for _, tt := range tests {
@@ -248,8 +241,8 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			msg := &Msg{mcontent: &tt.prev}
-//			want := &Msg{mcontent: &tt.want}
+//			msg := &Msg{msgContent: &tt.prev}
+//			want := &Msg{msgContent: &tt.want}
 //			if got := msg.SetField(tt.args.key, tt.args.value); !reflect.DeepEqual(got, want) {
 //				t.Errorf("Msg.SetField() = %v, want %v", got, want)
 //			}
@@ -271,7 +264,7 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{mcontent: &tt.inAndOut}
+//			msg := Msg{msgContent: &tt.inAndOut}
 //			if got := msg.Content(); !reflect.DeepEqual(got, tt.inAndOut) {
 //				t.Errorf("Msg.MsgContent() = %v, want %v", got, tt.inAndOut)
 //			}
@@ -294,7 +287,7 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{mcontent: &tt.in}
+//			msg := Msg{msgContent: &tt.in}
 //			if got := msg.Values(); !reflect.DeepEqual(got, tt.want) {
 //				t.Errorf("Msg.Values() = %v, want %v", got, tt.want)
 //			}
@@ -317,7 +310,7 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{mcontent: &tt.in}
+//			msg := Msg{msgContent: &tt.in}
 //			if got := msg.Types(); !reflect.DeepEqual(got, tt.want) {
 //				t.Errorf("Msg.Values() = %v, want %v", got, tt.want)
 //			}
@@ -336,10 +329,10 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}{
 //		// TODO: add test cases.
 //		{"Empty Msg", &Msg{}, "Number", nil},
-//		{"No val", &Msg{mcontent: &MsgContent{"Greet": NewFieldValue("Hello", STRING)}}, "Number", nil},
-//		{"Yes val", &Msg{mcontent: &MsgContent{"Number": NewFieldValue("Hello", STRING)}},
+//		{"No val", &Msg{msgContent: &MsgContent{"Greet": NewFieldValue("Hello", STRING)}}, "Number", nil},
+//		{"Yes val", &Msg{msgContent: &MsgContent{"Number": NewFieldValue("Hello", STRING)}},
 //			"Number", NewFieldValue("Hello", STRING)},
-//		{"Yes val", &Msg{mcontent: &MsgContent{"Greet": NewFieldValue("Nihao", STRING)}},
+//		{"Yes val", &Msg{msgContent: &MsgContent{"Greet": NewFieldValue("Nihao", STRING)}},
 //			"Greet", NewFieldValue("Nihao", STRING)},
 //	}
 //	for _, tt := range tests {
@@ -361,7 +354,7 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}{
 //		// TODO: add test cases.
 //		{"Empty Msg - No Pass", &Msg{}, false},
-//		{"Done Msg - Pass", &Msg{mtype: DONE}, true},
+//		{"Done Msg - Pass", &Msg{msgType: DONE}, true},
 //		{"Checkpoint Msg - Pass", &Msg{checkpointFlag: true}, true},
 //		{"Other Msg - No Pass", &Msg{id: 2}, false},
 //	}
@@ -393,10 +386,10 @@ func TestMsg_AsBytes(t *testing.T) {
 //	}{
 //		// TODO: add test cases.
 //		{"Empty Msg", args{1, 0, 19, MsgContent{}},
-//			&Msg{mcontent: MsgContent{},
+//			&Msg{msgContent: MsgContent{},
 //				pipelineId: 1, stageId: 0, processorId: 19, id: 1, traceFlag: false}},
 //		{"Greet Msg", args{0, 0, 0, MsgContent{"Greet": NewFieldValue("Ohayo", STRING)}},
-//			&Msg{mcontent: MsgContent{"Greet": NewFieldValue("Ohayo", STRING)},
+//			&Msg{msgContent: MsgContent{"Greet": NewFieldValue("Ohayo", STRING)},
 //				pipelineId: 0, stageId: 0, processorId: 0, id: 1, traceFlag: false}},
 //	}
 //	for _, tt := range tests {

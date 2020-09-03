@@ -26,8 +26,8 @@ func (mf *Factory) NewExecuteRoot(content content.IContent, withTrace bool) Msg 
 		pipelineId:  mf.pipelineId,
 		stageId:     mf.stageId,
 		processorId: mf.processorId,
-		mtype:       EXECUTE,
-		mcontent:    content,
+		msgType:     EXECUTE,
+		msgContent:  content,
 		prevContent: nil,
 		trace:       traceRoot,
 	}
@@ -43,8 +43,8 @@ func (mf *Factory) NewExecute(srcMessage Msg, content content.IContent, pContent
 		srcStageId:     srcMessage.stageId,
 		srcProcessorId: srcMessage.processorId,
 		srcMessageId:   srcMessage.id,
-		mtype:          EXECUTE,
-		mcontent:       content.Copy(),
+		msgType:        EXECUTE,
+		msgContent:     content.Copy(),
 		trace:          newTrace(srcMessage),
 		prevContent:    pContent,
 	}
@@ -58,9 +58,9 @@ func (mf *Factory) NewError(srcMessage *Msg, code uint8, mes string) Msg {
 		ssId, spId, smId = srcMessage.stageId, srcMessage.processorId, srcMessage.id
 	}
 
-	contents := content.New()
-	contents.Add("text", content.NewFieldValue(mes, content.STRING))
-	contents.Add("code", content.NewFieldValue(code, content.INT))
+	cont := content.New()
+	cont = cont.Add("text", content.NewFieldValue(mes, content.STRING))
+	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
 
 	return Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
@@ -70,7 +70,7 @@ func (mf *Factory) NewError(srcMessage *Msg, code uint8, mes string) Msg {
 		srcStageId:     ssId,
 		srcProcessorId: spId,
 		srcMessageId:   smId,
-		mtype:          ERROR,
-		mcontent:       contents,
+		msgType:        ERROR,
+		msgContent:     cont,
 	}
 }

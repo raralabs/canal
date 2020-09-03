@@ -2,8 +2,8 @@ package message
 
 import (
 	"bytes"
-	"encoding/gob"
 	"fmt"
+	"encoding/gob"
 	"github.com/raralabs/canal/core/message/content"
 )
 
@@ -29,21 +29,24 @@ type Msg struct {
 	srcStageId     uint32           //
 	srcProcessorId uint32           //
 	srcMessageId   uint64           //
-	mtype          MsgType          // MsgType of the message
-	mcontent       content.IContent // MsgContent of the message
+	msgType        MsgType          // MsgType of the message
+	msgContent     content.IContent // MsgContent of the message
 	prevContent    content.IContent // Content of previous message
 	trace          trace            // trace of the message
 }
 
-func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string)Msg{
-	contents := content.New()
-	contents.Add("text", content.NewFieldValue(text, content.STRING))
-	contents.Add("code", content.NewFieldValue(code, content.INT))
+
+func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
+
+	cont := content.New()
+	cont = cont.Add("text", content.NewFieldValue(text, content.STRING))
+	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
+
 	return Msg{
 		pipelineId:  pipelineId,
 		stageId:     stageId,
 		processorId: processorId,
-		mcontent:    contents,
+		msgContent:  cont,
 	}
 }
 
@@ -69,13 +72,13 @@ func (m *Msg) Id() uint64 {
 // SetField adds a (key, value) pair to the data stored by the Msg and
 // returns it.
 func (m *Msg) SetField(key string, value content.MsgFieldValue) *Msg {
-	m.mcontent.Add(key, value)
+	m.msgContent = m.msgContent.Add(key, value)
 	return m
 }
 
 // MsgContent returns the data stored by the message.
 func (m *Msg) Content() content.IContent {
-	return m.mcontent
+	return m.msgContent
 }
 
 // returns the previous data stored by the message.
@@ -91,7 +94,7 @@ func (m *Msg) SetPrevContent(content content.IContent) {
 // Values returns a map with just keys and values in the message, without type information.
 //? Caching the map might lead to better performance
 func (m *Msg) Values() map[string]interface{} {
-	return m.mcontent.Values()
+	return m.msgContent.Values()
 }
 
 
@@ -103,7 +106,7 @@ func (m *Msg) Trace() *trace {
 // actual values.
 //? Caching the map might lead to better performance
 func (m *Msg) Types() map[string]content.FieldValueType {
-	return m.mcontent.Types()
+	return m.msgContent.Types()
 }
 
 //// AsBytes returns the gob-encoded byte array of the message.
@@ -131,19 +134,19 @@ func (m *Msg) ProcessorId() uint32 {
 func (m *Msg) String() string {
 	return fmt.Sprintf(
 		"Msg[Id:%d, Stg:%d, Prc:%d; %s]",
-		m.id, m.stageId, m.processorId, m.mcontent.String())
+		m.id, m.stageId, m.processorId, m.msgContent.String())
 }
 
 func (m *Msg) IsControl() bool {
-	return m.mtype == CONTROL
+	return m.msgType == CONTROL
 }
 
 func (m *Msg) IsError() bool {
-	return m.mtype == ERROR
+	return m.msgType == ERROR
 }
 
 func (m *Msg) IsExecute() bool {
-	return m.mtype == EXECUTE
+	return m.msgType == EXECUTE
 }
 //==============================================================
 
@@ -160,7 +163,7 @@ func (m *Msg) AsBytes() ([]byte, error) {
 		SrcMessageId   uint64
 		Mtype          MsgType
 		Mcontent       map[string]interface{}
-		//PrevContent    map[string]interface{}
+		PrevContent    map[string]interface{}
 		TraceFlag	   bool
 		TracePath 	[]tracePath
 		}
@@ -169,7 +172,7 @@ func (m *Msg) AsBytes() ([]byte, error) {
 			Id:m.id,PipelineId: m.pipelineId,StageId: m.stageId,
 			ProcessorId: m.processorId,SrcStageId: m.srcStageId,
 			SrcProcessorId: m.srcProcessorId,SrcMessageId: m.srcMessageId,
-			Mtype: m.mtype, Mcontent: m.mcontent.Values(),//PrevContent: m.prevContent.Values(),
+			Mtype: m.msgType, Mcontent: m.msgContent.Values(),//PrevContent: m.prevContent.Values(),
 			TraceFlag: m.trace.enabled,TracePath:m.trace.path,
 		}
 

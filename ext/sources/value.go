@@ -20,7 +20,7 @@ func preprocess(m map[string]interface{}) content.IContent {
 
 	for k, v := range m {
 		val, valType := extract.ValType(v)
-		mVal.Add(k, content.NewFieldValue(val, valType))
+		mVal = mVal.Add(k, content.NewFieldValue(val, valType))
 	}
 
 	return mVal
@@ -33,7 +33,7 @@ func NewMapValueSource(val map[string]interface{}, times int) pipeline.Executor 
 
 	for k, v := range val {
 		value, valType := extract.ValType(v)
-		mv.values.Add(k, content.NewFieldValue(value, valType))
+		mv.values = mv.values.Add(k, content.NewFieldValue(value, valType))
 	}
 
 	mv.times = times

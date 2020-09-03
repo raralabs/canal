@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"github.com/raralabs/canal/core/message/content"
 	"log"
 	"strings"
@@ -117,8 +118,7 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 
 	// Skip the insertion and removal of contents, if current contents and
 	// the previous contents is identical.
-	if prevContent != contents {
-
+	if prevContent == nil || !cmp.Equal(prevContent.Values(), contents.Values()) {
 		// If previous contents is available, handle it appropriately
 		if prevContent != nil {
 
@@ -219,15 +219,15 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 // Entry provides the entry corresponding to provided group.
 func (t *Table) Entry(group string) content.IContent {
 
-	content := content.New()
+	contents := content.New()
 
 	// Insert group info to the content
-	t.fillGroupInfo(content, group)
+	t.fillGroupInfo(contents, group)
 
 	// Insert aggregator functions' results to the content
-	t.collectResults(content, group)
+	t.collectResults(contents, group)
 
-	return content
+	return contents
 }
 
 // Entries provides a way to access the table's content.
@@ -256,7 +256,7 @@ func (t *Table) fillGroupInfo(m content.IContent, grpStr string) {
 		log.Panic("Error in filling group info.")
 	}
 	for i, grp := range t.groupBy {
-		m.Add(grp, values[i])
+		m = m.Add(grp, values[i])
 	}
 }
 
@@ -265,6 +265,6 @@ func (t *Table) fillGroupInfo(m content.IContent, grpStr string) {
 func (t *Table) collectResults(m content.IContent, grpStr string) {
 	aggs := t.aggFns[grpStr]
 	for _, ag := range aggs {
-		m.Add(ag.Name(), ag.Result())
+		m = m.Add(ag.Name(), ag.Result())
 	}
 }

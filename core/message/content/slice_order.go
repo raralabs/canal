@@ -12,7 +12,7 @@ type SliceOrdered struct {
 func NewSliceOrdered() IContent {
 	c := make(map[string]MsgFieldValue)
 
-	return &SliceOrdered{
+	return SliceOrdered{
 		keys:    make([]string, 8),
 		content: c,
 	}
@@ -21,38 +21,46 @@ func (oc *SliceOrdered) Remove(key string){
 	delete(oc.content,key)
 }
 
-func (oc *SliceOrdered) Copy() IContent {
-	cpy := New()
-	for _, k := range oc.Keys() {
-		v, _ := oc.Get(k)
+func (oc SliceOrdered) Copy() IContent {
+	cpy := NewSliceOrdered()
+	for k, v := range oc.content {
 		cpy.Add(k, v)
 	}
 	return cpy
 }
 
+<<<<<<< HEAD
 func (oc *SliceOrdered) Get(key string) (MsgFieldValue, bool) {
+=======
+func (oc SliceOrdered) Get(key string) (MsgFieldValue, bool) {
+>>>>>>> 7b6541c0d10060fbd196b5a16582db4ba2b785d8
 	val, ok := oc.content[key]
 	return val, ok
 }
 
+<<<<<<< HEAD
 func (oc *SliceOrdered) Add(key string, value MsgFieldValue) {
+=======
+func (oc SliceOrdered) Add(key string, value MsgFieldValue) IContent {
+>>>>>>> 7b6541c0d10060fbd196b5a16582db4ba2b785d8
 	if _, ok := oc.content[key]; !ok {
 		oc.keys = append(oc.keys, key)
 	}
 	oc.content[key] = value
+	return oc
 }
 
-func (oc *SliceOrdered) Len() int {
+func (oc SliceOrdered) Len() int {
 	return len(oc.content)
 }
 
-func (oc *SliceOrdered) Keys() []string {
+func (oc SliceOrdered) Keys() []string {
 	return oc.keys
 }
 
 // Values returns a map with just keys and values in the message, without type
 // information in order.
-func (oc *SliceOrdered) Values() map[string]interface{} {
+func (oc SliceOrdered) Values() map[string]interface{} {
 	if oc.content == nil {
 		return nil
 	}
@@ -69,7 +77,7 @@ func (oc *SliceOrdered) Values() map[string]interface{} {
 
 // Types returns a map with just keys and values types in the message, without
 // actual in order.
-func (oc *SliceOrdered) Types() map[string]FieldValueType {
+func (oc SliceOrdered) Types() map[string]FieldValueType {
 
 	if oc.content == nil {
 		return nil
@@ -86,7 +94,7 @@ func (oc *SliceOrdered) Types() map[string]FieldValueType {
 }
 
 // String returns string representation in order
-func (oc *SliceOrdered) String() string {
+func (oc SliceOrdered) String() string {
 	var values string
 
 	for _, k := range oc.Keys() {

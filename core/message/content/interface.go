@@ -9,10 +9,8 @@ type IContent interface {
 	Get(key string) (MsgFieldValue, bool)
 
 	// Add adds a key-value pair to the IContent.
-	Add(key string, value MsgFieldValue)
+	Add(key string, value MsgFieldValue) IContent
 
-	//deletes the key-value pair of the Icontent
-	Remove(key string)
 
 	// Keys returns the keys of the IContent.
 
