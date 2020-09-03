@@ -2,11 +2,13 @@ package doFn
 
 import (
 	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
 	"github.com/raralabs/canal/ext/transforms/doFn/pick"
 )
 
+// PickFunction picks certain messages and passes them over.
 func PickFunction(desc string, num uint64, done func(m message.Msg) bool) pipeline.Executor {
 
 	var picker pick.IPick
@@ -21,7 +23,7 @@ func PickFunction(desc string, num uint64, done func(m message.Msg) bool) pipeli
 
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		mContent := m.Content()
+		mContent := content.Builder(m.Content())
 		if done(m) {
 			for _, output := range picker.Messages() {
 				proc.Result(m, output, nil)

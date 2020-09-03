@@ -7,19 +7,15 @@ import (
 	"github.com/raralabs/canal/core/transforms/do"
 )
 
+// SelectFunction selects certain fields from the message and only passes them
 func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Executor {
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
-		var oldContents, pContent content.IContent
-		if m.Content() != nil {
-			oldContents = m.Content().Copy()
-		}
-		if m.PrevContent() != nil {
-			pContent = m.PrevContent().Copy()
-		}
-
 		if !done(m) {
-			contents := content.New()
+			oldContents := m.Content()
+			pContent := m.PrevContent()
+
+			contents := content.Builder()
 			for _, fld := range fields {
 				if v, ok := oldContents.Get(fld); ok {
 					contents = contents.Add(fld, v)
@@ -28,8 +24,20 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 				}
 			}
 
-			proc.Result(m, contents, pContent)
+			pContents := content.Builder()
+			for _, fld := range fields {
+				if v, ok := pContent.Get(fld); ok {
+					pContents.Add(fld, v)
+				} else {
+					pContents.Add(fld, content.NewFieldValue(nil, content.NONE))
+				}
+			}
+
+			proc.Result(m, contents, pContents)
 		} else {
+			oldContents := content.Builder(m.Content())
+			pContent := content.Builder(m.PrevContent())
+
 			proc.Result(m, oldContents, pContent)
 			proc.Done()
 		}
