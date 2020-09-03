@@ -17,7 +17,11 @@ func NewUnordered() IContent {
 }
 
 func (oc Unordered) Copy() IContent {
-	return oc
+	cpy := NewUnordered()
+	for k, v := range oc.content {
+		cpy.Add(k, v)
+	}
+	return cpy
 }
 
 func (oc Unordered) Get(key string) (MsgFieldValue, bool) {

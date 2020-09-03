@@ -21,7 +21,11 @@ func NewOrdered() IContent {
 }
 
 func (oc Ordered) Copy() IContent {
-	return oc
+	cpy := NewOrdered()
+	for k, v := range oc.content {
+		cpy.Add(k, v)
+	}
+	return cpy
 }
 
 func (oc Ordered) Get(key string) (MsgFieldValue, bool) {
