@@ -24,16 +24,19 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 				}
 			}
 
-			pContents := content.Builder()
-			for _, fld := range fields {
-				if v, ok := pContent.Get(fld); ok {
-					pContents.Add(fld, v)
-				} else {
-					pContents.Add(fld, content.NewFieldValue(nil, content.NONE))
+			if pContent != nil {
+				pContents := content.Builder()
+				for _, fld := range fields {
+					if v, ok := pContent.Get(fld); ok {
+						pContents.Add(fld, v)
+					} else {
+						pContents.Add(fld, content.NewFieldValue(nil, content.NONE))
+					}
 				}
+				proc.Result(m, contents, pContents)
+			} else {
+				proc.Result(m, contents, nil)
 			}
-
-			proc.Result(m, contents, pContents)
 		} else {
 			oldContents := content.Builder(m.Content())
 			pContent := content.Builder(m.PrevContent())

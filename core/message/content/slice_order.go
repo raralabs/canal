@@ -19,7 +19,11 @@ func NewSliceOrdered() IContent {
 }
 
 func (oc SliceOrdered) Copy() IContent {
-	return oc
+	cpy := NewSliceOrdered()
+	for k, v := range oc.content {
+		cpy.Add(k, v)
+	}
+	return cpy
 }
 
 func (oc SliceOrdered) Get(key string) (MsgFieldValue, bool) {

@@ -12,7 +12,7 @@ func Builder(contents ...IContent) IContent {
 	content := contents[0]
 
 	if content == nil {
-		return New()
+		return nil
 	}
 
 	return content.Copy()
