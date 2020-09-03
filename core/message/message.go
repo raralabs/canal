@@ -106,18 +106,19 @@ func (m *Msg) Types() map[string]content.FieldValueType {
 	return m.mcontent.Types()
 }
 
-// AsBytes returns the gob-encoded byte array of the message.
-func (m *Msg) AsBytes() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := gob.NewEncoder(&buf)
-	err := encoder.Encode(*m)
+//// AsBytes returns the gob-encoded byte array of the message.
+//func (m *Msg) AsBytes() ([]byte, error) {
+//	var buf bytes.Buffer
+//	encoder := gob.NewEncoder(&buf)
+//	err := encoder.Encode(*m)
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return buf.Bytes(), nil
+//}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
 
 func (m *Msg) StageId() uint32 {
 	return m.stageId
@@ -143,4 +144,40 @@ func (m *Msg) IsError() bool {
 
 func (m *Msg) IsExecute() bool {
 	return m.mtype == EXECUTE
+}
+//==============================================================
+
+//AsBytes returns the gob-encoded byte array of the message.
+func (m *Msg) AsBytes() ([]byte, error) {
+	var buf bytes.Buffer
+	type msgholder struct{
+		Id 			   uint64
+		PipelineId     uint32
+		StageId        uint32
+		ProcessorId    uint32
+		SrcStageId     uint32
+		SrcProcessorId uint32
+		SrcMessageId   uint64
+		Mtype          MsgType
+		Mcontent       map[string]interface{}
+		//PrevContent    map[string]interface{}
+		TraceFlag	   bool
+		TracePath 	[]tracePath
+		}
+
+	MessageHolder := &msgholder{
+			Id:m.id,PipelineId: m.pipelineId,StageId: m.stageId,
+			ProcessorId: m.processorId,SrcStageId: m.srcStageId,
+			SrcProcessorId: m.srcProcessorId,SrcMessageId: m.srcMessageId,
+			Mtype: m.mtype, Mcontent: m.mcontent.Values(),//PrevContent: m.prevContent.Values(),
+			TraceFlag: m.trace.enabled,TracePath:m.trace.path,
+		}
+
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(MessageHolder)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

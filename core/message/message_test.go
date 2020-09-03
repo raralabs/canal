@@ -1,10 +1,11 @@
 package message
 
 import (
-	"bytes"
+	//"bytes"
 	"encoding/gob"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
@@ -17,30 +18,51 @@ func init() {
 //Tests:
 //	-SetField
 func TestMsg_SetField(t *testing.T) {
-	var msg = &Msg{mcontent: content.New()}
-	keys := []string{"name", "roll"}
-	msgValues := []interface{}{
-		content.NewFieldValue("xyz", content.STRING),
-		content.NewFieldValue(12, content.INT),
+	type args struct {
+		key      string
+		msgValue content.MsgFieldValue
+	}
+	testCases := []struct {
+		name string
+		prev content.MsgFieldValue
+		args args
+		want content.MsgFieldValue
+	}{
+		{	"testEmptyMsg",
+			content.MsgFieldValue{"", content.STRING},
+			args{"test", content.MsgFieldValue{"", content.STRING}},
+			content.MsgFieldValue{"", content.STRING},
+		},
+		{	"testNewProperMsgAdd",
+			content.MsgFieldValue{"", content.STRING},
+			args{"test", content.MsgFieldValue{"key", content.STRING}},
+			content.MsgFieldValue{"key", content.STRING},
+		},
+		{	"testForNumbers",
+			content.MsgFieldValue{1, content.INT},
+			args{"test", content.MsgFieldValue{1, content.INT}},
+			content.MsgFieldValue{1, content.INT},
+		},
+
 	}
 
-	t.Run("SetField", func(t *testing.T) {
-		for idx, msgValue := range (msgValues) {
-			msg = msg.SetField(keys[idx], msgValue.(content.MsgFieldValue))
-		}
-		msgkeys := msg.Content().Keys()
-		assert.Equal(t,len(keys),len(msg.Content().Values()),
-			"length must be equal to the number of item added")
-		assert.ElementsMatch(t,keys, msgkeys, "keys must be Same")
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			msg := &Msg{mcontent:content.New()}
+			msg.mcontent.Add("test",test.prev)
+			want := msg
+			if got := msg.SetField(test.args.key, test.args.msgValue); !reflect.DeepEqual(got, want) {
 
+				t.Errorf("Msg.SetField() = %v, want %v in %s", got, want ,test.name)
+			}
+		})
 
-	})
-
+	}
 }
 
 //Tests:
 	//content()
-func TestMsg_Content(t *testing.T) {
+func TestMsg_Content(t *testing.T){
 	var msg = &Msg{mcontent: content.New()}
 	keys := []string{"name", "roll","msg"}
 	msgValues := []content.MsgFieldValue{
@@ -57,29 +79,60 @@ func TestMsg_Content(t *testing.T) {
 	})
 }
 
-func NewFromBytes(bts []byte) (*Msg, error) {
-	var m Msg
-	var buf bytes.Buffer
-	buf.Write(bts)
-	decoder := gob.NewDecoder(&buf)
-	err := decoder.Decode(&m)
-	if err != nil {
-		return nil, err
-	}
+func TestMsg_Id(t *testing.T) {
+	expectedIds := []uint64{1,99,15}
+	messages := []*Msg{&Msg{id:1},&Msg{id:99},&Msg{id:15}}
+	for idx,msg := range (messages){
+		assert.Equal(t,expectedIds[idx],msg.Id(),"Id didn't match")
 
-	return &m, err
+	}
 }
 
 
 //Tests:
-//	- NewFromBytes
 //	- Message_AsBytes
+func TestMsg_AsBytes(t *testing.T) {
+	type message struct{
+		testName string
+		msg		 *Msg
+	}
+	var cont content.IContent
+	cont = content.New()
+	cont.Add("key",content.NewFieldValue("hello",content.STRING))
+	messages := []message{
+		//{"empty message",&Msg{mcontent: content.New()}},
+		//{"message id only",&Msg{id:1}},
+		{"complete EXECUTE msg with empty content",&Msg{id:1,processorId: 1,
+			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
+			mtype: EXECUTE,mcontent: content.New(),prevContent: content.New(),
+			trace:trace{false,[]tracePath{}},
+		}},
+		{"complete CONTROL msg with empty content",&Msg{id:1,processorId: 1,
+			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
+			mtype: CONTROL,mcontent: content.New(),prevContent: content.New(),
+			trace:trace{false,[]tracePath{}},
+		}},
+		{"complete ERROR msg with content",&Msg{id:1,processorId: 1,
+			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
+			mtype: ERROR,mcontent:cont,prevContent: content.New(),
+			trace:trace{false,[]tracePath{}},
+		}},
+		{"complete ERROR msg with prevcontent trace enabled",&Msg{id:1,processorId: 1,
+			srcMessageId: 2,stageId: 10,srcProcessorId: 1,srcStageId: 3,
+			mtype: ERROR,mcontent:content.New(),prevContent: cont,
+			trace:trace{false,[]tracePath{}},
+		}},
+						}
+	for _,testMsg := range messages{
 
-func TestNewFromBytes(t *testing.T) {
-	var msg *Msg
-
+		if _,err := testMsg.msg.AsBytes(); err!=nil{
+			t.Errorf("could not encode message in test %s" ,testMsg.testName)
+		}
+	}
 
 }
+
+
 
 //func Test_NewMessageFromBytes(t *testing.T) {
 //	//var msg *Msg
