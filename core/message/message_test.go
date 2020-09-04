@@ -79,9 +79,14 @@ func TestMsg_Content(t *testing.T){
 	})
 }
 
+//Tests:
+//	- Msg_Id
 func TestMsg_Id(t *testing.T) {
 	expectedIds := []uint64{1,99,15}
-	messages := []*Msg{&Msg{id:1},&Msg{id:99},&Msg{id:15}}
+	messages := []*Msg{
+		{id:1},
+		{id:99},
+		{id:15}}
 	for idx,msg := range (messages){
 		assert.Equal(t,expectedIds[idx],msg.Id(),"Id didn't match")
 
@@ -132,7 +137,6 @@ func TestMsg_AsBytes(t *testing.T) {
 
 }
 
-
 func TestNewFromBytes(t *testing.T) {
 	var cont content.IContent
 	cont = content.New()
@@ -171,10 +175,6 @@ func TestNewFromBytes(t *testing.T) {
 			//Decode the array of bytes to message
 			got, err := NewFromBytes(bts)
 
-			//msg,_:=got.msgContent.Get("key")
-			//ac_msg,_ := tt.inAndOut.msgContent.Get("key")
-			//fmt.Println("actual",ac_msg)
-			//fmt.Println(msg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewFromBytes() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -187,121 +187,102 @@ func TestNewFromBytes(t *testing.T) {
 	}
 }
 
-//func Test_NewMessageFromBytes(t *testing.T) {
-//	//var msg *Msg
-//	msgValue1 := content.NewFieldValue("xyz", content.STRING)
-//	msgValue2 := content.NewFieldValue(12, content.INT)
-//	msgContent := content.New()
-//	msgContent.Add("name",msgValue1)
-//	msgContent.Add("roll",msgValue2)
-//
-//	//msgMap.AddMessageValue("name", "Nischal", STRING)
-//
-//
-//	//assert.Equal(t, STRING, msgMap["name"].ValueType(), "ValueType must be string")
-//	//assert.Equal(t, "Nischal", msgMap["name"].Value(), "Name should be same")
-//	//assert.Equal(t, STRING, msgMap["name"].ValueType(), "ValueType must be string")
-//
-//	tests := []struct {
-//		name     string
-//		inAndOut *Msg
-//		wantErr  bool
-//	}{
-//		// TODO: add test cases.
-
-//		{"Empty Msg", &Msg{}, false},
-//		{"Only id", &Msg{id: 2}, false},
-//		{"id and Key", &Msg{id: 1, Key: "one"}, false},
-//		{"Only val Map", &Msg{msgContent: msgMap}, false},
-
-//	}
-//
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			// Encode the message to an array of bytes
-//			bts, err := tt.inAndOut.AsBytes()
-//
-//			// Decode the array of bytes to message
-//			got, err := NewFromBytes(bts)
-//			fmt.Println(got,err)
-//			if (err != nil) != tt.wantErr {
-//				t.Errorf("NewFromBytes() error = %v, wantErr %v", err, tt.wantErr)
-//				return
-//			}
-//			if !reflect.DeepEqual(got, tt.inAndOut) {
-//				t.Errorf("NewFromBytes() = %v, want %v", got, tt.inAndOut)
-//			}
-//		})
-//	}
-//
-//	// Test to see if error is raised when garbage is passed
-//	got, err := NewFromBytes([]byte("Garbage String"))
-//	if (err != nil) != true {
-//		t.Errorf("NewFromBytes() error = %v, wantErr %v", err, true)
-//		return
-//	}
-//	if got != nil {
-//		t.Errorf("NewFromBytes() = %v, want %v", got, nil)
-//	}
-//}
-
-//
 //Tests:
-//	- Message_SetKey
-//func TestMessage_SetKey(t *testing.T) {
-//	tests := []struct {
-//		name  string
-//		m     *Msg
-//		input string
-//		want  *Msg
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Msg", &Msg{}, "", &Msg{}},
-//		{"add Key", &Msg{}, "One", &Msg{Key: "One"}},
-//		{"Change Key", &Msg{Key: "Two"}, "One", &Msg{Key: "One"}},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			tt.m.SetKey(tt.input)
-//
-//			if !reflect.DeepEqual(tt.m, tt.want) {
-//				t.Errorf("After setting key m = %v, want %v", tt.m, tt.want)
-//			}
-//		})
-//	}
-//}
-//
+//	Message_IsControl
+//	Message_IsExecute
+//	Message_IsError
+func TestMsg_MsgTypes(t *testing.T) {
+	var msg *Msg
+	testParams := []MsgType{
+		CONTROL,EXECUTE,ERROR,
+	}
+	msg = &Msg{}
+	for _,testParam := range(testParams){
+		msg.msgType = testParam
+		switch testParam {
+		case CONTROL:
+			assert.Equal(t,true,msg.IsControl())
+		case EXECUTE:
+			assert.Equal(t,true,msg.IsExecute())
+		case ERROR:
+			assert.Equal(t,true,msg.IsError())
+		}
+	}
+}
+
+//Tests
+//	-Message_Id
+//	-Message_ProcessorId
+//  -Message_StageId
+func TestMsg_Ids(t *testing.T){
+	type tests struct{
+		testName string
+		message  *Msg
+
+	}
+	testMessages := []*tests{
+		{"Empty msg",&Msg{}},
+		{"only msg id",&Msg{id: 1}},
+		{"msg with all valid ids",&Msg{id: 1, processorId: 1,
+			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3}},
+		}
+
+	for _,testMsg := range testMessages{
+		id := testMsg.message.id
+		assert.Equal(t,id,testMsg.message.Id(),"Assigned Id must match retrieved Id in %s",testMsg.testName)
+		processorId := testMsg.message.processorId
+		assert.Equal(t,processorId,testMsg.message.ProcessorId(),"Assigned Id must match retrieved Id %s",testMsg.testName)
+		stageId := testMsg.message.stageId
+		assert.Equal(t,stageId,testMsg.message.StageId(),"Assigned Id must match retrieved Id in %s",testMsg.testName)
+	}
+}
+
 //Tests:
-//	- Message_SetField
-//func TestMessage_SetField(t *testing.T) {
-//	type args struct {
-//		key   string
-//		value *MsgFieldValue
-//	}
-//	tests := []struct {
-//		name string
-//		prev MsgContent
-//		args args
-//		want MsgContent
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Msg", MsgContent{}, args{key: "", value: nil}, MsgContent{"": nil}},
-//		{"add Data", MsgContent{}, args{key: "Greet", value: NewFieldValue("Hello", STRING)},
-//			MsgContent{"Greet": NewFieldValue("Hello", STRING)}},
-//		{"Change Data", MsgContent{"Number": NewFieldValue(3, INT)},
-//			args{key: "Number", value: NewFieldValue(3.4, FLOAT)},
-//			MsgContent{"Number": NewFieldValue(3.4, FLOAT)}},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			msg := &Msg{msgContent: &tt.prev}
-//			want := &Msg{msgContent: &tt.want}
-//			if got := msg.SetField(tt.args.key, tt.args.value); !reflect.DeepEqual(got, want) {
-//				t.Errorf("Msg.SetField() = %v, want %v", got, want)
-//			}
-//		})
-//	}
+// -Msg_String
+func TestMsg_String(t *testing.T) {
+	msg := &Msg{id: 1, processorId: 1, srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
+		msgType: ERROR, msgContent: content.New(), prevContent: content.New(),
+		trace: trace{false, []tracePath(nil)}}
+	strMessage := msg.String()
+	assert.Equal(t,"string",reflect.TypeOf(strMessage).String(),"DataType mismatch")
+}
+
+func TestMsg_Trace(t *testing.T){
+
+}
+//Tests:
+// -MsgContent_Types()
+func TestMsgContent_Types(t *testing.T) {
+	tests := []struct {
+		testName string
+		inputMsg *Msg
+		want 	string
+	}{
+		{"msg with empty content", &Msg{msgContent: content.New(),prevContent: content.New()},"nil",
+		},
+
+		{"msg with int content", &Msg{id: 10, msgType: CONTROL,
+			msgContent:content.New().Add("key1",content.NewFieldValue(10, content.INT))},"int",
+		},
+
+		{"msg with string content", &Msg{id: 1, processorId: 1, msgType: EXECUTE,
+					msgContent: content.New().Add("key3",content.NewFieldValue("hello", content.STRING)),
+					prevContent: content.New(),},"str",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			typeOfMsgContent := test.inputMsg.Types()
+			for _,value := range typeOfMsgContent{
+				assert.Equal(t,test.want,value.String(),"DataTypes didn't match")
+			}
+		})
+	}
+}
+
+
 //}
+
 //
 //// Tests:
 ////	- Message_ValueMap

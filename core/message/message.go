@@ -58,7 +58,6 @@ func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8,
 	cont := content.New()
 	cont = cont.Add("text", content.NewFieldValue(text, content.STRING))
 	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
-
 	return Msg{
 		pipelineId:  pipelineId,
 		stageId:     stageId,
@@ -81,7 +80,6 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	currentDecodedMsgContent := content.New()
 	PrevDecodedMsgContent := content.New()
 	for key,value :=range m.McontentValues{
-		fmt.Println(key,value)
 		currentDecodedMsgContent.Add(key,content.NewFieldValue(value,m.McontentType[key]))
 	}
 	for key,value := range m.PrevContentValues{
@@ -178,7 +176,6 @@ func (m *Msg) IsError() bool {
 func (m *Msg) IsExecute() bool {
 	return m.msgType == EXECUTE
 }
-//==============================================================
 
 //AsBytes returns the gob-encoded byte array of the message.
 func (m *Msg) AsBytes() ([]byte, error) {
@@ -191,7 +188,6 @@ func (m *Msg) AsBytes() ([]byte, error) {
 			McontentType: m.msgContent.Types(), PrevContentType: m.prevContent.Types(),
 			TraceFlag: m.trace.enabled,TracePath:m.trace.path,
 		}
-
 	encoder := gob.NewEncoder(&buf)
 	err := encoder.Encode(MessageHolder)
 	if err != nil {
