@@ -22,18 +22,20 @@ const (
 )
 
 type msgHolder struct{
-	Id 			   uint64
-	PipelineId     uint32
-	StageId        uint32
-	ProcessorId    uint32
-	SrcStageId     uint32
-	SrcProcessorId uint32
-	SrcMessageId   uint64
-	Mtype          MsgType
-	Mcontent       map[string]interface{}
-	PrevContent    map[string]interface{}
-	TraceFlag	   bool
-	TracePath 	[]tracePath
+	Id 			   		uint64
+	PipelineId     		uint32
+	StageId        		uint32
+	ProcessorId    		uint32
+	SrcStageId     		uint32
+	SrcProcessorId 		uint32
+	SrcMessageId   		uint64
+	Mtype          		MsgType
+	McontentValues		map[string]interface{}
+	PrevContentValues   map[string]interface{}
+	McontentType		map[string]content.FieldValueType
+	PrevContentType		map[string]content.FieldValueType
+	TraceFlag	   		bool
+	TracePath 			[]tracePath
 }
 
 type Msg struct {
@@ -76,19 +78,19 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	if err != nil {
 		return nil, err
 	}
-	decodedMsgContent := content.New()
-	for key,value :=range m.Mcontent{
-		if _,ok:= value.(string);ok==true{
-			decodedMsgContent.Add(key,content.NewFieldValue(value,content.STRING))
-		}else if _,ok:= value.(int);ok==true{
-			decodedMsgContent.Add(key,content.NewFieldValue(value,content.STRING))
-		}
+	currentDecodedMsgContent := content.New()
+	PrevDecodedMsgContent := content.New()
+	for key,value :=range m.McontentValues{
+		fmt.Println(key,value)
+		currentDecodedMsgContent.Add(key,content.NewFieldValue(value,m.McontentType[key]))
 	}
-
+	for key,value := range m.PrevContentValues{
+		PrevDecodedMsgContent.Add(key,content.NewFieldValue(value,m.PrevContentType[key]))
+	}
 	message := &Msg{id:m.Id,pipelineId: m.PipelineId,stageId: m.StageId,
 		processorId: m.ProcessorId,srcStageId: m.SrcStageId,
 		srcProcessorId: m.SrcProcessorId,srcMessageId: m.SrcMessageId,
-		msgType: m.Mtype,msgContent: decodedMsgContent,prevContent: decodedMsgContent,
+		msgType: m.Mtype,msgContent: currentDecodedMsgContent,prevContent: PrevDecodedMsgContent,
 		trace:trace{m.TraceFlag,m.TracePath},}
 	return message, err
 }
@@ -185,7 +187,8 @@ func (m *Msg) AsBytes() ([]byte, error) {
 			Id:m.id,PipelineId: m.pipelineId,StageId: m.stageId,
 			ProcessorId: m.processorId,SrcStageId: m.srcStageId,
 			SrcProcessorId: m.srcProcessorId,SrcMessageId: m.srcMessageId,
-			Mtype: m.msgType, Mcontent: m.msgContent.Values(),PrevContent: m.prevContent.Values(),
+			Mtype: m.msgType, McontentValues: m.msgContent.Values(),PrevContentValues: m.prevContent.Values(),
+			McontentType: m.msgContent.Types(), PrevContentType: m.prevContent.Types(),
 			TraceFlag: m.trace.enabled,TracePath:m.trace.path,
 		}
 

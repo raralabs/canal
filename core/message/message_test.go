@@ -3,7 +3,6 @@ package message
 import (
 	//"bytes"
 	"encoding/gob"
-	"fmt"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -146,22 +145,22 @@ func TestNewFromBytes(t *testing.T) {
 		{"complete EXECUTE msg with empty content", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 			msgType: EXECUTE, msgContent: content.New(), prevContent: content.New(),
-			trace: trace{false, []tracePath{}},
+			trace: trace{false, []tracePath(nil)},
 		}, false},
 		{"complete CONTROL msg with empty content", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 			msgType: CONTROL, msgContent: content.New(), prevContent: content.New(),
-			trace: trace{false, []tracePath{}},
+			trace: trace{false, []tracePath(nil)},
 		}, false},
 		{"complete ERROR msg with content", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 			msgType: ERROR, msgContent: cont, prevContent: content.New(),
-			trace: trace{false, []tracePath{}},
+			trace: trace{false, []tracePath(nil)},
 		}, false},
 		{"complete ERROR msg with prevcontent trace enabled", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 			msgType: ERROR, msgContent: content.New(), prevContent: cont,
-			trace: trace{false, []tracePath{}},
+			trace: trace{false, []tracePath(nil)},
 		}, false},
 	}
 
@@ -171,14 +170,19 @@ func TestNewFromBytes(t *testing.T) {
 			bts, err := tt.inAndOut.AsBytes()
 			//Decode the array of bytes to message
 			got, err := NewFromBytes(bts)
-			fmt.Print("Got",got,err)
+
+			//msg,_:=got.msgContent.Get("key")
+			//ac_msg,_ := tt.inAndOut.msgContent.Get("key")
+			//fmt.Println("actual",ac_msg)
+			//fmt.Println(msg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewFromBytes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.inAndOut) {
+			if !reflect.DeepEqual(tt.inAndOut,got){
 				t.Errorf("NewFromBytes() = %v, want %v", got, tt.inAndOut)
 			}
+
 		})
 	}
 }
@@ -465,4 +469,5 @@ func TestNewFromBytes(t *testing.T) {
 //			}
 //		})
 //	}
+//}
 //}
