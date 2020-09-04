@@ -271,17 +271,61 @@ func TestMsg_Ids(t *testing.T){
 
 //Tests:
 // -Msg_String
-func TestMsg_String(t *testing.T) {
+func TestMsg_String(t *testing.T){
 	msg := &Msg{id: 1, processorId: 1, srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 		msgType: ERROR, msgContent: content.New(), prevContent: content.New(),
 		trace: trace{false, []tracePath(nil)}}
 	strMessage := msg.String()
 	assert.Equal(t,"string",reflect.TypeOf(strMessage).String(),"DataType mismatch")
 }
-func TestFactory_NewError(t *testing.T){
 
+func TestMsg_NewError(t *testing.T) {
+	type errorAttr struct {
+		pipelineId  uint32
+		stageId     uint32
+		processorId uint32
+		code        uint8
+		text        string
+	}
+	type tests struct {
+		testName   string
+		testParams errorAttr
+	}
+	testCases := []*tests{
+		{"Resource Error", errorAttr{1, 2, 3, 1, "resource not found"}},
+		{"Server Error", errorAttr{4, 5, 3, 2, "server not found"}},
+	}
+	for _,test := range testCases{
+		errMsg := NewError(test.testParams.pipelineId,test.testParams.stageId,
+			test.testParams.processorId, test.testParams.code ,test.testParams.text)
+		assert.IsType(t,Msg{},errMsg,"should of type Msg")
+		assert.Equal(t,test.testParams.pipelineId,errMsg.pipelineId)
+		assert.Equal(t,test.testParams.stageId,errMsg.StageId())
+		assert.Equal(t,test.testParams.processorId,errMsg.ProcessorId())
+		wantContent := make(map[string]interface{})
+		wantContent["text"] = test.testParams.text
+		wantContent["code"] = test.testParams.code
+		assert.Equal(t,wantContent,errMsg.msgContent.Values())
+	}
 }
-func TestMsg_SetPrevContent(t *testing.T) {
+func TestMsg_SetPrevContent(t *testing.T){
+	type tests struct{
+		testName string
+		content  content.IContent
+	}
+	var msg *Msg
+	msg = &Msg{id:1}
+	newContent := content.New()
+	testMessages := []*tests{
+		{"Empty msg",newContent},
+		{"only msg id",newContent.Add("greetings",content.NewFieldValue("hello",content.STRING))},
+		{"only msg id",newContent.Add("number",content.NewFieldValue(1,content.INT))},
+	}
+	for _,test := range testMessages{
+		msg.SetPrevContent(test.content)
+		assert.Equal(t,test.content,msg.prevContent,"Inserted content doesn't match with the retrieved content")
+	}
+
 
 }
 func TestMsg_Trace(t *testing.T){
@@ -303,7 +347,6 @@ func TestMsg_Trace(t *testing.T){
 			if !reflect.DeepEqual(test.inputMessage.Trace(),test.want){
 				t.Errorf("NewFromBytes() = %v, want %v in test: %s", test.inputMessage.Trace(), test.want,test.testName)
 			}
-
 		})
 	}
 

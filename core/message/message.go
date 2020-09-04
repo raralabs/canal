@@ -54,7 +54,6 @@ type Msg struct {
 
 
 func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
-
 	cont := content.New()
 	cont = cont.Add("text", content.NewFieldValue(text, content.STRING))
 	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
