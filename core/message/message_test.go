@@ -61,25 +61,6 @@ func TestMsg_SetField(t *testing.T) {
 }
 
 //Tests:
-	//content()
-func TestMsg_Content(t *testing.T){
-	var msg = &Msg{msgContent: content.New()}
-	keys := []string{"name", "roll","msg"}
-	msgValues := []content.MsgFieldValue{
-		content.NewFieldValue("This is testing", content.STRING),
-		content.NewFieldValue(12, content.INT),
-		content.NewFieldValue("xyz", content.STRING),
-	}
-	t.Run("Content", func(t *testing.T) {
-		for idx, msgValue := range (msgValues) {
-			msg.msgContent.Add(keys[idx], msgValue)
-		}
-		assert.Equal(t,len(keys),len(msg.Content().Values()),
-			"length must be equal to the number of item added")
-	})
-}
-
-//Tests:
 //	- Msg_Id
 func TestMsg_Id(t *testing.T) {
 	expectedIds := []uint64{1,99,15}
@@ -188,6 +169,57 @@ func TestNewFromBytes(t *testing.T) {
 }
 
 //Tests:
+//content()
+func TestMsg_Content(t *testing.T) {
+	var msg = &Msg{msgContent: content.New()}
+	keys := []string{"name", "roll","msg"}
+	msgValues := []content.MsgFieldValue{
+		content.NewFieldValue("This is testing", content.STRING),
+		content.NewFieldValue(12, content.INT),
+		content.NewFieldValue("xyz", content.STRING),
+	}
+	want:=map[string]interface{}{}
+	t.Run("Content", func(t *testing.T) {
+		for idx, msgValue := range (msgValues) {
+			want[keys[idx]] = msgValue.Val
+			msg.msgContent.Add(keys[idx],msgValue)
+			if got := msg.msgContent; !reflect.DeepEqual(got.Values(), want) {
+				t.Errorf("Msg.Values() = %v, want %v", got.Values(), want)
+			}
+		}
+		assert.Equal(t,len(keys),len(msg.Content().Values()),
+			"length must be equal to the number of item added")
+
+	})
+
+}
+//Tests:
+// -Msg_Values
+func TestMsg_PrevContent(t *testing.T) {
+	var msg = &Msg{prevContent: content.New()}
+	keys := []string{"name", "roll","msg"}
+	msgValues := []content.MsgFieldValue{
+		content.NewFieldValue("This is testing", content.STRING),
+		content.NewFieldValue(12, content.INT),
+		content.NewFieldValue("xyz", content.STRING),
+	}
+	want:=map[string]interface{}{}
+	t.Run("PrevContent", func(t *testing.T) {
+		for idx, msgValue := range (msgValues) {
+			want[keys[idx]] = msgValue.Val
+			msg.prevContent.Add(keys[idx],msgValue)
+			if got := msg.prevContent; !reflect.DeepEqual(got.Values(), want) {
+				t.Errorf("Msg.Values() = %v, want %v", got.Values(), want)
+			}
+		}
+		assert.Equal(t,len(keys),len(msg.PrevContent().Values()),
+			"length must be equal to the number of item added")
+
+	})
+
+}
+
+//Tests:
 //	Message_IsControl
 //	Message_IsExecute
 //	Message_IsError
@@ -229,11 +261,11 @@ func TestMsg_Ids(t *testing.T){
 
 	for _,testMsg := range testMessages{
 		id := testMsg.message.id
-		assert.Equal(t,id,testMsg.message.Id(),"Assigned Id must match retrieved Id in %s",testMsg.testName)
+		assert.Equal(t,id,testMsg.message.Id(),"Assigned Id must match retrieved Id in %s in test:",testMsg.testName)
 		processorId := testMsg.message.processorId
-		assert.Equal(t,processorId,testMsg.message.ProcessorId(),"Assigned Id must match retrieved Id %s",testMsg.testName)
+		assert.Equal(t,processorId,testMsg.message.ProcessorId(),"Assigned Id must match retrieved Id %s in test:",testMsg.testName)
 		stageId := testMsg.message.stageId
-		assert.Equal(t,stageId,testMsg.message.StageId(),"Assigned Id must match retrieved Id in %s",testMsg.testName)
+		assert.Equal(t,stageId,testMsg.message.StageId(),"Assigned Id must match retrieved Id in %s in test:",testMsg.testName)
 	}
 }
 
@@ -246,8 +278,34 @@ func TestMsg_String(t *testing.T) {
 	strMessage := msg.String()
 	assert.Equal(t,"string",reflect.TypeOf(strMessage).String(),"DataType mismatch")
 }
+func TestFactory_NewError(t *testing.T){
 
+}
+func TestMsg_SetPrevContent(t *testing.T) {
+
+}
 func TestMsg_Trace(t *testing.T){
+	tests := []struct {
+		testName string
+		inputMessage *Msg
+		want     *trace
+
+	}{
+		{"trace with default flag", &Msg{},&trace{}},
+		{"trace disabled", &Msg{trace: trace{false, []tracePath(nil)}},&trace{false,[]tracePath(nil)}},
+		{"trace enabled with empty tracePath", &Msg{trace: trace{true, []tracePath(nil)}},&trace{true,[]tracePath(nil)}},
+		{"trace enabled with tracePath", &Msg{trace: trace{false, []tracePath{{1,2,3}}}},&trace{false,[]tracePath{{1,2,3}}}},
+	}
+
+
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			if !reflect.DeepEqual(test.inputMessage.Trace(),test.want){
+				t.Errorf("NewFromBytes() = %v, want %v in test: %s", test.inputMessage.Trace(), test.want,test.testName)
+			}
+
+		})
+	}
 
 }
 //Tests:
@@ -281,103 +339,34 @@ func TestMsgContent_Types(t *testing.T) {
 }
 
 
-//}
+//Tests:
+// -Msg_Values
+func TestMsg_Values(t *testing.T) {
+	tests := []struct {
+		testName string
+		in   *Msg
+		want map[string]interface{}
+	}{
+		{"msg with empty content", &Msg{msgContent: content.New(),prevContent: content.New()}, map[string]interface{}{},
+		},
 
-//
-//// Tests:
-////	- Message_ValueMap
-//func TestMessage_ValueMap(t *testing.T) {
-//	tests := []struct {
-//		name     string
-//		inAndOut MsgContent
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Map", MsgContent{}},
-//		{"Map of length 1", MsgContent{"Number": NewFieldValue(7, INT)}},
-//		{"Nil map", nil},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{msgContent: &tt.inAndOut}
-//			if got := msg.Content(); !reflect.DeepEqual(got, tt.inAndOut) {
-//				t.Errorf("Msg.MsgContent() = %v, want %v", got, tt.inAndOut)
-//			}
-//		})
-//	}
-//}
-//
-//// Tests:
-////	- Message_Values
-//func TestMessage_Values(t *testing.T) {
-//	tests := []struct {
-//		name string
-//		in   MsgContent
-//		want map[string]interface{}
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Map", MsgContent{}, map[string]interface{}{}},
-//		{"Map of length 1", MsgContent{"Number": NewFieldValue(7, INT)}, map[string]interface{}{"Number": 7}},
-//		{"Nil map", nil, nil},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{msgContent: &tt.in}
-//			if got := msg.Values(); !reflect.DeepEqual(got, tt.want) {
-//				t.Errorf("Msg.Values() = %v, want %v", got, tt.want)
-//			}
-//		})
-//	}
-//}
-//
-//// Tests:
-////	- Message_Types
-//func TestMessage_Types(t *testing.T) {
-//	tests := []struct {
-//		name string
-//		in   MsgContent
-//		want map[string]FieldValueType
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Map", MsgContent{}, map[string]FieldValueType{}},
-//		{"Map of length 1", MsgContent{"Number": NewFieldValue(7, INT)}, map[string]FieldValueType{"Number": INT}},
-//		{"Nil map", nil, nil},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			msg := Msg{msgContent: &tt.in}
-//			if got := msg.Types(); !reflect.DeepEqual(got, tt.want) {
-//				t.Errorf("Msg.Values() = %v, want %v", got, tt.want)
-//			}
-//		})
-//	}
-//}
-//
-//// Tests:
-////	- Message_FieldValue
-//func TestMessage_FieldValue(t *testing.T) {
-//	tests := []struct {
-//		name  string
-//		m     *Msg
-//		field string
-//		want  *MsgFieldValue
-//	}{
-//		// TODO: add test cases.
-//		{"Empty Msg", &Msg{}, "Number", nil},
-//		{"No val", &Msg{msgContent: &MsgContent{"Greet": NewFieldValue("Hello", STRING)}}, "Number", nil},
-//		{"Yes val", &Msg{msgContent: &MsgContent{"Number": NewFieldValue("Hello", STRING)}},
-//			"Number", NewFieldValue("Hello", STRING)},
-//		{"Yes val", &Msg{msgContent: &MsgContent{"Greet": NewFieldValue("Nihao", STRING)}},
-//			"Greet", NewFieldValue("Nihao", STRING)},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			//if got := tt.m.FieldValue(tt.field); !reflect.DeepEqual(got, tt.want) {
-//			//	t.Errorf("Msg.FieldValue() = %v, want %v", got, tt.want)
-//			//}
-//		})
-//	}
-//}
-//
+		{"msg with int content", &Msg{msgContent:content.New().Add("key1",content.NewFieldValue(10, content.INT))}, map[string]interface{}{"key1":10},
+		},
+
+		{"msg with string content", &Msg{msgContent: content.New().Add("key2",content.NewFieldValue("hello", content.STRING)),
+			prevContent: content.New(),}, map[string]interface{}{"key2":"hello"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			if got := test.in.Values(); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("Msg.Values() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+
 //// Tests:
 ////	- Message_PassThrough
 //func TestMessage_Passthrough(t *testing.T) {
