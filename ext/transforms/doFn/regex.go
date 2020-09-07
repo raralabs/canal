@@ -2,7 +2,7 @@ package doFn
 
 import (
 	"github.com/raralabs/canal/core/message"
-	content2 "github.com/raralabs/canal/core/message/content"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/transforms/do"
 	"log"
@@ -26,7 +26,7 @@ func RegExParser(exp, key string, f func(*regexp.Regexp, string) map[string]stri
 			}
 		}
 		str, _ := contents.Get(key)
-		if types[key] != content2.STRING {
+		if types[key] != content.STRING {
 			log.Panicf("Could not parse non-string values: %v", str)
 		}
 		st, _ := str.Val.(string)
@@ -37,9 +37,9 @@ func RegExParser(exp, key string, f func(*regexp.Regexp, string) map[string]stri
 			yes := digitCheck.MatchString(string(value))
 			str.Val = value
 			if yes{
-				str.ValType = content2.INT
+				str.ValType = content.INT
 			}else{
-				str.ValType = content2.STRING
+				str.ValType = content.STRING
 			}
 			contents.Add(key, str)
 		}
@@ -57,16 +57,16 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 	}
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-		content := m.Content()
+		msgContent := m.Content()
 		types := m.Types()
-		if v, ok := content.Get("eof"); ok {
+		if v, ok := msgContent.Get("eof"); ok {
 			if v.Val == true {
-				proc.Result(m, content, nil)
+				proc.Result(m, msgContent, nil)
 				return true
 			}
 		}
-		str, _ := content.Get(key)
-		if types[key] != content2.STRING {
+		str, _ := msgContent.Get(key)
+		if types[key] != content.STRING {
 			log.Panicf("Could not parse non-string values: %v", str)
 		}
 		st, _ := str.Val.(string)
@@ -75,8 +75,8 @@ func RegExp(exp, key string, f func(*regexp.Regexp, string) string) pipeline.Exe
 			s := f(reg, st)
 			str.Val = s
 
-			content = content.Add(key, str)
-		proc.Result(m, content, nil)
+			msgContent = msgContent.Add(key, str)
+		proc.Result(m, msgContent, nil)
 		return true
 	}
 

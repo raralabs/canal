@@ -11,6 +11,7 @@ require (
 	github.com/d5/tengo v1.24.8
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259 // indirect
+	github.com/google/go-cmp v0.4.0
 	github.com/jfeliu007/goplantuml v1.5.0 // indirect
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/spenczar/tdigest v2.1.0+incompatible
