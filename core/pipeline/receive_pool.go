@@ -36,7 +36,7 @@ type IReceivePool interface {
 	error(code uint8, text string)
 }
 
-// A receivePool pools messages from all the processors the receivePool is
+// A receivePool pools messages from all the processors. The receivePool is
 // connected to, and streams the messages to 'Receiver' sendChannel.
 // It implements the IReceivePool interface.
 type receivePool struct {
@@ -61,6 +61,9 @@ func (rp *receivePool) addReceiveFrom(processor IProcessorForReceiver) {
 	if rp.isRunning() {
 		return
 	}
+	//loop through the processor already in receive pool
+	//and raise error if processor already in pool is added
+	//again
 	for _, proc := range rp.receiveFrom {
 		if proc == processor {
 			panic("Added same Processor twice in the receiver.")
@@ -70,7 +73,7 @@ func (rp *receivePool) addReceiveFrom(processor IProcessorForReceiver) {
 	rp.receiveFrom = append(rp.receiveFrom, processor)
 }
 
-// initStage initializes the receiver routes if the 'isSourceStage' is false
+// initStage initializes the receiver routes if the 'isSourceStage' is false   --->????
 func (rp *receivePool) lock() {
 	if rp.isRunning() {
 		return

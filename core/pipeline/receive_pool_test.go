@@ -75,12 +75,13 @@ func (drp *dummyReceivePool) isRunning() bool {
 func (drp *dummyReceivePool) error(code uint8, text string) {
 }
 
+
 func TestReceivePool(t *testing.T) {
 
 	t.Run("Simple Tests", func(t *testing.T) {
 
 		pipelineId := uint32(1)
-
+		//get the factory from message package which creates msg with given pipeline id and stageid,proccessor id
 		msgF := message.NewFactory(pipelineId, 1, 1)
 		content := content2.New()
 		content =  content.Add("value", content2.NewFieldValue(12, content2.INT))

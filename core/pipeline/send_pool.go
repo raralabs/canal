@@ -11,7 +11,6 @@ const (
 	_SendBufferLength uint16 = 4
 	_SendTimeout             = 1 * time.Second
 )
-
 // A sndPool does the Fanout of messages to all connected receivers
 type sendPool struct {
 	proc       *Processor           //

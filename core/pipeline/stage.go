@@ -49,16 +49,21 @@ func (stg *stage) ReceiveFrom(route MsgRouteParam, processors ...IProcessor) *st
 	// add all the processors from other stages to the receivePool and connect the
 	// Processor to this stg
 	for _, processor := range processors {
+		//check if stage in not from the same pipeline. If yes ,panic
 		if stg.pipeline != processor.processorPool().stage().pipeline {
 			panic("Cannot connect processors of different networks.")
 		}
+		//check if the processor is of same stage, if yes panic
 		if stg == processor.processorPool().stage() {
 			panic("Can't connect processors of the same source.")
 		}
-
+		//connect processor from other stage to the receive pool i.e subscribe to the processor
 		stg.receivePool.addReceiveFrom(processor)
+
+		//ready processor to send to the subscribed stage through route .i.e add route
 		processor.addSendTo(stg, route)
 	}
+
 
 	if _, ok := stg.routes[route]; !ok {
 		stg.routes[route] = struct{}{}
@@ -70,6 +75,7 @@ func (stg *stage) ReceiveFrom(route MsgRouteParam, processors ...IProcessor) *st
 // add creates a new Processor in a stg with the executor
 // and adds it to the procPool of the Stage. Returns the Processor that was created.
 func (stg *stage) AddProcessor(opts ProcessorOptions, executor Executor, routes ...MsgRouteParam) IProcessor {
+
 	if stg.isRunning() {
 		panic("error")
 	}
@@ -167,7 +173,7 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 	if stg.executorType == SOURCE {
 		// If its a source Stage, run srcLoop. Context sent only to source, it will cascade.
 		stg.srcLoop(ctx, stg.processorPool)
-	} else {
+	}else {
 		// Else runs receivePool.loop to receive and execute new messages
 		stg.receivePool.loop(stg.processorPool)
 	}
@@ -205,7 +211,7 @@ func newStageFactory(pipeline *Pipeline) stageFactory {
 	return stageFactory{pipeline: pipeline, hwm: 0}
 }
 
-func (sf *stageFactory) new(name string, executorType ExecutorType) *stage {
+func (sf *stageFactory)new(name string, executorType ExecutorType) *stage {
 	s := &stage{
 		id:           atomic.AddUint32(&sf.hwm, 1),
 		name:         name,

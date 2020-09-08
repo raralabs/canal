@@ -9,7 +9,6 @@ import (
 // passed, wherever IProcessorForPool can be passed, to achieve the same result.
 type IProcessorForPool interface {
 	IProcessorCommon
-
 	IProcessorReceiver
 }
 
@@ -67,7 +66,7 @@ type processorPool struct {
 	procMsgPaths map[MsgRouteParam][]IProcessorForPool // Maps the incoming route to a list of processors that subscribe to the path
 }
 
-// newProcessorPool creates a new procPool with default values.
+// newProcessorPool creates a new Processor Pool with default values.
 func newProcessorPool(stage *stage) *processorPool {
 
 	procMsgPaths := make(map[MsgRouteParam][]IProcessorForPool)
@@ -76,7 +75,6 @@ func newProcessorPool(stage *stage) *processorPool {
 		stg:              stage,
 		shortCircuit:     false,
 		processorFactory: newProcessorFactory(stage),
-
 		procMsgPaths: procMsgPaths,
 	}
 }
@@ -141,7 +139,7 @@ func (pool *processorPool) attach(procs ...IProcessorForPool) {
 	}
 }
 
-// attach detaches a processor from the processor pool. It also un-registers the processor, so that it no longer receive
+// detaches a processor from the processor pool. It also un-registers the processor, so that it no longer receive
 // the messages from the paths it had subscribed before.
 func (pool *processorPool) detach(procs ...IProcessorForPool) {
 
@@ -174,11 +172,10 @@ func (pool *processorPool) execute(pod msgPod) {
 	if pool.isClosed() || !pool.isRunning() {
 		return
 	}
-
 	allClosed := true
 
 	for path, procs := range pool.procMsgPaths {
-		if path != MsgRouteParam("") && path != pod.route {
+		if path != MsgRouteParam("") && path != pod.route {//redundant type conversion refactorization necessary
 			continue
 		}
 
