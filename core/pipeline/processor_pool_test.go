@@ -4,6 +4,7 @@ import (
 	content2 "github.com/raralabs/canal/core/message/content"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,12 +19,14 @@ type dummyProcessorPool struct {
 	outRoute   chan msgPod
 	chanClosed bool
 	stg        *stage
+	runLock    atomic.Value
 }
 
 
 func newDummyProcessorPool(route MsgRouteParam, stg *stage) *dummyProcessorPool {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	return &dummyProcessorPool{
+
 		outRoute:   sendChannel,
 		chanClosed: false,
 		routeMu:    &sync.Mutex{},

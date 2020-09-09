@@ -145,6 +145,7 @@ func (stg *stage) lock() {
 // an infinite loop. It returns if the context timeouts or if the procPool return true
 // in its execute function, which signifies that all the processors are DONE sending the msg
 func (stg *stage) srcLoop(c context.Context, pool IProcessorPool) {
+	//check the type of stage here
 sourceLoop:
 	for {
 		select {
@@ -158,6 +159,7 @@ sourceLoop:
 			}
 		}
 	}
+	//return
 }
 
 // loop starts the execution of the stg. The 'doneCallback' function is called
@@ -167,9 +169,7 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 	if stg.isRunning() || stg.isClosed() {
 		return
 	}
-
 	stg.runLock.Store(true)
-
 	if stg.executorType == SOURCE {
 		// If its a source Stage, run srcLoop. Context sent only to source, it will cascade.
 		stg.srcLoop(ctx, stg.processorPool)
