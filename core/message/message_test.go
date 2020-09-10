@@ -166,6 +166,7 @@ func TestNewFromBytes(t *testing.T) {
 //Tests:
 //content()
 func TestMsg_Content(t *testing.T) {
+
 	var msg = &Msg{msgContent: content.New()}
 	keys := []string{"name", "roll", "msg"}
 	msgValues := []content.MsgFieldValue{
@@ -268,7 +269,7 @@ func TestMsg_Ids(t *testing.T) {
 // -Msg_String
 func TestMsg_String(t *testing.T) {
 	msg := &Msg{id: 1, processorId: 1, srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
-		msgType: ERROR, msgContent: content.New(), prevContent: content.New(),
+		msgType: ERROR, msgContent: nil, prevContent: content.New(),
 		trace: trace{false, []tracePath(nil)}}
 	strMessage := msg.String()
 	assert.Equal(t, "string", reflect.TypeOf(strMessage).String(), "DataType mismatch")

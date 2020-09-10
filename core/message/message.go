@@ -135,14 +135,19 @@ func (m *Msg) AsBytes() ([]byte, error) {
 		SrcProcessorId:    m.srcProcessorId,
 		SrcMessageId:      m.srcMessageId,
 		Mtype:             m.msgType,
-		McontentValues:    m.msgContent.Values(),
-		PrevContentValues: m.prevContent.Values(),
-		McontentType:      m.msgContent.Types(),
-		PrevContentType:   m.prevContent.Types(),
 		TraceFlag:         m.trace.enabled,
 		TracePath:         m.trace.path,
 	}
+	if m.msgContent != nil{
+		MessageHolder.McontentValues = m.msgContent.Values()
+		MessageHolder.McontentType = m.msgContent.Types()
 
+	}
+
+	if m.prevContent != nil{
+		MessageHolder.PrevContentValues = m.prevContent.Values()
+		MessageHolder.PrevContentType =m.prevContent.Types()
+	}
 	encoder := gob.NewEncoder(&buf)
 	err := encoder.Encode(MessageHolder)
 	if err != nil {
@@ -157,7 +162,6 @@ func (m *Msg) AsBytes() ([]byte, error) {
 func NewFromBytes(bts []byte) (*Msg, error) {
 	var m *msgHolder
 	var buf bytes.Buffer
-
 	buf.Write(bts)
 	err := gob.NewDecoder(&buf).Decode(&m)
 	if err != nil {
@@ -188,7 +192,6 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 		prevContent:    prevDecodedMsgContent,
 		trace:          trace{enabled: m.TraceFlag, path: m.TracePath},
 	}
-
 	return message, nil
 }
 

@@ -166,12 +166,14 @@ sourceLoop:
 // after the stg has finished execution. The stg finishes it's execution if all
 // the processors associated with the stg have emitted Done Message.
 func (stg *stage) loop(ctx context.Context, onComplete func()) {
+
 	if stg.isRunning() || stg.isClosed() {
 		return
 	}
 	stg.runLock.Store(true)
 	if stg.executorType == SOURCE {
 		// If its a source Stage, run srcLoop. Context sent only to source, it will cascade.
+
 		stg.srcLoop(ctx, stg.processorPool)
 	}else {
 		// Else runs receivePool.loop to receive and execute new messages
@@ -221,7 +223,6 @@ func (sf *stageFactory)new(name string, executorType ExecutorType) *stage {
 		routes:       make(msgRoutes),
 		withTrace:    false,
 	}
-
 	s.processorPool = newProcessorPool(s)
 	if executorType != SOURCE {
 		s.receivePool = newReceiverPool(s)

@@ -9,6 +9,10 @@ import (
 	"reflect"
 	"testing"
 )
+
+
+
+
 func TestStage_GetId(t *testing.T) {
 	pipeLines := []*Pipeline{NewPipeline(uint32(1)),NewPipeline(uint32(5)),NewPipeline(uint32(7)),}
 	for _,pipeLine := range pipeLines{
@@ -155,8 +159,7 @@ func TestStage_Trace(t *testing.T) {
 }
 
 //Tests
-// -srcLoop
-// loop
+// -lock
 func Test_Lock (t *testing.T){
 	stgFactory := newStageFactory(NewPipeline(uint32(1)))
 
@@ -170,6 +173,7 @@ func Test_Lock (t *testing.T){
 	testStage1.processorPool = prcPool
 	testStage1.receivePool = recPool
 	testStage1.processorPool.add(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	testStage1.processorPool.add(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
 	testStage2 := stgFactory.new("Stage2",TRANSFORM)
 	testStage2.processorPool = prcPool
 	t.Run("source loop", func(t *testing.T) {
@@ -177,28 +181,14 @@ func Test_Lock (t *testing.T){
 		assert.Panics(t,func(){
 			testStage2.lock() //locking stage that doesn't have processor
 		})
+		status :=testStage1.processorPool.add(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route) //trying to add
+			//to the running stage
+		assert.Equal(t,nil,status,"Error :added to the running stage")
 	})
 
 
 }
-//func (stg *stage) srcLoop(c context.Context, pool IProcessorPool) {
-//sourceLoop:
-//	for {
-//		select {
-//		case <-c.Done():
-//			stg.error(1, "Source Timeout")
-//			break sourceLoop
-//		default:
-//			pool.execute(msgPod{route: ""})
-//			if pool.isClosed() {
-//				break sourceLoop
-//			}
-//		}
-//	}
-//}
 
-
-//========================================================================
 //func TestStage(t *testing.T) {
 //
 //	t.Run("Simple Tests", func(t *testing.T) {

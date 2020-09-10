@@ -126,16 +126,20 @@ func (pool *processorPool) attach(procs ...IProcessorForPool) {
 
 	for _, proc := range procs {
 		procRoutes := proc.incomingRoutes()
-
 		for path := range procRoutes {
 			for _, pr := range pool.procMsgPaths[path] {
+
 				if proc == pr {
 					goto nextProc
 				}
 			}
+
 			pool.procMsgPaths[path] = append(pool.procMsgPaths[path], proc)
+
 		}
+
 	nextProc:
+		//??
 	}
 }
 
