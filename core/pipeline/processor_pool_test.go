@@ -1,11 +1,14 @@
 package pipeline
 
 import (
+	content2 "github.com/raralabs/canal/core/message/content"
+	"github.com/raralabs/canal/core/message"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // This dummy struct mocks a Processor Pool from the perspective of a receive pool. So we will only implement following:
@@ -129,8 +132,6 @@ func TestProcessorPool_shortCircuit(t *testing.T){
 	})
 }
 
-
-
 //Test:
 // -attach()
 // -detach() processors
@@ -167,284 +168,272 @@ func TestProcessorPool_Operations(t *testing.T){
 
 }
 
+//Tests:
+//	- lock()
+// 	- isRunning()
+func TestProcessorPool_lock(t *testing.T){
+	newPipeLine := NewPipeline(uint32(1))
+	stgFactory := newStageFactory(newPipeLine)
+	stg:= stgFactory.new("stage1",SOURCE)
+	procPool := newProcessorPool(stg)
+	stg.processorPool = procPool
+	route := msgRoutes{"path": struct{}{}}
+	t.Run("lock processor pool with process", func(t *testing.T) {
+
+		assert.Panics(t, func() {
+			stg.processorPool.lock(route)//trying to lock procesorPool without processor
+		})
+		pr1 :=  newDummyProcessor(newDummyExecutor(TRANSFORM),route,stg.processorPool)
+		stg.processorPool.attach(pr1)
+		assert.Equal(t,false,procPool.isRunning(),"processor should not be running before lock method invocation")
+		stg.processorPool.lock(route)
+		assert.Equal(t,true,procPool.runLock.Load(),"lock must have been enabled")
+		assert.Equal(t,true,procPool.isRunning(),"the processor is running but shows false")
+	})
+
+}
 
 
+func TestProcessorPool(t *testing.T) {
 
+	t.Run("Simple Processor Pool Test", func(t *testing.T) {
 
-// Tests
-// - isRunning()
-// - isClosed()
-//func TestProcessorPool_attr(t *testing.T){
-//	pipelne := NewPipeline(uint32(1))
-//	stgFac:= newStageFactory(pipelne)
-//	stg1 := stgFac.new("sendingStage",SOURCE)
-//	route1 := msgRoutes{	"path1": struct{}{},}
-//	procPool:=newProcessorPool(stg1)
-//	newProc1 := newDummyProcessor(newDummyExecutor(SOURCE),route1,procPool)
-//	procPool.attach(newProc1)
-//	stg1.processorPool = procPool
-//	stg2 := stgFac.new("receivingStage",TRANSFORM)
-//	route2 := msgRoutes{	"path1": struct{}{},}
-//	procPoolForRec:=newProcessorPool(stg2)
-//
-//	procPoolForRec.add(DefaultProcessorOptions,newDummyExecutor(TRANSFORM), route2)
-//	recPool := newDummyReceivePool(stg2)
-//	recPool.addReceiveFrom(newProc1)
-//
-//	stg2.processorPool = procPoolForRec
-//
-//		bckGnd := context.Background()
-//	d := time.Now().Add(10 * time.Millisecond)
-//	ctx, _ := context.WithDeadline(bckGnd,d)
-//	stg1.lock()
-//	stg1.loop(ctx,func(){
-//		procPool.isRunning()
-//	})
-//	t.Run("Check processor running", func(t *testing.T) {
-//		assert.Equal(t,false,procPool.isRunning(),"processor pool is not locked in stage")
-//	})
-//
-//}
+		pipelineId := uint32(1)
 
-//func TestProcessorPool(t *testing.T) {
-//
-//	t.Run("Simple Processor Pool Test", func(t *testing.T) {
-//
-//		pipelineId := uint32(1)
-//
-//		// Generate Message
-//		msgF := message.NewFactory(pipelineId, 1, 1)
-//		content := content2.New()
-//		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
-//
-//		msg := msgF.NewExecuteRoot(content, false)
-//
-//		// Create pipeline and stg
-//		pipeline := NewPipeline(pipelineId)
-//		stgFactory := newStageFactory(pipeline)
-//
-//		tStage := stgFactory.new("First Node", TRANSFORM)
-//		procPool := newProcessorPool(tStage)
-//
-//		// Create a route for the incoming messages for a processor
-//		routeParam := MsgRouteParam("path1")
-//		route := msgRoutes{
-//			routeParam: struct{}{},
-//		}
-//
-//		// Add a processor to the pool with a dummy executor that simply returns the incoming messages
-//		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
-//
-//		// Add a channel where the processor can dump it's output
-//		stg := stgFactory.new("Second Node", TRANSFORM)
-//		pr.addSendTo(stg, "test")
-//		receiver := pr.channelForStageId(stg)
-//
-//		procPool.lock(route)
-//
-//		t.Run("Test1", func(t *testing.T) {
-//			msgPack := msgPod{
-//				msg:   msg,
-//				route: routeParam,
-//			}
-//
-//			procPool.execute(msgPack)
-//			select {
-//			case rcvd := <-receiver:
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg.Id(), m.Id())
-//			}
-//		})
-//
-//		t.Run("Test2", func(t *testing.T) {
-//			msg2 := msgF.NewExecute(msg, content, nil)
-//			msgPack := msgPod{
-//				msg:   msg2,
-//				route: routeParam,
-//			}
-//
-//			procPool.execute(msgPack)
-//			select {
-//			case rcvd := <-receiver:
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg2.Id(), m.Id())
-//			}
-//		})
-//
-//		t.Run("Test3", func(t *testing.T) {
-//			msg2 := msgF.NewExecute(msg, content, nil)
-//			msgPack := msgPod{
-//				msg:   msg2,
-//				route: routeParam,
-//			}
-//
-//			procPool.execute(msgPack)
-//			select {
-//			case rcvd := <-receiver:
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg2.Id(), m.Id())
-//			}
-//		})
-//
-//		procPool.done()
-//	})
-//
-//	t.Run("Processor Pool with Two Dummy Processors", func(t *testing.T) {
-//		pipelineId := uint32(1)
-//
-//		// Generate Message
-//		msgF := message.NewFactory(pipelineId, 1, 1)
-//		content := content2.New()
-//		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
-//
-//		msg := msgF.NewExecuteRoot(content, false)
-//
-//		// Create pipeline and stg
-//		pipeline := NewPipeline(pipelineId)
-//		stgFactory := newStageFactory(pipeline)
-//
-//		tStage := stgFactory.new("First Node", TRANSFORM)
-//		procPool := newProcessorPool(tStage)
-//
-//		// Create a route for the incoming messages for a processor
-//		routeParam := MsgRouteParam("path1")
-//		route := msgRoutes{
-//			routeParam: struct{}{},
-//		}
-//
-//		// Create Processors
-//		pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
-//		pr2 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
-//
-//		stg1 := &stage{}
-//		pr1.addSendTo(stg1, "test1")
-//		pr1Receiver := pr1.channelForStageId(stg1)
-//
-//		stg2 := &stage{}
-//		pr2.addSendTo(stg2, "test2")
-//		pr2Receiver := pr2.channelForStageId(stg2)
-//
-//		msgPack := msgPod{
-//			msg:   msg,
-//			route: routeParam,
-//		}
-//
-//		procPool.attach(pr1, pr2)
-//		procPool.lock(route)
-//
-//		t.Run("With Both Processors", func(t *testing.T) {
-//
-//			procPool.execute(msgPack)
-//			time.Sleep(1 * time.Microsecond)
-//
-//			t.Run("Check First", func(t *testing.T) {
-//				rcvd := <-pr1Receiver
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg.Id(), m.Id())
-//			})
-//
-//			t.Run("Check Second", func(t *testing.T) {
-//				rcvd := <-pr2Receiver
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg.Id(), m.Id())
-//			})
-//		})
-//
-//		t.Run("Removing Processors", func(t *testing.T) {
-//
-//			t.Run("-First", func(t *testing.T) {
-//
-//				procPool.attach(pr1, pr2)
-//				procPool.detach(pr1)
-//				procPool.execute(msgPack)
-//				time.Sleep(1 * time.Microsecond)
-//
-//				rcvd := <-pr2Receiver
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg.Id(), m.Id())
-//
-//				assert.Zero(t, len(pr1Receiver))
-//			})
-//
-//			t.Run("-Second", func(t *testing.T) {
-//
-//				procPool.attach(pr1, pr2)
-//				procPool.detach(pr2)
-//				procPool.execute(msgPack)
-//				time.Sleep(1 * time.Microsecond)
-//
-//				rcvd := <-pr1Receiver
-//				m := rcvd.msg
-//				if !reflect.DeepEqual(m.Content(), msg.Content()) {
-//					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
-//				}
-//				assert.Equal(t, msg.Id(), m.Id())
-//
-//				assert.Zero(t, len(pr2Receiver))
-//			})
-//		})
-//
-//	})
-//}
-//
-//func BenchmarkProcessorPool(b *testing.B) {
-//
-//	b.Run("Simple Processor Pool Bench", func(b *testing.B) {
-//		b.ReportAllocs()
-//
-//		pipelineId := uint32(1)
-//
-//		msgF := message.NewFactory(pipelineId, 1, 1)
-//		content := content2.New()
-//		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
-//
-//		msg := msgF.NewExecuteRoot(content, false)
-//
-//		pipeline := NewPipeline(pipelineId)
-//		stgFactory := newStageFactory(pipeline)
-//
-//		tStage := stgFactory.new("First Node", TRANSFORM)
-//		procPool := newProcessorPool(tStage)
-//
-//		routeParam := MsgRouteParam("path1")
-//		route := msgRoutes{
-//			routeParam: struct{}{},
-//		}
-//
-//		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
-//
-//		stg := stgFactory.new("Second Node", TRANSFORM)
-//		pr.addSendTo(stg, "test")
-//		//receiver := pr.channelForStageId(stg)
-//
-//		procPool.lock(route)
-//
-//		msgPack := msgPod{
-//			msg:   msg,
-//			route: routeParam,
-//		}
-//
-//		for i := 0; i < b.N; i++ {
-//			procPool.execute(msgPack)
-//			procPool.done()
-//		}
-//	})
-//}
+		// Generate Message
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := content2.New()
+		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
+
+		msg := msgF.NewExecuteRoot(content, false)
+
+		// Create pipeline and stg
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
+
+		tStage := stgFactory.new("First Node", TRANSFORM)
+		procPool := newProcessorPool(tStage)
+
+		// Create a route for the incoming messages for a processor
+		routeParam := MsgRouteParam("path1")
+		route := msgRoutes{
+			routeParam: struct{}{},
+		}
+
+		// Add a processor to the pool with a dummy executor that simply returns the incoming messages
+		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
+
+		// Add a channel where the processor can dump it's output
+		stg := stgFactory.new("Second Node", TRANSFORM)
+		pr.addSendTo(stg, "test")
+		receiver := pr.channelForStageId(stg)
+
+		procPool.lock(route)
+
+		t.Run("Test1", func(t *testing.T) {
+			msgPack := msgPod{
+				msg:   msg,
+				route: routeParam,
+			}
+
+			procPool.execute(msgPack)
+			select {
+			case rcvd := <-receiver:
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg.Id(), m.Id())
+			}
+		})
+
+		t.Run("Test2", func(t *testing.T) {
+			msg2 := msgF.NewExecute(msg, content, nil)
+			msgPack := msgPod{
+				msg:   msg2,
+				route: routeParam,
+			}
+
+			procPool.execute(msgPack)
+			select {
+			case rcvd := <-receiver:
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg2.Id(), m.Id())
+			}
+		})
+
+		t.Run("Test3", func(t *testing.T) {
+			msg2 := msgF.NewExecute(msg, content, nil)
+			msgPack := msgPod{
+				msg:   msg2,
+				route: routeParam,
+			}
+
+			procPool.execute(msgPack)
+			select {
+			case rcvd := <-receiver:
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg2.Id(), m.Id())
+			}
+		})
+
+		procPool.done()
+	})
+
+	t.Run("Processor Pool with Two Dummy Processors", func(t *testing.T) {
+		pipelineId := uint32(1)
+
+		// Generate Message
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := content2.New()
+		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
+
+		msg := msgF.NewExecuteRoot(content, false)
+
+		// Create pipeline and stg
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
+
+		tStage := stgFactory.new("First Node", TRANSFORM)
+		procPool := newProcessorPool(tStage)
+
+		// Create a route for the incoming messages for a processor
+		routeParam := MsgRouteParam("path1")
+		route := msgRoutes{
+			routeParam: struct{}{},
+		}
+
+		// Create Processors
+		pr1 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
+		pr2 := newDummyProcessor(newDummyExecutor(TRANSFORM), route, nil)
+
+		stg1 := &stage{}
+		pr1.addSendTo(stg1, "test1")
+		pr1Receiver := pr1.channelForStageId(stg1)
+
+		stg2 := &stage{}
+		pr2.addSendTo(stg2, "test2")
+		pr2Receiver := pr2.channelForStageId(stg2)
+
+		msgPack := msgPod{
+			msg:   msg,
+			route: routeParam,
+		}
+
+		procPool.attach(pr1, pr2)
+		procPool.lock(route)
+
+		t.Run("With Both Processors", func(t *testing.T) {
+
+			procPool.execute(msgPack)
+
+			time.Sleep(1 * time.Microsecond)
+
+			t.Run("Check First", func(t *testing.T) {
+				rcvd := <-pr1Receiver
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg.Id(), m.Id())
+			})
+
+			t.Run("Check Second", func(t *testing.T) {
+				rcvd := <-pr2Receiver
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg.Id(), m.Id())
+			})
+		})
+
+		t.Run("Removing Processors", func(t *testing.T) {
+
+			t.Run("-First", func(t *testing.T) {
+
+				procPool.attach(pr1, pr2)
+				procPool.detach(pr1)
+				procPool.execute(msgPack)
+				time.Sleep(1 * time.Microsecond)
+
+				rcvd := <-pr2Receiver
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg.Id(), m.Id())
+
+				assert.Zero(t, len(pr1Receiver))
+			})
+
+			t.Run("-Second", func(t *testing.T) {
+
+				procPool.attach(pr1, pr2)
+				procPool.detach(pr2)
+				procPool.execute(msgPack)
+				time.Sleep(1 * time.Microsecond)
+
+				rcvd := <-pr1Receiver
+				m := rcvd.msg
+				if !reflect.DeepEqual(m.Content(), msg.Content()) {
+					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+				}
+				assert.Equal(t, msg.Id(), m.Id())
+
+				assert.Zero(t, len(pr2Receiver))
+			})
+		})
+
+	})
+}
+
+func BenchmarkProcessorPool(b *testing.B) {
+
+	b.Run("Simple Processor Pool Bench", func(b *testing.B) {
+		b.ReportAllocs()
+
+		pipelineId := uint32(1)
+
+		msgF := message.NewFactory(pipelineId, 1, 1)
+		content := content2.New()
+		content = content.Add("value", content2.NewFieldValue(12, content2.INT))
+
+		msg := msgF.NewExecuteRoot(content, false)
+
+		pipeline := NewPipeline(pipelineId)
+		stgFactory := newStageFactory(pipeline)
+
+		tStage := stgFactory.new("First Node", TRANSFORM)
+		procPool := newProcessorPool(tStage)
+
+		routeParam := MsgRouteParam("path1")
+		route := msgRoutes{
+			routeParam: struct{}{},
+		}
+
+		pr := procPool.add(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), route)
+
+		stg := stgFactory.new("Second Node", TRANSFORM)
+		pr.addSendTo(stg, "test")
+		//receiver := pr.channelForStageId(stg)
+
+		procPool.lock(route)
+
+		msgPack := msgPod{
+			msg:   msg,
+			route: routeParam,
+		}
+
+		for i := 0; i < b.N; i++ {
+			procPool.execute(msgPack)
+			procPool.done()
+		}
+	})
+}
