@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/message"
+	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sync"
@@ -189,17 +189,98 @@ func TestProcessorPool_lock(t *testing.T){
 		stg.processorPool.lock(route)
 		assert.Equal(t,true,procPool.runLock.Load(),"lock must have been enabled")
 		assert.Equal(t,true,procPool.isRunning(),"the processor is running but shows false")
+
+		//check if the processor is closed after invoking done()
+
+		//assert.Equal(t,true,procPool.isClosed(),"processor still running after invoking done()")
 	})
-
 }
+//Tests
+// -execute()
+// -isClosed()
+// -done()
+func TestProcessorPool_execute(t *testing.T){
+	newPipeline := NewPipeline(uint32(1))
+	stgFactory := newStageFactory(newPipeline)
+	//create stage1 and its related processor pool and msg content
+	stg1:= stgFactory.new("stage1",TRANSFORM)
+	prcPool := newProcessorPool(stg1)
+	stg1.processorPool = prcPool
+	prcFactory := newProcessorFactory(stg1)
+	route := msgRoutes{"path": struct{}{}}
+	processor1 := prcFactory.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	prcPool.attach(processor1)
+	msgFactory := message.NewFactory(newPipeline.id,stg1.id,processor1.id)
+	msgContent := content2.New()
+	msgContent.Add("key",content2.NewFieldValue("hello",content2.STRING))
+	msg := msgFactory.NewExecuteRoot(msgContent, false)
 
+	//create stage2 and its related processor pool
+	stg2:= stgFactory.new("stage2",TRANSFORM)
+	processor1.addSendTo(stg2, "sendPath")
+
+	//creating channel from processor 1 to stg2
+	receiver := processor1.channelForStageId(stg2)
+	processor2 := prcFactory.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	stg3 := stgFactory.new("Stage3",SINK)
+	prcPool.attach(processor2)
+	processor2.addSendTo(stg3,"sendPath3")
+	processor1.addSendTo(stg3,"sendPath2")
+	receiver2 := processor1.channelForStageId(stg3)
+	receiver3 := processor1.channelForStageId(stg3)
+
+	prcPool.lock(route)
+
+	t.Run("single processor sending to the stage", func(t *testing.T) {
+		msgPack := msgPod{
+			msg:   msg,
+			route: MsgRouteParam("path"),
+		}
+
+		// check if the processor is closed before complete execution
+		assert.Equal(t,false,prcPool.isClosed(),"want processor to be running but received processor closed")
+		prcPool.execute(msgPack)
+		select {
+		case receivedMsg := <-receiver:
+			m := receivedMsg.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		}
+	})
+	prcPool.done()
+	//check if the processor is closed after complete execution
+	assert.Equal(t,true,prcPool.isClosed(),"want processor to be closed but received processor running")
+	//multiple channel from multiple processor to one receiving stage
+
+	t.Run("multiple processor sending to same stage", func(t *testing.T) {
+		msgPack := msgPod{
+			msg:   msg,
+			route: MsgRouteParam("path"),
+		}
+		prcPool.execute(msgPack)
+		select {
+		case receivedMsg2 := <-receiver2:
+			m := receivedMsg2.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		case receivedMsg3 := <-receiver3:
+			m := receivedMsg3.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		}
+	})
+}
 
 func TestProcessorPool(t *testing.T) {
 
 	t.Run("Simple Processor Pool Test", func(t *testing.T) {
-
 		pipelineId := uint32(1)
-
 		// Generate Message
 		msgF := message.NewFactory(pipelineId, 1, 1)
 		content := content2.New()
@@ -227,9 +308,7 @@ func TestProcessorPool(t *testing.T) {
 		stg := stgFactory.new("Second Node", TRANSFORM)
 		pr.addSendTo(stg, "test")
 		receiver := pr.channelForStageId(stg)
-
 		procPool.lock(route)
-
 		t.Run("Test1", func(t *testing.T) {
 			msgPack := msgPod{
 				msg:   msg,
@@ -284,6 +363,7 @@ func TestProcessorPool(t *testing.T) {
 		})
 
 		procPool.done()
+
 	})
 
 	t.Run("Processor Pool with Two Dummy Processors", func(t *testing.T) {

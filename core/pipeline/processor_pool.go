@@ -211,6 +211,7 @@ func (pool *processorPool) error(uint8, error) {
 func (pool *processorPool) done() {
 	for _, processors := range pool.procMsgPaths {
 		for _, processor := range processors {
+
 			if !processor.IsClosed() {
 				processor.Done()
 			}
