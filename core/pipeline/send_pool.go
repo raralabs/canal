@@ -22,7 +22,7 @@ type sendPool struct {
 	runLock    atomic.Value         //
 }
 
-// newSendPool creates a new receivePool
+// newSendPool creates a new send Pool
 func newSendPool(processor *Processor) sendPool {
 	return sendPool{
 		proc:      processor,

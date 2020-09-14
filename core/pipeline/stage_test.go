@@ -4,13 +4,10 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"time"
-
 	//"github.com/raralabs/canal/core/pipeline"
 	"reflect"
 	"testing"
 )
-
-
 
 
 func TestStage_GetId(t *testing.T) {
@@ -26,6 +23,7 @@ func TestStage_GetId(t *testing.T) {
 
 	}
 }
+
 
 //Tests:
 // -newStageFactory

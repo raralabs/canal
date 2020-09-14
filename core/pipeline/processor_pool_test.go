@@ -117,20 +117,6 @@ func TestProcessorPool_add(t *testing.T){
 	assert.Equal(t,1,len(procPool.procMsgPaths),"number of processor added didn't match the route count for procesor")
 }
 
-func TestProcessorPool_shortCircuit(t *testing.T){
-	stg :=  &stage{
-		id: uint32(5),
-		executorType: SOURCE,
-		name:"firstStage",
-	}
-	procPool := newProcessorPool(stg)
-	t.Run("shortCircuitProcessor", func(t *testing.T) {
-		assert.Equal(t,false,procPool.shortCircuit,"shortcircuit must be disabled by default")
-		procPool.shortCircuitProcessors()
-		assert.Equal(t,true,procPool.shortCircuit,"shortcircuit enabled but no change detected")
-
-	})
-}
 
 //Test:
 // -attach()
@@ -189,12 +175,39 @@ func TestProcessorPool_lock(t *testing.T){
 		stg.processorPool.lock(route)
 		assert.Equal(t,true,procPool.runLock.Load(),"lock must have been enabled")
 		assert.Equal(t,true,procPool.isRunning(),"the processor is running but shows false")
-
-		//check if the processor is closed after invoking done()
-
-		//assert.Equal(t,true,procPool.isClosed(),"processor still running after invoking done()")
 	})
 }
+func TestProcessorPool_shortCircuit(t *testing.T) {
+	newPipeLine := NewPipeline(uint32(1))
+	stg := &stage{
+		id:           uint32(5),
+		executorType: SOURCE,
+		name:         "firstStage",
+		pipeline: 	  newPipeLine,
+	}
+	procPool := newProcessorPool(stg)
+	t.Run("shortCircuitProcessor", func(t *testing.T) {
+		assert.Equal(t, false, procPool.shortCircuit, "shortcircuit must be disabled by default")
+		procPool.shortCircuitProcessors()
+		assert.Equal(t, true, procPool.shortCircuit, "shortcircuit enabled but no change detected")
+
+	})
+	route := msgRoutes{"path": struct{}{}}
+	prcFact := newProcessorFactory(stg)
+	processor1 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	processor2 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	procPool.attach(processor1,processor2)
+	msgFact := message.NewFactory(uint32(1), 1, 1)
+	msgContent := content2.New()
+	msgContent.Add("greetings",content2.NewFieldValue("hello",content2.STRING))
+	msg := msgFact.NewExecuteRoot(msgContent,false)
+	msgPackets := msgPod{
+		msg:   msg,
+		route: "path",
+	}
+	procPool.execute(msgPackets)
+}
+
 //Tests
 // -execute()
 // -isClosed()

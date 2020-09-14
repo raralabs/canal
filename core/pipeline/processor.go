@@ -49,7 +49,6 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 // process executes the corresponding executor of the execute on the passed
 // msg. Returns true on successful execution of the executor on msg.
 func (pr *Processor) process(msg message.Msg) bool {
-
 	if pr.executor.ExecutorType() == SOURCE {
 		pod := newMsgPod(pr.statusMessage(pr.procPool.stage().withTrace))
 		msg = pod.msg

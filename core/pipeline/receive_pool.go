@@ -7,6 +7,7 @@ import (
 	"github.com/raralabs/canal/core/message"
 )
 
+
 // An IProcessorForReceiver is a lite version of IProcessor that is designed for the IReceivePool. IProcessor can also
 // be passed, wherever IProcessorForReceiver can be passed, to achieve the same result.
 type IProcessorForReceiver interface {
@@ -71,9 +72,10 @@ func (rp *receivePool) addReceiveFrom(processor IProcessorForReceiver) {
 	}
 
 	rp.receiveFrom = append(rp.receiveFrom, processor)
+
 }
 
-// initStage initializes the receiver routes if the 'isSourceStage' is false   --->????
+// initStage initializes the receiver routes if the 'isSourceStage' is false
 func (rp *receivePool) lock() {
 	if rp.isRunning() {
 		return
@@ -96,7 +98,6 @@ func (rp *receivePool) loop(pool IProcessorPool) {
 		return
 	}
 	rp.runLock.Store(true)
-
 	if len(rp.receiveFrom) > 0 {
 		wg := sync.WaitGroup{}
 		wg.Add(len(rp.receiveFrom))
