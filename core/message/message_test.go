@@ -147,7 +147,7 @@ func TestNewFromBytes(t *testing.T) {
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
 			msgType: ERROR, msgContent: content.New().Add("key2", content.NewFieldValue("hello", content.STRING)),
 			prevContent: nil,
-			trace:       trace{false, []tracePath(nil)},
+			trace:  trace{false, []tracePath(nil)},
 		}, false},
 		{"complete ERROR msg with prevcontent trace enabled", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
@@ -342,6 +342,7 @@ func TestMsg_SetPrevContent(t *testing.T) {
 	}
 
 }
+
 func TestMsg_Trace(t *testing.T) {
 	tests := []struct {
 		testName     string

@@ -88,8 +88,8 @@ func (m *Msg) ProcessorId() uint32 {
 
 func (m *Msg) String() string {
 	return fmt.Sprintf(
-		"Msg[Id:%d, Stg:%d, Prc:%d]",
-		m.id, m.stageId, m.processorId)
+		"Msg[Id:%d, Stg:%d, Prc:%d,Content:%s]",
+		m.id, m.stageId, m.processorId,m.msgContent)
 }
 
 func (m *Msg) IsControl() bool {
@@ -140,9 +140,7 @@ func (m *Msg) AsBytes() ([]byte, error) {
 		TraceFlag:         m.trace.enabled,
 		TracePath:         m.trace.path,
 	}
-
 	if m.msgContent != nil{
-		//fmt.Println("messages",m.msgContent)
 		MessageHolder.McontentValues = m.msgContent.Values()
 		MessageHolder.McontentType = m.msgContent.Types()
 	}else{
@@ -157,8 +155,8 @@ func (m *Msg) AsBytes() ([]byte, error) {
 	}else{
 		nilValues := make(map[string]interface{})
 		nilValues["key"] = "nil"
-		MessageHolder.McontentValues = nilValues
-		MessageHolder.NilFlagForContent = true
+		MessageHolder.PrevContentValues = nilValues
+		MessageHolder.NilFlagForPreContent = true
 	}
 	encoder := gob.NewEncoder(&buf)
 	err := encoder.Encode(MessageHolder)
@@ -192,9 +190,10 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	}
 
 	for key, value := range m.PrevContentValues {
-		if !m.NilFlagForContent {
+		if !m.NilFlagForPreContent {
 			prevDecodedMsgContent.Add(key, content.NewFieldValue(value, m.PrevContentType[key]))
 		}else{
+
 			prevDecodedMsgContent = nil
 		}
 	}

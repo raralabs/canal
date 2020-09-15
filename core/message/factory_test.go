@@ -83,7 +83,6 @@ func TestFactory_NewExecute(t *testing.T){
 			content.MsgFieldValue{1,content.INT}),content.New(),Msg{}},
 		{" Proper msgontent empty PrevContent and SrcMsg", content.New().Add("hello",content.MsgFieldValue{1,content.INT}),
 			content.New().Add("hello",content.MsgFieldValue{"hello",content.STRING}),Msg{}},
-
 		{" Proper msgontent empty PrevContent and SrcMsg", content.New().Add("hello",content.MsgFieldValue{1,content.INT}),
 			content.New().Add("hello",content.MsgFieldValue{"hello",content.STRING}),Msg{id:1,processorId: 2,stageId: 3}},
 	}
