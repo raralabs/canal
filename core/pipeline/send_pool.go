@@ -11,7 +11,6 @@ const (
 	_SendBufferLength uint16 = 4
 	_SendTimeout             = 1 * time.Second
 )
-
 // A sndPool does the Fanout of messages to all connected receivers
 type sendPool struct {
 	proc       *Processor           //
@@ -23,7 +22,7 @@ type sendPool struct {
 	runLock    atomic.Value         //
 }
 
-// newSendPool creates a new receivePool
+// newSendPool creates a new send Pool
 func newSendPool(processor *Processor) sendPool {
 	return sendPool{
 		proc:      processor,

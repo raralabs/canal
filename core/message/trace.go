@@ -22,7 +22,7 @@ func newTraceRoot(enabled bool) trace {
 }
 
 func newTrace(fromMsg Msg) trace {
-	if !fromMsg.trace.enabled {
+	if fromMsg.trace.enabled {
 		return fromMsg.trace
 	}
 

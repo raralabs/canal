@@ -12,9 +12,13 @@ type MsgType uint8
 
 // These are the currently supported types
 const (
-	CONTROL MsgType = iota + 1 // CONTROL message tells the processors to persist the current state in the disk
-	ERROR                      // ERROR message is used for reporting errors in the pipeline
-	EXECUTE                    // EXECUTE type messages are for the messages that are unbound (indefinitely streaming)
+	CONTROL MsgType = iota + 1 // CONTROL message tells the processors to persist the
+	// current state in the disk
+
+	ERROR // ERROR message is used for reporting errors in the pipeline
+
+	EXECUTE // EXECUTE type messages are for the messages that are unbound
+	// (indefinitely streaming)
 )
 
 type Msg struct {
@@ -29,35 +33,6 @@ type Msg struct {
 	msgContent     content.IContent // MsgContent of the message
 	prevContent    content.IContent // Content of previous message
 	trace          trace            // trace of the message
-}
-
-func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
-
-	cont := content.New()
-	cont = cont.Add("text", content.NewFieldValue(text, content.STRING))
-	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
-
-	return Msg{
-		pipelineId:  pipelineId,
-		stageId:     stageId,
-		processorId: processorId,
-		msgContent:  cont,
-	}
-}
-
-// NewFromBytes creates a new message on the basis of the byte array 'bts'.
-// The byte array MUST be gob-encoded.
-func NewFromBytes(bts []byte) (*Msg, error) {
-	var m Msg
-	var buf bytes.Buffer
-	buf.Write(bts)
-	decoder := gob.NewDecoder(&buf)
-	err := decoder.Decode(&m)
-	if err != nil {
-		return nil, err
-	}
-
-	return &m, err
 }
 
 func (m *Msg) Id() uint64 {
@@ -76,12 +51,12 @@ func (m *Msg) Content() content.IContent {
 	return m.msgContent
 }
 
-// MsgContent returns the data stored by the message.
+// returns the previous data stored by the message.
 func (m *Msg) PrevContent() content.IContent {
 	return m.prevContent
 }
 
-// MsgContent returns the data stored by the message.
+// sets content of time (t) as previous content for (t+1) message.
 func (m *Msg) SetPrevContent(content content.IContent) {
 	m.prevContent = content
 }
@@ -103,19 +78,6 @@ func (m *Msg) Types() map[string]content.FieldValueType {
 	return m.msgContent.Types()
 }
 
-// AsBytes returns the gob-encoded byte array of the message.
-func (m *Msg) AsBytes() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := gob.NewEncoder(&buf)
-	err := encoder.Encode(*m)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
 func (m *Msg) StageId() uint32 {
 	return m.stageId
 }
@@ -126,8 +88,8 @@ func (m *Msg) ProcessorId() uint32 {
 
 func (m *Msg) String() string {
 	return fmt.Sprintf(
-		"Msg[Id:%d, Stg:%d, Prc:%d; %s]",
-		m.id, m.stageId, m.processorId, m.msgContent.String())
+		"Msg[Id:%d, Stg:%d, Prc:%d]",
+		m.id, m.stageId, m.processorId)
 }
 
 func (m *Msg) IsControl() bool {
@@ -140,4 +102,127 @@ func (m *Msg) IsError() bool {
 
 func (m *Msg) IsExecute() bool {
 	return m.msgType == EXECUTE
+}
+
+// msgHolder holds the message to be serialized.
+type msgHolder struct {
+	Id                	 uint64
+	PipelineId        	 uint32
+	StageId           	 uint32
+	ProcessorId       	 uint32
+	SrcStageId        	 uint32
+	SrcProcessorId    	 uint32
+	SrcMessageId      	 uint64
+	Mtype             	 MsgType
+	McontentValues    	 map[string]interface{}
+	PrevContentValues 	 map[string]interface{}
+	McontentType      	 map[string]content.FieldValueType
+	PrevContentType   	 map[string]content.FieldValueType
+	NilFlagForContent 	 bool //flag to check if the message content is nil inorder to prevent encoding errors
+	NilFlagForPreContent bool //flag to check if the previous content is nil inorder to prevent encoding errors
+	TraceFlag         	 bool
+	TracePath         	[]tracePath
+}
+
+// AsBytes returns the gob-encoded byte array of the message.
+func (m *Msg) AsBytes() ([]byte, error) {
+	var buf bytes.Buffer
+
+	MessageHolder := &msgHolder{
+		Id:                m.id,
+		PipelineId:        m.pipelineId,
+		StageId:           m.stageId,
+		ProcessorId:       m.processorId,
+		SrcStageId:        m.srcStageId,
+		SrcProcessorId:    m.srcProcessorId,
+		SrcMessageId:      m.srcMessageId,
+		Mtype:             m.msgType,
+		TraceFlag:         m.trace.enabled,
+		TracePath:         m.trace.path,
+	}
+
+	if m.msgContent != nil{
+		//fmt.Println("messages",m.msgContent)
+		MessageHolder.McontentValues = m.msgContent.Values()
+		MessageHolder.McontentType = m.msgContent.Types()
+	}else{
+		nilValues := make(map[string]interface{})
+		nilValues["key"] = "nil"
+		MessageHolder.McontentValues = nilValues
+		MessageHolder.NilFlagForContent = true
+	}
+	if m.prevContent != nil{
+		MessageHolder.PrevContentValues = m.prevContent.Values()
+		MessageHolder.PrevContentType =m.prevContent.Types()
+	}else{
+		nilValues := make(map[string]interface{})
+		nilValues["key"] = "nil"
+		MessageHolder.McontentValues = nilValues
+		MessageHolder.NilFlagForContent = true
+	}
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(MessageHolder)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// NewFromBytes creates a new message on the basis of the byte array 'bts'.
+// The byte array MUST be gob-encoded.
+func NewFromBytes(bts []byte) (*Msg, error) {
+	var m *msgHolder
+	var buf bytes.Buffer
+	buf.Write(bts)
+	err := gob.NewDecoder(&buf).Decode(&m)
+	if err != nil {
+		return nil, err
+	}
+
+	currentDecodedMsgContent := content.New()
+	prevDecodedMsgContent := content.New()
+
+	for key, value := range m.McontentValues {
+		if !m.NilFlagForContent{
+			currentDecodedMsgContent.Add(key, content.NewFieldValue(value, m.McontentType[key]))
+		}else{
+			currentDecodedMsgContent = nil
+		}
+	}
+
+	for key, value := range m.PrevContentValues {
+		if !m.NilFlagForContent {
+			prevDecodedMsgContent.Add(key, content.NewFieldValue(value, m.PrevContentType[key]))
+		}else{
+			prevDecodedMsgContent = nil
+		}
+	}
+
+	message := &Msg{
+		id:             m.Id,
+		pipelineId:     m.PipelineId,
+		stageId:        m.StageId,
+		processorId:    m.ProcessorId,
+		srcStageId:     m.SrcStageId,
+		srcProcessorId: m.SrcProcessorId,
+		srcMessageId:   m.SrcMessageId,
+		msgType:        m.Mtype,
+		msgContent:     currentDecodedMsgContent,
+		prevContent:    prevDecodedMsgContent,
+		trace:          trace{enabled: m.TraceFlag, path: m.TracePath},
+	}
+	return message, nil
+}
+
+func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8, text string) Msg {
+	cont := content.New()
+	cont = cont.Add("text", content.NewFieldValue(text, content.STRING))
+	cont = cont.Add("code", content.NewFieldValue(code, content.INT))
+	return Msg{
+		pipelineId:  pipelineId,
+		stageId:     stageId,
+		processorId: processorId,
+		msgContent:  cont,
+	}
 }

@@ -17,6 +17,9 @@ func NewSliceOrdered() IContent {
 		content: c,
 	}
 }
+func (oc *SliceOrdered) Remove(key string){
+	delete(oc.content,key)
+}
 
 func (oc SliceOrdered) Copy() IContent {
 	cpy := NewSliceOrdered()
@@ -26,12 +29,16 @@ func (oc SliceOrdered) Copy() IContent {
 	return cpy
 }
 
+
 func (oc SliceOrdered) Get(key string) (MsgFieldValue, bool) {
+
 	val, ok := oc.content[key]
 	return val, ok
 }
 
+
 func (oc SliceOrdered) Add(key string, value MsgFieldValue) IContent {
+
 	if _, ok := oc.content[key]; !ok {
 		oc.keys = append(oc.keys, key)
 	}

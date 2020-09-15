@@ -16,7 +16,6 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 
 		contents := content.Builder(m.Content())
 		pContent := content.Builder(m.PrevContent())
-
 		if !done(m) {
 			// Enrich here
 
@@ -27,7 +26,9 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 					return false
 				}
 				v, vt := extract.ValType(val)
+
 				contents = contents.Add(field, content.NewFieldValue(v, vt))
+
 			}
 
 			if pContent != nil {
@@ -35,7 +36,9 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 				pVal, _ := expr.Evaluate(pValues)
 
 				v, vt := extract.ValType(pVal)
+
 				pContent = pContent.Add(field, content.NewFieldValue(v, vt))
+
 			}
 
 			proc.Result(m, contents, pContent)

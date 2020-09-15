@@ -15,7 +15,7 @@ type Fake struct {
 	faker   *faker.Stream
 	random  map[string]interface{}
 }
-
+//utilizes the function of utils faker and produces dummy data
 func NewFaker(maxRows int64, m map[string][]interface{}) *Fake {
 
 	if m == nil {
@@ -62,6 +62,7 @@ func (f *Fake) done(m message.Msg, proc pipeline.IProcessorForExecutor) {
 func (f *Fake) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SOURCE
 }
+
 
 func (f *Fake) HasLocalState() bool {
 	return false

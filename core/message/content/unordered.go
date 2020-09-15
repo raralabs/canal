@@ -24,15 +24,20 @@ func (oc Unordered) Copy() IContent {
 	return cpy
 }
 
+
 func (oc Unordered) Get(key string) (MsgFieldValue, bool) {
+
 	val, ok := oc.content[key]
 	return val, ok
 }
 
+
 func (oc Unordered) Add(key string, value MsgFieldValue) IContent {
+
 	oc.content[key] = value
 	return oc
 }
+
 
 func (oc Unordered) Len() int {
 	return len(oc.content)

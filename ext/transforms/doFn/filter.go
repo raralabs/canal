@@ -18,7 +18,6 @@ func FilterFunction(filter func(map[string]interface{}) (bool, error), doneFunc 
 				if doneFunc(m) {
 					contents := content.Builder(m.Content())
 					pContent := content.Builder(m.PrevContent())
-
 					proc.Result(m, contents, pContent)
 					proc.Done()
 					return false
@@ -35,6 +34,7 @@ func FilterFunction(filter func(map[string]interface{}) (bool, error), doneFunc 
 		}
 
 		if !sent {
+
 			if m.PrevContent() != nil {
 				if ok, _ := filter(m.PrevContent().Values()); ok {
 					pContent := content.Builder(m.PrevContent())

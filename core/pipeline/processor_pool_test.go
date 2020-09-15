@@ -1,14 +1,14 @@
 package pipeline
 
 import (
+	"github.com/raralabs/canal/core/message"
 	content2 "github.com/raralabs/canal/core/message/content"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/raralabs/canal/core/message"
-	"github.com/stretchr/testify/assert"
 )
 
 // This dummy struct mocks a Processor Pool from the perspective of a receive pool. So we will only implement following:
@@ -18,11 +18,14 @@ type dummyProcessorPool struct {
 	outRoute   chan msgPod
 	chanClosed bool
 	stg        *stage
+	runLock    atomic.Value
 }
+
 
 func newDummyProcessorPool(route MsgRouteParam, stg *stage) *dummyProcessorPool {
 	sendChannel := make(chan msgPod, _SendBufferLength)
 	return &dummyProcessorPool{
+
 		outRoute:   sendChannel,
 		chanClosed: false,
 		routeMu:    &sync.Mutex{},
@@ -78,13 +81,219 @@ func (d *dummyProcessorPool) done() {
 	close(d.outRoute)
 	d.chanClosed = true
 }
+//Tests
+// -newProcessorPool
+// - stage()
+// - shortCircuitProcessors()
+
+func Test_newProcessorPool(t *testing.T){
+	stg :=  &stage{
+					id: uint32(5),
+		            executorType: SOURCE,
+		            name:"firstStage",
+	}
+	t.Run("newProcessorPool", func(t *testing.T) {
+		procPool:=newProcessorPool(stg)
+		if !reflect.DeepEqual(stg, procPool.stg){
+			t.Errorf("Want: %v\nGot: %v\n", stg, procPool.stg)}
+		assert.Equal(t,false,procPool.shortCircuit,"short circuit must be disabled by default")
+		assert.Equal(t,"map[pipeline.MsgRouteParam][]pipeline.IProcessorForPool",reflect.TypeOf(procPool.procMsgPaths).String(),"Datatype of the created procMsgPaths incompatible")
+		assert.Equal(t,"pipeline.processorFactory",reflect.TypeOf(procPool.processorFactory).String(),"creating new proc pool should create processor Factory")
+		assert.Equal(t,stg.id,procPool.processorFactory.stage.id,"processor factory not in same stage")
+		assert.Equal(t, nil,procPool.runLock.Load(),"processor should not be runLock at the initialization")
+		assert.Equal(t,procPool.stg,procPool.stage(),"Unexpected value received for stage")
+	})
+}
+
+func TestProcessorPool_add(t *testing.T){
+	newPipeline:= NewPipeline(uint32(1))
+	stgFac := newStageFactory(newPipeline)
+	stg:= stgFac.new("Stagedummy",TRANSFORM)
+	procPool := newProcessorPool(stg)
+	route := msgRoutes{	"path1": struct{}{},}
+	stg.processorPool = procPool
+	assert.Equal(t,0,len(procPool.procMsgPaths),"inital condition there is shouldn't be any procesor")//no processor added
+	procPool.add(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	assert.Equal(t,1,len(procPool.procMsgPaths),"number of processor added didn't match the route count for procesor")
+}
+
+
+//Test:
+// -attach()
+// -detach() processors
+// -removeProcRecv
+func TestProcessorPool_Operations(t *testing.T){
+	pipe := NewPipeline(uint32(1))
+	stgFactory := newStageFactory(pipe)
+	stg:= stgFactory.new("Stage1",SOURCE)
+	procPool := newProcessorPool(stg)
+	route := msgRoutes{"path": struct{}{},}
+	otherRoute := msgRoutes{"path2": struct{}{}}
+	processor1:= newDummyProcessor(newDummyExecutor(SOURCE),route,procPool)
+	processor2:= newDummyProcessor(newDummyExecutor(SOURCE),route,procPool)
+	//test for attach processor
+	//subscribing to same route
+	assert.Equal(t,0,len(procPool.procMsgPaths),"no process attached yet")
+	procPool.attach(processor1)
+	assert.Equal(t,1,len(procPool.procMsgPaths["path"]),"process attached")
+	procPool.attach(processor2)
+	assert.Equal(t,2,len(procPool.procMsgPaths["path"]),"second process attached")
+	//subscribing to other route
+	processor3 := newDummyProcessor(newDummyExecutor(SOURCE),otherRoute,procPool)
+	procPool.attach(processor3)
+	assert.Equal(t,2,len(procPool.procMsgPaths),"there are two different path in total")
+	assert.Equal(t,1,len(procPool.procMsgPaths["path2"]),"only one processor subscribed by processor3")
+
+	//test for detach processor
+	procPool.detach(processor3)
+	assert.Equal(t,0,len(procPool.procMsgPaths["path2"]),"one processor subscribing to other route removed")
+	procPool.detach(processor2)
+	assert.Equal(t,1,len(procPool.procMsgPaths["path"]),"one processor subscribing to other route removed")
+	procPool.detach(processor1)
+	assert.Equal(t,0,len(procPool.procMsgPaths["path"]),"one processor subscribing to other route removed")
+
+}
+
+//Tests:
+//	- lock()
+// 	- isRunning()
+func TestProcessorPool_lock(t *testing.T){
+	newPipeLine := NewPipeline(uint32(1))
+	stgFactory := newStageFactory(newPipeLine)
+	stg:= stgFactory.new("stage1",SOURCE)
+	procPool := newProcessorPool(stg)
+	stg.processorPool = procPool
+	route := msgRoutes{"path": struct{}{}}
+	t.Run("lock processor pool with process", func(t *testing.T) {
+
+		assert.Panics(t, func() {
+			stg.processorPool.lock(route)//trying to lock procesorPool without processor
+		})
+		pr1 :=  newDummyProcessor(newDummyExecutor(TRANSFORM),route,stg.processorPool)
+		stg.processorPool.attach(pr1)
+		assert.Equal(t,false,procPool.isRunning(),"processor should not be running before lock method invocation")
+		stg.processorPool.lock(route)
+		assert.Equal(t,true,procPool.runLock.Load(),"lock must have been enabled")
+		assert.Equal(t,true,procPool.isRunning(),"the processor is running but shows false")
+	})
+}
+func TestProcessorPool_shortCircuit(t *testing.T) {
+	newPipeLine := NewPipeline(uint32(1))
+	stg := &stage{
+		id:           uint32(5),
+		executorType: SOURCE,
+		name:         "firstStage",
+		pipeline: 	  newPipeLine,
+	}
+	procPool := newProcessorPool(stg)
+	t.Run("shortCircuitProcessor", func(t *testing.T) {
+		assert.Equal(t, false, procPool.shortCircuit, "shortcircuit must be disabled by default")
+		procPool.shortCircuitProcessors()
+		assert.Equal(t, true, procPool.shortCircuit, "shortcircuit enabled but no change detected")
+
+	})
+	route := msgRoutes{"path": struct{}{}}
+	prcFact := newProcessorFactory(stg)
+	processor1 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	processor2 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	procPool.attach(processor1,processor2)
+	msgFact := message.NewFactory(uint32(1), 1, 1)
+	msgContent := content2.New()
+	msgContent.Add("greetings",content2.NewFieldValue("hello",content2.STRING))
+	msg := msgFact.NewExecuteRoot(msgContent,false)
+	msgPackets := msgPod{
+		msg:   msg,
+		route: "path",
+	}
+	procPool.execute(msgPackets)
+}
+
+//Tests
+// -execute()
+// -isClosed()
+// -done()
+func TestProcessorPool_execute(t *testing.T){
+	newPipeline := NewPipeline(uint32(1))
+	stgFactory := newStageFactory(newPipeline)
+	//create stage1 and its related processor pool and msg content
+	stg1:= stgFactory.new("stage1",TRANSFORM)
+	prcPool := newProcessorPool(stg1)
+	stg1.processorPool = prcPool
+	prcFactory := newProcessorFactory(stg1)
+	route := msgRoutes{"path": struct{}{}}
+	processor1 := prcFactory.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	prcPool.attach(processor1)
+	msgFactory := message.NewFactory(newPipeline.id,stg1.id,processor1.id)
+	msgContent := content2.New()
+	msgContent.Add("key",content2.NewFieldValue("hello",content2.STRING))
+	msg := msgFactory.NewExecuteRoot(msgContent, false)
+
+	//create stage2 and its related processor pool
+	stg2:= stgFactory.new("stage2",TRANSFORM)
+	processor1.addSendTo(stg2, "sendPath")
+
+	//creating channel from processor 1 to stg2
+	receiver := processor1.channelForStageId(stg2)
+	processor2 := prcFactory.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
+	stg3 := stgFactory.new("Stage3",SINK)
+	prcPool.attach(processor2)
+	processor2.addSendTo(stg3,"sendPath3")
+	processor1.addSendTo(stg3,"sendPath2")
+	receiver2 := processor1.channelForStageId(stg3)
+	receiver3 := processor1.channelForStageId(stg3)
+
+	prcPool.lock(route)
+
+	t.Run("single processor sending to the stage", func(t *testing.T) {
+		msgPack := msgPod{
+			msg:   msg,
+			route: MsgRouteParam("path"),
+		}
+
+		// check if the processor is closed before complete execution
+		assert.Equal(t,false,prcPool.isClosed(),"want processor to be running but received processor closed")
+		prcPool.execute(msgPack)
+		select {
+		case receivedMsg := <-receiver:
+			m := receivedMsg.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		}
+	})
+	prcPool.done()
+	//check if the processor is closed after complete execution
+	assert.Equal(t,true,prcPool.isClosed(),"want processor to be closed but received processor running")
+	//multiple channel from multiple processor to one receiving stage
+
+	t.Run("multiple processor sending to same stage", func(t *testing.T) {
+		msgPack := msgPod{
+			msg:   msg,
+			route: MsgRouteParam("path"),
+		}
+		prcPool.execute(msgPack)
+		select {
+		case receivedMsg2 := <-receiver2:
+			m := receivedMsg2.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		case receivedMsg3 := <-receiver3:
+			m := receivedMsg3.msg
+			if !reflect.DeepEqual(m.Content(), msg.Content()) {
+				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
+			}
+			assert.Equal(t, msg.Id(), m.Id())
+		}
+	})
+}
 
 func TestProcessorPool(t *testing.T) {
 
 	t.Run("Simple Processor Pool Test", func(t *testing.T) {
-
 		pipelineId := uint32(1)
-
 		// Generate Message
 		msgF := message.NewFactory(pipelineId, 1, 1)
 		content := content2.New()
@@ -112,9 +321,7 @@ func TestProcessorPool(t *testing.T) {
 		stg := stgFactory.new("Second Node", TRANSFORM)
 		pr.addSendTo(stg, "test")
 		receiver := pr.channelForStageId(stg)
-
 		procPool.lock(route)
-
 		t.Run("Test1", func(t *testing.T) {
 			msgPack := msgPod{
 				msg:   msg,
@@ -169,6 +376,7 @@ func TestProcessorPool(t *testing.T) {
 		})
 
 		procPool.done()
+
 	})
 
 	t.Run("Processor Pool with Two Dummy Processors", func(t *testing.T) {
@@ -217,6 +425,7 @@ func TestProcessorPool(t *testing.T) {
 		t.Run("With Both Processors", func(t *testing.T) {
 
 			procPool.execute(msgPack)
+
 			time.Sleep(1 * time.Microsecond)
 
 			t.Run("Check First", func(t *testing.T) {

@@ -47,7 +47,6 @@ func TestDummyExecutor(t *testing.T) {
 	proc := newDummyProcessorExecutor(exec)
 
 	proc.process(msg)
-
 	if !reflect.DeepEqual(msg, proc.resSrcMsg) {
 		t.Errorf("want: %v, got: %v", proc.resSrcMsg, msg)
 	}

@@ -4,7 +4,6 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"sync/atomic"
 )
-
 // A MessageFactory represents a factory that can produce message(s).
 type Factory struct {
 	pipelineId  uint32 //

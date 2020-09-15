@@ -10,9 +10,9 @@ import (
 func PassFunction() pipeline.Executor {
 
 	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+
 		contents := content.Builder(m.Content())
 		pContent := content.Builder(m.PrevContent())
-
 		proc.Result(m, contents, pContent)
 		return true
 	}

@@ -11,6 +11,7 @@ import (
 func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Executor {
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
+
 		if !done(m) {
 			oldContents := m.Content()
 			pContent := m.PrevContent()
@@ -23,7 +24,6 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 					contents = contents.Add(fld, content.NewFieldValue(nil, content.NONE))
 				}
 			}
-
 			if pContent != nil {
 				pContents := content.Builder()
 				for _, fld := range fields {
@@ -40,7 +40,6 @@ func SelectFunction(fields []string, done func(m message.Msg) bool) pipeline.Exe
 		} else {
 			oldContents := content.Builder(m.Content())
 			pContent := content.Builder(m.PrevContent())
-
 			proc.Result(m, oldContents, pContent)
 			proc.Done()
 		}
