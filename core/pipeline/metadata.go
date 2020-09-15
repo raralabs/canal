@@ -97,7 +97,7 @@ func (mr *messageRate) init() {
 		cnt := atomic.SwapUint64(&mr.counter, 0)
 
 		mr.rateMu.Lock()
-		mr.rateBuffer.Put(cnt)
+		mr.rateBuffer.Put(cnt) //???
 		mr.rateMu.Unlock()
 	}
 
