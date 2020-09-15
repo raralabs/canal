@@ -88,8 +88,8 @@ func (m *Msg) ProcessorId() uint32 {
 
 func (m *Msg) String() string {
 	return fmt.Sprintf(
-		"Msg[Id:%d, Stg:%d, Prc:%d; %s]",
-		m.id, m.stageId, m.processorId, m.msgContent.String())
+		"Msg[Id:%d, Stg:%d, Prc:%d]",
+		m.id, m.stageId, m.processorId)
 }
 
 func (m *Msg) IsControl() bool {
@@ -106,20 +106,22 @@ func (m *Msg) IsExecute() bool {
 
 // msgHolder holds the message to be serialized.
 type msgHolder struct {
-	Id                uint64
-	PipelineId        uint32
-	StageId           uint32
-	ProcessorId       uint32
-	SrcStageId        uint32
-	SrcProcessorId    uint32
-	SrcMessageId      uint64
-	Mtype             MsgType
-	McontentValues    map[string]interface{}
-	PrevContentValues map[string]interface{}
-	McontentType      map[string]content.FieldValueType
-	PrevContentType   map[string]content.FieldValueType
-	TraceFlag         bool
-	TracePath         []tracePath
+	Id                	 uint64
+	PipelineId        	 uint32
+	StageId           	 uint32
+	ProcessorId       	 uint32
+	SrcStageId        	 uint32
+	SrcProcessorId    	 uint32
+	SrcMessageId      	 uint64
+	Mtype             	 MsgType
+	McontentValues    	 map[string]interface{}
+	PrevContentValues 	 map[string]interface{}
+	McontentType      	 map[string]content.FieldValueType
+	PrevContentType   	 map[string]content.FieldValueType
+	NilFlagForContent 	 bool //flag to check if the message content is nil inorder to prevent encoding errors
+	NilFlagForPreContent bool //flag to check if the previous content is nil inorder to prevent encoding errors
+	TraceFlag         	 bool
+	TracePath         	[]tracePath
 }
 
 // AsBytes returns the gob-encoded byte array of the message.
@@ -138,15 +140,25 @@ func (m *Msg) AsBytes() ([]byte, error) {
 		TraceFlag:         m.trace.enabled,
 		TracePath:         m.trace.path,
 	}
+
 	if m.msgContent != nil{
+		//fmt.Println("messages",m.msgContent)
 		MessageHolder.McontentValues = m.msgContent.Values()
 		MessageHolder.McontentType = m.msgContent.Types()
-
+	}else{
+		nilValues := make(map[string]interface{})
+		nilValues["key"] = "nil"
+		MessageHolder.McontentValues = nilValues
+		MessageHolder.NilFlagForContent = true
 	}
-
 	if m.prevContent != nil{
 		MessageHolder.PrevContentValues = m.prevContent.Values()
 		MessageHolder.PrevContentType =m.prevContent.Types()
+	}else{
+		nilValues := make(map[string]interface{})
+		nilValues["key"] = "nil"
+		MessageHolder.McontentValues = nilValues
+		MessageHolder.NilFlagForContent = true
 	}
 	encoder := gob.NewEncoder(&buf)
 	err := encoder.Encode(MessageHolder)
@@ -172,11 +184,19 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	prevDecodedMsgContent := content.New()
 
 	for key, value := range m.McontentValues {
-		currentDecodedMsgContent.Add(key, content.NewFieldValue(value, m.McontentType[key]))
+		if !m.NilFlagForContent{
+			currentDecodedMsgContent.Add(key, content.NewFieldValue(value, m.McontentType[key]))
+		}else{
+			currentDecodedMsgContent = nil
+		}
 	}
 
 	for key, value := range m.PrevContentValues {
-		prevDecodedMsgContent.Add(key, content.NewFieldValue(value, m.PrevContentType[key]))
+		if !m.NilFlagForContent {
+			prevDecodedMsgContent.Add(key, content.NewFieldValue(value, m.PrevContentType[key]))
+		}else{
+			prevDecodedMsgContent = nil
+		}
 	}
 
 	message := &Msg{

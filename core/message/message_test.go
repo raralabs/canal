@@ -122,9 +122,9 @@ func TestNewFromBytes(t *testing.T) {
 		inAndOut *Msg
 		wantErr  bool
 	}{
-		{"complete EXECUTE msg with empty content", &Msg{id: 1, processorId: 1,
+		{"complete EXECUTE msg with nil content", &Msg{id: 1, processorId: 1,
 			srcMessageId: 2, stageId: 10, srcProcessorId: 1, srcStageId: 3,
-			msgType: EXECUTE, msgContent: content.New(), prevContent: content.New(),
+			msgType: EXECUTE, prevContent: content.New(),
 			trace: trace{false, []tracePath(nil)},
 		}, false},
 		{"complete CONTROL msg with empty content", &Msg{id: 1, processorId: 1,
