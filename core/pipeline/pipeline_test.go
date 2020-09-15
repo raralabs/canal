@@ -5,6 +5,7 @@ import (
 	"github.com/raralabs/canal/core/message"
 	content2 "github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -71,6 +72,91 @@ func (s *channelSink) Name() string {
 	return s.name
 }
 
+func TestNewPipeline(t *testing.T) {
+
+	t.Run("Create New Pipeline", func(t *testing.T) {
+		pipeLine := NewPipeline(uint32(1))
+		stgFactory := newStageFactory(pipeLine)
+		assert.Equal(t,pipeLine.id,uint32(1),"Id didn't match")
+		assert.Equal(t,false,pipeLine.runLock.Load(),"run lock must be disabled by default")
+		assert.Equal(t,"chan message.Msg",reflect.TypeOf(pipeLine.errorReceiver).String(),"error receiver must of type channel")
+		if !reflect.DeepEqual(pipeLine.stageFactory, stgFactory) {
+			t.Errorf("Want: %v\nGot: %v\n", stgFactory, pipeLine.stageFactory)
+		}
+	})
+}
+
+
+func TestPipeline_AddSource(t *testing.T) {
+	pipeLine := NewPipeline(uint32(1))
+	t.Run("add source", func(t *testing.T) {
+		stg := pipeLine.AddSource("source stage")
+		assert.Equal(t,stg.pipeline.id,pipeLine.id,"pipeline id mismatch suggest stage created on different pipeline")
+		assert.Equal(t,SOURCE,stg.executorType,"Executor Type expected to be SOURCE")
+		//trying to add transform and sink processor on source stage
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(TRANSFORM))
+		})
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(SINK))
+		})
+	})
+}
+
+
+func TestPipeline_AddTransform(t *testing.T) {
+	pipeLine := NewPipeline(uint32(1))
+	t.Run("add source", func(t *testing.T) {
+		stg := pipeLine.AddTransform("source stage")
+		assert.Equal(t,stg.pipeline.id,pipeLine.id,"pipeline id mismatch suggest stage created on different pipeline")
+		assert.Equal(t,TRANSFORM,stg.executorType,"Executor Type expected to be TRANSFORM")
+		// trying to add source and sink processor on transform stage
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(SOURCE))
+		})
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(SINK))
+		})
+	})
+}
+
+func TestPipeline_AddSink(t *testing.T) {
+	pipeLine := NewPipeline(uint32(1))
+	t.Run("add source", func(t *testing.T) {
+		stg := pipeLine.AddSink("source stage")
+		assert.Equal(t,stg.pipeline.id,pipeLine.id,"pipeline id mismatch suggest stage created on different pipeline")
+		assert.Equal(t,SINK,stg.executorType,"Executor Type expected to be TRANSFORM")
+		// trying to add source and transform processor on Sink stage
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(SOURCE))
+		})
+		assert.Panics(t, func() {
+			stg.AddProcessor(DefaultProcessorOptions,newDummyExecutor(TRANSFORM))
+		})
+	})
+}
+
+//func TestPipeline_Validate(t *testing.T) {
+//	pipeLine := NewPipeline(uint32(1))
+//	srcStg := pipeLine.AddSource("Generator")
+//	trnStg := pipeLine.AddTransform("Filter")
+//	snkStg := pipeLine.AddSink("BlackHole")
+//	src := srcStg.AddProcessor(DefaultProcessorOptions, newNumberGenerator(100))
+//	trnStg.ReceiveFrom("path1", src)
+//	tr := trnStg.AddProcessor(DefaultProcessorOptions, newDummyExecutor(TRANSFORM), "path1")
+//	snkCh := make(chan message.Msg, 100)
+//	snkStg.ReceiveFrom("path2", tr)
+//	snkStg.AddProcessor(DefaultProcessorOptions, newSink(snkCh), "")
+//	pipeLine.Validate()
+//
+//}
+
+func TestPipeline_Id(t *testing.T) {
+	pipelineId := uint32(1)
+	pipeLine := NewPipeline(pipelineId)
+	assert.Equal(t,pipelineId,pipeLine.Id(),"Id must match")
+}
+
 func TestPipeline(t *testing.T) {
 
 	pipelineId := uint32(1)
@@ -94,6 +180,8 @@ func TestPipeline(t *testing.T) {
 	snkStg.AddProcessor(DefaultProcessorOptions, newSink(snkCh), "")
 
 	pipeline.Validate()
+
+	
 
 	bckGnd := context.Background()
 	d := time.Now().Add(10 * time.Millisecond)
@@ -122,6 +210,10 @@ func TestPipeline(t *testing.T) {
 	}
 
 	pipeline.Start(ctx, testAfterCompletion)
+	for _,stg := range(pipeline.stages){
+		assert.Equal(t,true,stg.isRunning(),"start should run the stages")
+		assert.Equal(t,true,stg.isClosed(),"start sould run the stages")
+	}
 
 	cancel()
 }

@@ -112,7 +112,6 @@ func (rp *receivePool) loop(pool IProcessorPool) {
 		}
 		wg.Wait()
 	}
-
 	//println("Receiveloop exited, closing ", rp.stage.name)
 	pool.done()
 }
