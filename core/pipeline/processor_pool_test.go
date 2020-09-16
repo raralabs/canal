@@ -177,35 +177,64 @@ func TestProcessorPool_lock(t *testing.T){
 		assert.Equal(t,true,procPool.isRunning(),"the processor is running but shows false")
 	})
 }
+
 func TestProcessorPool_shortCircuit(t *testing.T) {
 	newPipeLine := NewPipeline(uint32(1))
-	stg := &stage{
-		id:           uint32(5),
-		executorType: SOURCE,
-		name:         "firstStage",
-		pipeline: 	  newPipeLine,
-	}
-	procPool := newProcessorPool(stg)
-	t.Run("shortCircuitProcessor", func(t *testing.T) {
-		assert.Equal(t, false, procPool.shortCircuit, "shortcircuit must be disabled by default")
-		procPool.shortCircuitProcessors()
-		assert.Equal(t, true, procPool.shortCircuit, "shortcircuit enabled but no change detected")
+	stgFactory := newStageFactory(newPipeLine)
+	stg := stgFactory.new("stage1",SOURCE)
 
-	})
+	procPool := newProcessorPool(stg)
 	route := msgRoutes{"path": struct{}{}}
 	prcFact := newProcessorFactory(stg)
 	processor1 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
 	processor2 := prcFact.new(DefaultProcessorOptions,newDummyExecutor(TRANSFORM),route)
 	procPool.attach(processor1,processor2)
-	msgFact := message.NewFactory(uint32(1), 1, 1)
-	msgContent := content2.New()
-	msgContent.Add("greetings",content2.NewFieldValue("hello",content2.STRING))
-	msg := msgFact.NewExecuteRoot(msgContent,false)
-	msgPackets := msgPod{
-		msg:   msg,
-		route: "path",
-	}
-	procPool.execute(msgPackets)
+	stg.processorPool = procPool
+	t.Run("shortCircuitProcessor", func(t *testing.T) {
+		assert.Equal(t, false, procPool.shortCircuit, "shortcircuit must be disabled by default")
+		stg.processorPool.shortCircuitProcessors()
+		assert.Equal(t, true, procPool.shortCircuit, "shortcircuit enabled but no change detected")
+		msgFact := message.NewFactory(uint32(1), 1, 1)
+		msgContent := content2.New()
+		msgContent.Add("greetings",content2.NewFieldValue("hello",content2.STRING))
+		msg := msgFact.NewExecuteRoot(msgContent,false)
+		msgPackets := msgPod{
+			msg:   msg,
+			route: "path",
+		}
+		//processor1.meta = newMetadata()
+		//processor2.meta = newMetadata()
+		for path, procs := range procPool.procMsgPaths {
+			if path != msgPackets.route {
+				continue
+			}
+			for _, proc := range procs {
+
+				if proc.IsClosed() {
+					continue
+				}
+
+				accepted := proc.process(msg)
+
+				if accepted && procPool.shortCircuit {
+					break
+				}
+				//assert.Equal(t,processor1.meta.totalRcvMsg,uint64(0))
+				//assert.Equal(t,processor2.meta.totalRcvMsg,uint64(0))
+			}
+
+		}
+
+		assert.Equal(t,processor1.meta.totalRcvMsg,uint64(1))
+		assert.Equal(t,processor2.meta.totalRcvMsg,uint64(0))
+
+	})
+
+
+
+
+
+
 }
 
 //Tests

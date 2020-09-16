@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-
 	"github.com/raralabs/canal/config"
 	"github.com/stretchr/testify/assert"
 )

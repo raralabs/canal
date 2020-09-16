@@ -26,9 +26,7 @@ func TestSendPool_newSendPool(t *testing.T){
 }
 
 
-func TestSendPool_lock(t *testing.T){
 
-}
 //Tests
 //- isConnected()
 //- addSendTO

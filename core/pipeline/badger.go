@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"time"
-
 	"github.com/dgraph-io/badger/v2"
 	"github.com/raralabs/canal/config"
 	"github.com/raralabs/canal/utils/handle"
@@ -20,11 +19,9 @@ type Badger struct {
 
 func NewBadger(path string) *Badger {
 	os.MkdirAll(path, os.ModePerm)
-
 	opts := badger.DefaultOptions(path)
 	db, err := badger.Open(opts)
 	handle.Error(err)
-
 	return &Badger{
 		db:           db,
 		firstIterate: true,
