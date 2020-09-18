@@ -5,5 +5,6 @@
 - mock_message creates dummy msg that immitates the msg through route
 - hashMap.go contains the HashMap table to store the stream1
 - hashMap also provides function to check the presence of item in the 
-has map
-- merger joins the two messages when they qualifies for the join
+hash map
+- merger joins the two messages if hash of message 2 is found on hash table
+

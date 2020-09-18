@@ -67,7 +67,7 @@ func(in *innerJoin)Join(inStream1,inStream2 content.IContent){
 }
 
 func(in *innerJoin) Condition(query string)([]string,[]string){
-	var cleanedFields1 []string //to join keys for the first stream
+	var cleanedFields1 []string //to hold join keys for the first stream
 	var cleanedFields2 []string // to hold the join keys for the second stream
 	regEx,_ := regexp.Compile(`ON\s+?(?P<seg1>[^=]+)\s?\=\s+?(?P<seg2>[^\s\s\s+]+)`)
 	params := regparser.ExtractParams(regEx,query)
@@ -85,15 +85,22 @@ func(in *innerJoin) Condition(query string)([]string,[]string){
 }
 
 func Start(){
+	//dummy query example
 	query := "SELECT * FROM Stream1 INNERJOIN Stream2 ON Stream1.age,Stream1.first_name,Stream1. last_name = Stream2.age,Stream2.full_name"
+	//creates a new inner join
 	newJoin := NewInnerJoin(query)
+
+	//prepares query by extractiong the join keys and condition
 	fieldsFromStream1,fieldsFromStream2 := newJoin.Condition(query)
+
+	//channels for message stream 1 and 2 to mimick the messages from path1 and path2
 	messageStream1 := make(chan content.IContent)
 	messageStream2 := make(chan content.IContent)
 
 	go createMsgForPath1(100,messageStream1)
 	go createMsgForPath2(100,messageStream2)
 
+	//get the messages from stream1 and hold them in hash map
 	for msg := range messageStream1{
 		var joinFieldsVal []interface{}
 		for _,field := range fieldsFromStream1{
@@ -103,6 +110,8 @@ func Start(){
 		key := concatKeys(joinFieldsVal)
 		newJoin.hashTable.Set(msg,key)
 	}
+
+	//get the message from stream2 and check for the match in the hashmap
 	count:=0
 	for msg := range messageStream2{
 		var joinFieldsVal []interface{}
@@ -121,7 +130,6 @@ func Start(){
 
 	}
 	fmt.Println(newJoin.mergedContent,len(newJoin.mergedContent),"joined")
-
 }
 
 
