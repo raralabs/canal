@@ -48,6 +48,7 @@ func TestMsg_SetField(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			msg := &Msg{msgContent: content.New()}
 			msg.msgContent.Add("test", test.prev)
+
 			want := msg
 			if got := msg.SetField(test.args.key, test.args.msgValue); !reflect.DeepEqual(got, want) {
 
@@ -193,11 +194,14 @@ func TestMsg_Content(t *testing.T) {
 		content.NewFieldValue(12, content.INT),
 		content.NewFieldValue("xyz", content.STRING),
 	}
+
 	want := map[string]interface{}{}
 	t.Run("Content", func(t *testing.T) {
 		for idx, msgValue := range msgValues {
 			want[keys[idx]] = msgValue.Val
 			msg.msgContent.Add(keys[idx], msgValue)
+			//fmt.Println("message",msg.msgContent.Keys())
+
 			if got := msg.msgContent; !reflect.DeepEqual(got.Values(), want) {
 				t.Errorf("Msg.Values() = %v, want %v", got.Values(), want)
 			}

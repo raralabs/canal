@@ -109,7 +109,6 @@ func (d *dummyProcessor) metadata() *metadata {
 // - lock()
 // - addSendTO()
 // - metadata()
-
 func TestProcessor_Attr(t *testing.T) {
 	stgFactory := newStageFactory(NewPipeline(uint32(1)))
 	stg := stgFactory.new("testStg", TRANSFORM)
@@ -134,7 +133,7 @@ func TestProcessor_Attr(t *testing.T) {
 	//processor1.lock(route)
 	//tie:=time.Now()
 	assert.Equal(t,nil,processor1.sndPool.runLock.Load(),"sndpool lock should be enabled by lock()")
-	hours, minutes, _ := time.Now().Clock()
+	hours, minutes,_:= time.Now().Clock()
 	processor1.lock(route)
 	processor1StHr,processor1StMin,_ := processor1.meta.startTime.Clock()
 	assert.Equal(t,hours,processor1StHr,"lock should initialize metadata of the processor")

@@ -53,7 +53,6 @@ func (pr *Processor) process(msg message.Msg) bool {
 		pod := newMsgPod(pr.statusMessage(pr.procPool.stage().withTrace))
 		msg = pod.msg
 	}
-
 	pr.meta.ping(msg)
 	return pr.executor.Execute(msg, pr)
 }

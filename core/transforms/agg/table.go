@@ -8,7 +8,6 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"log"
 	"strings"
-
 	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 

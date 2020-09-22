@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -103,8 +104,10 @@ func (rp *receivePool) loop(pool IProcessorPool) {
 		wg.Add(len(rp.receiveFrom))
 		for _, proc := range rp.receiveFrom {
 			rchan := proc.channelForStageId(rp.stage)
+
 			go func() {
 				for pod := range rchan {
+					fmt.Println(pod)
 					pool.execute(pod)
 				}
 				wg.Done()
