@@ -28,9 +28,8 @@ type joinInterface interface {
 	Join(inStream1,inStream2 content.IContent) content.IContent
 
 	//returns the joined streams of message
-	//JoinedMsg()[]c
 
-	//condition for the join
+	//prepares query for the join
 	Condition(query string)
 
 	//get stream from 1st route
@@ -73,6 +72,7 @@ func(in *innerJoin) Condition(query string)([]string,[]string){
 	params := regparser.ExtractParams(regEx,query)
 	rawFields1 := strings.Split(params["seg1"], ",")
 	rawFields2 := strings.Split(params["seg2"], ",")
+
 	for _,field := range rawFields1{
 		reqField := strings.Split(field,".")[1]
 		cleanedFields1 = append(cleanedFields1,strings.TrimSpace(reqField))
@@ -82,6 +82,10 @@ func(in *innerJoin) Condition(query string)([]string,[]string){
 		cleanedFields2 = append(cleanedFields2,reqField)
 	}
 	return cleanedFields1,cleanedFields2
+}
+
+func (in *innerJoin) ProcessStreamFirst(stream){
+
 }
 
 func Start(){
@@ -101,22 +105,22 @@ func Start(){
 	go createMsgForPath2(100,messageStream2)
 
 	//get the messages from stream1 and hold them in hash map
-	for msg := range messageStream1{
-		var joinFieldsVal []interface{}
-		for _,field := range fieldsFromStream1{
-
-			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
+	go func() {
+		for msg := range messageStream1{
+			var joinFieldsVal []interface{}
+			for _,field := range fieldsFromStream1{
+				joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
+			}
+			key := concatKeys(joinFieldsVal)
+			newJoin.hashTable.Set(msg,key)
 		}
-		key := concatKeys(joinFieldsVal)
-		newJoin.hashTable.Set(msg,key)
-	}
+	}()
 
 	//get the message from stream2 and check for the match in the hashmap
 	count:=0
 	for msg := range messageStream2{
 		var joinFieldsVal []interface{}
 		for _,field := range fieldsFromStream2{
-
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
 		key := concatKeys(joinFieldsVal)
