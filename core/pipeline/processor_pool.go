@@ -42,7 +42,8 @@ type IProcessorPool interface {
 	detach(...IProcessorForPool)
 
 	// execute routes the msgPod to the processors that has subscribed to it.
-	execute(pod msgPod)
+	//execute(pod msgPod) //old implementations%%%%%%%%%
+	execute(pod MsgPod)
 
 	// error sends the errors produced during the execution to appropriate channels.
 	error(uint8, error)
@@ -172,14 +173,15 @@ func removeProcRecv(pr []IProcessorForPool, i int) []IProcessorForPool {
 
 // execute executes the corresponding execute on all the processors with the same msg 'm', that has subscribed to the
 // path of msg 'm'
-func (pool *processorPool) execute(pod msgPod) {
+//func (pool *processorPool) execute(pod msgPod) {
+func (pool * processorPool) execute(pod MsgPod){//new implementations
 	if pool.isClosed() || !pool.isRunning() {
 		return
 	}
 	allClosed := true
 
 	for path, procs := range pool.procMsgPaths {
-		if path != MsgRouteParam("") && path != pod.route {//redundant type conversion refactorization necessary
+		if path != MsgRouteParam("") && path != pod.Route {//redundant type conversion refactorization necessary
 			continue
 		}
 
@@ -187,8 +189,8 @@ func (pool *processorPool) execute(pod msgPod) {
 			if proc.IsClosed() {
 				continue
 			}
-
-			accepted := proc.process(pod.msg)
+			accepted := proc.process(pod)
+			//accepted := proc.process(pod.msg) //old implementation
 			if !proc.IsClosed() {
 				allClosed = false
 			}

@@ -31,10 +31,10 @@ func NewFaker(maxRows int64, m map[string][]interface{}) *Fake {
 	}
 }
 
-func (f *Fake) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-
+//func (f *Fake) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+func (f *Fake) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	if f.currRow >= f.maxRows {
-		f.done(m, proc)
+		f.done(m.Msg, proc)
 		return false
 	}
 
@@ -45,7 +45,7 @@ func (f *Fake) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool 
 		value, valType := extract.ValType(v)
 		contents = contents.Add(k, content.NewFieldValue(value, valType))
 	}
-	proc.Result(m, contents, nil)
+	proc.Result(m.Msg, contents, nil)
 	f.currRow++
 
 	return false

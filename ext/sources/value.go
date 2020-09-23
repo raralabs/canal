@@ -1,7 +1,7 @@
 package sources
 
 import (
-	"github.com/raralabs/canal/core/message"
+	//"github.com/raralabs/canal/core/message"//import for older version
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/utils/extract"
@@ -45,8 +45,8 @@ func (mv *MapValue) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SOURCE
 }
 
-func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-
+//func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+func (mv *MapValue) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	if mv.times != 0 {
 		times := mv.times
 		if mv.times == -1 {
@@ -60,7 +60,7 @@ func (mv *MapValue) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) 
 				mv.times--
 			}
 
-			proc.Result(m, mv.values, nil)
+			proc.Result(m.Msg, mv.values, nil)
 		}
 	} else {
 		proc.Done()

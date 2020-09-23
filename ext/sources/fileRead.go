@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/raralabs/canal/core/message"
+	//"github.com/raralabs/canal/core/message"//older implementations
 	"github.com/raralabs/canal/core/pipeline"
 )
 
@@ -36,8 +36,10 @@ func NewFileReader(path, key string, maxLines int) pipeline.Executor {
 		maxLines: maxLines,
 	}
 }
-
-func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+//older implementation
+//func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+//newer implementation
+func (fr *FileReader) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	if fr.maxLines == 0 {
 		proc.Done()
 		fr.close()
@@ -52,11 +54,11 @@ func (fr *FileReader) Execute(m message.Msg, proc pipeline.IProcessorForExecutor
 		content := content2.New()
 		line := fr.scanner.Text()
 		content = content.Add(fr.key, content2.NewFieldValue(line, content2.STRING))
-		proc.Result(m, content, nil)
+		proc.Result(m.Msg, content, nil)
 	} else {
 		content := content2.New()
 		content = content.Add("eof", content2.NewFieldValue(true, content2.BOOL))
-		proc.Result(m, content, nil)
+		proc.Result(m.Msg, content, nil)
 
 		proc.Done()
 		fr.close()

@@ -1,8 +1,9 @@
 package sources
 
 import (
-	"github.com/raralabs/canal/core/message"
-	content2 "github.com/raralabs/canal/core/message/content"
+
+	//"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 )
 
@@ -16,16 +17,17 @@ func NewInlineRange(maxVal uint64) pipeline.Executor {
 	return &InlineRange{name: "Inline", curVal: 0, maxVal: maxVal}
 }
 
-func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+//func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+func (s *InlineRange) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	if s.curVal >= s.maxVal {
 		proc.Done()
 		return true
 	}
 
 	s.curVal++
-	content := content2.New()
-	content = content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
-	proc.Result(m, content, nil)
+	msgContent := content.New()
+	msgContent = msgContent.Add("value", content.NewFieldValue(s.curVal, content.INT))
+	proc.Result(m.Msg, msgContent, nil)
 	return false
 }
 

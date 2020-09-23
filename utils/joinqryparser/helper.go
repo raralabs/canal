@@ -16,7 +16,6 @@ func tokenize(sentence string,tkDecider string)[]string{
 //extracts the join parameters and condition
 func getJoinCondition(querySeg string)(string,string,string) {
 	var fields1,fields2,operator string
-	querySeg = "c.customer_id=o.customer_id"
 	switchFlag := false
 	firstEnd := 0
 	secondStart := 0

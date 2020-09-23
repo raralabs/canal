@@ -1,9 +1,5 @@
 package pipeline
 
-import (
-	"github.com/raralabs/canal/core/message"
-)
-
 type ExecutorType uint8
 
 const (
@@ -47,7 +43,8 @@ type IProcessorForExecutor interface {
 // joiner, counter, tumbling window functions and so on and do functions like
 // compute, pass, filter and so on.
 type Executor interface {
-	Execute(message.Msg, IProcessorForExecutor) bool
+	Execute(MsgPod, IProcessorForExecutor) bool
+	//Execute(message.Msg, IProcessorForExecutor) bool //old implementation of execute . TO roll back just uncomment
 	HasLocalState() bool
 	ExecutorType() ExecutorType
 	SetName(name string)

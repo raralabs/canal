@@ -32,8 +32,10 @@ type IProcessorExecutor interface {
 // stg. It provides methods for a processor to act as an 'Observer'.
 type IProcessorReceiver interface {
 	// process obtains the incoming message from it's subscription.
-	process(message.Msg) bool
+	//process(message.Msg) bool //old implementation of the code
+	//process(msgPod)bool//old implementation
 
+	process(MsgPod)bool
 	// Returns the message routes for the incoming message for processor.
 	incomingRoutes() msgRoutes
 
@@ -47,8 +49,10 @@ type IProcessorSender interface {
 	addSendTo(stage *stage, route MsgRouteParam)
 
 	// channelForStageId returns a channel that emits message for the respective stage.
-	channelForStageId(stage *stage) <-chan msgPod
+	//!!!!old implementations
+	//channelForStageId(stage *stage) <-chan msgPod
 
+	channelForStageId(stage *stage) <-chan MsgPod
 	// isConnected tells if the processor is properly connected to the receiver in the next stage.
 	// For a sink type processor, it simply returns true.
 	isConnected() bool

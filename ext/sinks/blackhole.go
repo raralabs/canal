@@ -1,7 +1,7 @@
 package sinks
 
 import (
-	"github.com/raralabs/canal/core/message"
+
 	"github.com/raralabs/canal/core/pipeline"
 )
 
@@ -17,9 +17,15 @@ func (s *BlackholeSink) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
 
-func (s *BlackholeSink) Execute(m message.Msg, pr pipeline.IProcessorForExecutor) bool {
+//old implementation of the code
+//func (s *BlackholeSink) Execute(m message.Msg, pr pipeline.IProcessorForExecutor) bool {
+//	return true
+//}
+
+func (s *BlackholeSink) Execute(_ pipeline.MsgPod, _ pipeline.IProcessorForExecutor) bool {
 	return true
 }
+
 
 func (s *BlackholeSink) HasLocalState() bool {
 	return false

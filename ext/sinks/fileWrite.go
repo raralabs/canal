@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/raralabs/canal/core/message"
+	//"github.com/raralabs/canal/core/message"//import for older version
 	"github.com/raralabs/canal/core/pipeline"
 )
 
@@ -28,10 +28,12 @@ func NewFileWriter(path, key string) pipeline.Executor {
 func (fw *FileWriter) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
+// for older implementation use m message.Msg instead of m pipeline.MsgPod
+func (fw *FileWriter) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 
-func (fw *FileWriter) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-
-	content := m.Content()
+	//content := m.Content()
+	//new
+	content := m.Msg.Content()
 	if val, ok := content.Get(fw.key); ok {
 		str := fmt.Sprintf("%v\n", val.Val)
 		fw.writer.WriteString(str)

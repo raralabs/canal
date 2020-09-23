@@ -35,18 +35,38 @@ func (sp *sendPool) isConnected() bool {
 	return len(sp.sndRoutes) > 0
 }
 
-// addSendTo registers a stg to which the sndPool is supposed to send the msg.
+//// addSendTo registers a stg to which the sndPool is supposed to send the msg.
+//func (sp *sendPool) addSendTo(stg *stage, route MsgRouteParam) {
+//	if sp.isLocked() {
+//		return
+//	}
+//
+//	if _, ok := sp.sndRoutes[stg]; !ok {
+//		sp.sndRoutes[stg] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
+//	}
+//}
 func (sp *sendPool) addSendTo(stg *stage, route MsgRouteParam) {
 	if sp.isLocked() {
 		return
 	}
 
 	if _, ok := sp.sndRoutes[stg]; !ok {
-		sp.sndRoutes[stg] = newSendRoute(make(chan msgPod, _SendBufferLength), route)
+		sp.sndRoutes[stg] = newSendRoute(make(chan MsgPod, _SendBufferLength), route)
 	}
 }
+//old implementations!!!!!
+//func (sp *sendPool) getChannel(stg *stage) <-chan msgPod {
+//	readPath, ok := sp.sndRoutes[stg]
+//
+//	if !ok {
+//		panic("Trying to get ReadChannel for stg not connected")
+//	}
+//
+//	return readPath.sendChannel
+//}
 
-func (sp *sendPool) getChannel(stg *stage) <-chan msgPod {
+//new implementation
+func (sp *sendPool) getChannel(stg *stage) <-chan MsgPod {
 	readPath, ok := sp.sndRoutes[stg]
 
 	if !ok {

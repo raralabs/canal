@@ -14,13 +14,13 @@ import (
 
 type tableValues struct{
 	alias 		string
-	name        string
+	Name        string
 }
 
 type condition struct{
-	fields1    []string
-	fields2	   []string
-	operator  string
+	Fields1    []string
+	Fields2	   []string
+	Operator  string
 }
 
 type queryParser struct{
@@ -42,7 +42,6 @@ func NewQueryParser(query string)*queryParser{
 
 //function tokenizes query into 3 parts select fields,from tables and conditions"
 func(qp *queryParser) PrepareQuery()*queryParser{
-
 	exp := `(SELECT|select)\s+(?P<select>.+)\s+(FROM|from)\s+(?P<table1>\w+\s?\w+?)\s(?P<joinType>[A-Za-z]+(join|JOIN))\s(?P<table2>\w+\s?\w+?)\s(on|ON)\s(?P<condition>.+)`
 	reg,err := regexp.Compile(exp)
 	if err!=nil{
@@ -63,7 +62,7 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			params := regparser.ExtractParams(reg,field)
 			for key,value := range params{
 				if key ==  "name"{
-					qp.FirstTable.name = value
+					qp.FirstTable.Name = value
 				}else if key== "alias"{
 					qp.FirstTable.alias = value
 				}
@@ -78,7 +77,7 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			params := regparser.ExtractParams(reg,field)
 			for key,value := range params{
 				if key ==  "name"{
-					qp.SecondTable.name = value
+					qp.SecondTable.Name = value
 				}else if key== "alias"{
 					qp.SecondTable.alias = value
 				}
@@ -97,23 +96,23 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 
 		case "condition":
 			fields1,fields2,operator := getJoinCondition(field)
-			qp.Condition.operator = operator
+			qp.Condition.Operator = operator
 			tokenizedFields1 := tokenize(fields1,",")
 			tokenizedFields2 := tokenize(fields2,",")
 			for _,token:= range(tokenizedFields1){
 				AliasedField := tokenize(token,".")
 				if len(AliasedField)>1{
-					qp.Condition.fields1 =append(qp.Condition.fields1,strings.TrimSpace(AliasedField[1]))
+					qp.Condition.Fields1 =append(qp.Condition.Fields1,strings.TrimSpace(AliasedField[1]))
 				}else{
-					qp.Condition.fields1 = append(qp.Condition.fields1,strings.TrimSpace(AliasedField[0]))
+					qp.Condition.Fields1 = append(qp.Condition.Fields1,strings.TrimSpace(AliasedField[0]))
 				}
 			}
 			for _,token:= range(tokenizedFields2){
 				AliasedField := tokenize(token,".")
 				if len(AliasedField)>1{
-					qp.Condition.fields2 =append(qp.Condition.fields2,strings.TrimSpace(AliasedField[1]))
+					qp.Condition.Fields2 =append(qp.Condition.Fields2,strings.TrimSpace(AliasedField[1]))
 				}else{
-					qp.Condition.fields2 = append(qp.Condition.fields2,strings.TrimSpace(AliasedField[0]))
+					qp.Condition.Fields2 = append(qp.Condition.Fields2,strings.TrimSpace(AliasedField[0]))
 				}
 			}
 

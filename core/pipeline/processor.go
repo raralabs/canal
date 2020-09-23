@@ -46,15 +46,26 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 	pr.meta.lock()
 }
 
+
+//Note :uncomment to revert back to old implementation!!!!!!
 // process executes the corresponding executor of the execute on the passed
 // msg. Returns true on successful execution of the executor on msg.
-func (pr *Processor) process(msg message.Msg) bool {
+//func (pr *Processor) process(msg message.Msg) bool {
+//	if pr.executor.ExecutorType() == SOURCE {
+//		pod := newMsgPod(pr.statusMessage(pr.procPool.stage().withTrace))
+//		msg = pod.msg
+//	}
+//	pr.meta.ping(msg)
+//	return pr.executor.Execute(msg, pr)
+//}
+//new implementation of processor process method
+func(pr *Processor) process(messagePod MsgPod) bool{
 	if pr.executor.ExecutorType() == SOURCE {
 		pod := newMsgPod(pr.statusMessage(pr.procPool.stage().withTrace))
-		msg = pod.msg
+		messagePod.Msg = pod.Msg
 	}
-	pr.meta.ping(msg)
-	return pr.executor.Execute(msg, pr)
+	pr.meta.ping(messagePod.Msg)
+	return pr.executor.Execute(messagePod,pr)
 }
 
 func (pr *Processor) Result(srcMsg message.Msg, content, pContent content.IContent) {
@@ -108,8 +119,13 @@ func (pr *Processor) IsClosed() bool {
 func (pr *Processor) addSendTo(stage *stage, route MsgRouteParam) {
 	pr.sndPool.addSendTo(stage, route)
 }
+//old implementation
+//func (pr *Processor) channelForStageId(stage *stage) <-chan msgPod {
+//	return pr.sndPool.getChannel(stage)
+//}
 
-func (pr *Processor) channelForStageId(stage *stage) <-chan msgPod {
+//new implementation
+func (pr *Processor) channelForStageId(stage *stage) <-chan MsgPod {
 	return pr.sndPool.getChannel(stage)
 }
 

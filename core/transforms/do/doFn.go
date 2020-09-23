@@ -13,9 +13,12 @@ type Operator struct {
 func NewOperator(df func(message.Msg, pipeline.IProcessorForExecutor) bool) pipeline.Executor {
 	return &Operator{doFunc: df}
 }
-
-func (df *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
-	return df.doFunc(m, proc)
+//older version of the code
+//func (df *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
+//	return df.doFunc(m, proc)
+//}
+func (df *Operator) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
+	return df.doFunc(m.Msg, proc)
 }
 
 func (df *Operator) ExecutorType() pipeline.ExecutorType {

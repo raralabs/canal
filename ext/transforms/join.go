@@ -14,26 +14,30 @@ type joinProcessor struct{
 	query  	 		string
 	name    		string
 	Joiner			joinUsingHshMap.StreamJoin
-	route 			string
+	firstPath		string
+	secondPath		string
 	fields1  		[]string
 	fields2  		[]string
-	firstProcessor 	uint32
 	secondContainer []content.IContent
 	mergeLock 		bool
 }
 
 func NewJoinProcessor(name string,joiner joinUsingHshMap.StreamJoin,query string) *joinProcessor {
-	qr:= "SELECT table,chair FROM table1 c INNERJOIN table2 d on table1.id=table2.id"
-	queryProcessor := joinqryparser.NewQueryParser(qr)
+
+	queryProcessor := joinqryparser.NewQueryParser(query)
 	queryProcessor.PrepareQuery()
-	fields1,fields2:= joiner.Condition(query)
-	return &joinProcessor{name:name,Joiner:joiner,query:query,fields1: fields1,fields2:fields2}
+	fields1,fields2:=queryProcessor.Condition.Fields1,queryProcessor.Condition.Fields2
+	fmt.Println("aaaaa",fields1,fields2)
+	return &joinProcessor{name:name,Joiner:joiner,query:query,firstPath:queryProcessor.FirstTable.Name,
+							secondPath:queryProcessor.SecondTable.Name,fields1: fields1,fields2:fields2}
 }
 
-func (sp *joinProcessor)Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool{
+func (sp *joinProcessor)Execute(messagePod pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool{
+	m := messagePod.Msg
 	if sp.firstProcessor==0{
-		sp.firstProcessor = m.ProcessorId()
+		sp.firstProcessor = messagePod.Msg.ProcessorId()
 	}
+
 	if m.ProcessorId() == sp.firstProcessor {
 		if m.Content().Keys()[0] != "eof" {
 			sp.Joiner.ProcessStreamFirst(m.Content(), sp.fields1)
@@ -54,7 +58,6 @@ func (sp *joinProcessor)Execute(m message.Msg, proc pipeline.IProcessorForExecut
 				proc.Result(m,merged,previous_content)
 				previous_content = merged
 			}
-
 		}
 		sp.secondContainer = nil
 		}
