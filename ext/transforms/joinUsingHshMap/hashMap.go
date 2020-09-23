@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const arrayLength = uint64(100)
+const arrayLength = uint64(1000)
 
 type HashTable struct {
 	data   [arrayLength]*linkedlist.LinkedList
@@ -39,7 +39,7 @@ func createHash(concatKey string)uint64{
 
 	for pos,char := range concatKey{
 
-		hash += uint64(char) * uint64(math.Pow(31, float64(len(concatKey)-pos+1)))
+		hash += uint64(char) * uint64(math.Pow(27, float64(len(concatKey)-pos+1)))
 
 		//fmt.Println("hash",string(char),int(math.Pow(31,float64(len(concatenatedkey)-pos+1))))
 		}
@@ -58,6 +58,7 @@ func index(hash uint64)uint64{
 //we iterate through the list and check whether the node needs
 //update or should we add new node
 func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
+
 	hash := createHash(concatKey)
 	index := index(hash)
 	if hshTable.data[index] == nil {

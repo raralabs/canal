@@ -1,7 +1,7 @@
 package transforms
 
 import (
-	"fmt"
+
 	//"fmt"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
@@ -27,24 +27,19 @@ func NewJoinProcessor(name string,joiner joinUsingHshMap.StreamJoin,query string
 	queryProcessor := joinqryparser.NewQueryParser(query)
 	queryProcessor.PrepareQuery()
 	fields1,fields2:=queryProcessor.Condition.Fields1,queryProcessor.Condition.Fields2
-	fmt.Println("aaaaa",fields1,fields2)
 	return &joinProcessor{name:name,Joiner:joiner,query:query,firstPath:queryProcessor.FirstTable.Name,
 							secondPath:queryProcessor.SecondTable.Name,fields1: fields1,fields2:fields2}
 }
 
 func (sp *joinProcessor)Execute(messagePod pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool{
 	m := messagePod.Msg
-	if sp.firstProcessor==0{
-		sp.firstProcessor = messagePod.Msg.ProcessorId()
-	}
-
-	if m.ProcessorId() == sp.firstProcessor {
+	if pipeline.MsgRouteParam(sp.firstPath) == messagePod.Route {
 		if m.Content().Keys()[0] != "eof" {
 			sp.Joiner.ProcessStreamFirst(m.Content(), sp.fields1)
 		} else {
 			sp.mergeLock = true
 		}
-	}else{
+	}else if pipeline.MsgRouteParam(sp.secondPath) == messagePod.Route{
 		if m.Content().Keys()[0] !="eof" {
 			sp.secondContainer = append(sp.secondContainer, m.Content())
 		}

@@ -54,9 +54,11 @@ func(in *innerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []s
 func(in *innerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []string)(interface{},bool){
 	if in.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}
+
 		for _,field := range fieldsFromStream2{
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
+
 		key := concatKeys(joinFieldsVal)
 		result,ok:= in.hashTable.Get(key)
 		return result,ok
@@ -87,40 +89,4 @@ func(in *innerJoin) Condition(query string)([]string,[]string){
 
 
 
-//func Start(){
-//	//dummy query example
-//	query := "SELECT * FROM Stream1 INNERJOIN Stream2 ON Stream1.age,Stream1.first_name,Stream1. last_name = Stream2.age,Stream2.full_name"
-//	//creates a new inner join
-//	newJoin := NewInnerJoin(HASH)
-//
-//	//prepares query by extractiong the join keys and condition
-//	fieldsFromStream1,fieldsFromStream2 := newJoin.Condition(query)
-//
-//	//channels for message stream 1 and 2 to mimick the messages from path1 and path2
-//	messageStream1 := make(chan content.IContent)
-//	messageStream2 := make(chan content.IContent)
-//
-//	go createMsgForPath1(100,messageStream1)
-//	go createMsgForPath2(100,messageStream2)
-//
-//	//get the messages from stream1 and hold them in hash map
-//	go func() {
-//		for msg := range messageStream1{
-//			newJoin.ProcessStreamFirst(msg,fieldsFromStream1)
-//		}
-//	}()
-//	//get the message from stream2 and check for the match in the hashmap
-//	count:=0
-//	for msg := range messageStream2{
-//		result,ok:=newJoin.ProcessStreamSec(msg,fieldsFromStream2)
-//		if ok{
-//			newJoin.Join(result.(content.IContent),msg)
-//		}else{
-//			count++
-//			//fmt.Println(count,"not matched")
-//		}
-//
-//	}
-//	fmt.Println(newJoin.mergedContent,len(newJoin.mergedContent),"joined")
-//}
 

@@ -20,7 +20,7 @@ var DefaultChoices = map[string][]interface{}{
 
 }
 var nextChoices = map[string][]interface{}{
-	"full_name":   {"Kumar Shrestha", "Hero Bajracharya","Madhav Dahal","kumar Bajracharya"},
+	"full_name":   {"Kumar Shrestha", "Hero Bajracharya","Madhav Dahal"},
 	"age":          {10, 20, 30, 40, 50, 60, 70, 15, 25, 35, 45, 55, 65, 75, 100, 6, 33, 47},
 
 
@@ -40,7 +40,7 @@ func main() {
 	f1 := delay1.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	delay2 := newPipeline.AddTransform("Delay")
 	f2 := delay2.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path2")
-	query := "SELECT * FROM path3 c INNERJOIN path4 d on path3.age,path3.first_name,path3.last_name = path4.age,path4.full_name"
+	query := "SELECT * FROM path3 c INNERJOIN path4 d on path3.first_name,path3.last_name = path4.full_name"
 	joinStage := newPipeline.AddTransform("join")
 	j1 := joinStage.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("innerjoin",joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH),query),"path3","path4")
 	delay1.ReceiveFrom("path1", sp1)
