@@ -1,6 +1,7 @@
 package joinqryparser
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -15,12 +16,13 @@ func tokenize(sentence string,tkDecider string)[]string{
 
 //extracts the join parameters and condition
 func getJoinCondition(querySeg string)(string,string,string) {
-	var fields1,fields2,operator string
+	space := regexp.MustCompile(`\s`)
+	querySeg=space.ReplaceAllString(querySeg, "")
 	switchFlag := false
 	firstEnd := 0
 	secondStart := 0
 	for idx, character := range querySeg {
-		if character == '=' {
+		if character == '='||character=='<'||character=='>' {
 			switchFlag = true
 			continue
 		} else {
@@ -32,9 +34,9 @@ func getJoinCondition(querySeg string)(string,string,string) {
 			}
 		}
 	}
-	fields1 = querySeg[:firstEnd-1]
-	fields2 = querySeg[secondStart:]
-	operator = querySeg[firstEnd:secondStart]
-	return strings.TrimSpace(fields1),strings.TrimSpace(fields2),strings.TrimSpace(operator)
+	fields1 := querySeg[:firstEnd]
+	fields2 := querySeg[secondStart:len(querySeg)]
+	operator := querySeg[firstEnd:secondStart]
+	return fields1,fields2,operator
 }
 

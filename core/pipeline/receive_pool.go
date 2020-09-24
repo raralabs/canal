@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -107,7 +106,6 @@ func (rp *receivePool) loop(pool IProcessorPool) {
 
 			go func() {
 				for pod := range rchan {
-					fmt.Println(pod)
 					pool.execute(pod)
 				}
 				wg.Done()

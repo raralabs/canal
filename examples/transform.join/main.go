@@ -37,7 +37,7 @@ func main() {
 	f1 := delay1.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	delay2 := newPipeline.AddTransform("Delay")
 	f2 := delay2.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path2")
-	query := "SELECT first_name,full_name,age FROM path3 c INNERJOIN path4 d on path3.age,path3.first_name,path3.last_name = path4.age,path4.full_name"
+	query := "SELECT age,last_name FROM path3 c INNERJOIN path4 d on path3.age = path4.age"
 	joinStage := newPipeline.AddTransform("join")
 	j1 := joinStage.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("innerjoin",joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH),query),"path3","path4")
 	delay1.ReceiveFrom("path1", sp1)

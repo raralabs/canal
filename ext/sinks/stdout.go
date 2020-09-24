@@ -38,6 +38,7 @@ func (s *StdoutSink) Execute(m pipeline.MsgPod, _ pipeline.IProcessorForExecutor
 	if s.header == nil || len(s.header) == 0 {
 		//fmt.Println(fmt.Sprintf("%s %s", m.String(), trace))
 		fmt.Println(fmt.Sprintf("%s %s", m.Msg.String(), trace))//new implementation
+
 	} else {
 		//fmt.Printf("Msg[Id:%d, Stg:%d, Prc:%d; Contents:{", m.Id(), m.StageId(), m.ProcessorId())//older implementations
 		fmt.Printf("Msg[Id:%d, Stg:%d, Prc:%d; Contents:{", m.Msg.Id(), m.Msg.StageId(), m.Msg.ProcessorId())

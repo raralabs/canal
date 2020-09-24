@@ -32,7 +32,7 @@ type StreamJoin interface{
 	Type() JoinType
 
 	//joins two stream instances
-	Join(inStream1,inStream2 content.IContent)content.IContent
+	Join(inStream1,inStream2 content.IContent,selectFields []string)content.IContent
 
 	//returns the joined streams of message
 

@@ -54,10 +54,10 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 		case "select":
 			qp.Select=tokenize(field,",")
 		case "table1":
-			exp := `(?P<name>\w+)(\s(as|AS))?\s(?P<alias>\w+)`
+			exp := `(?P<name>\w+)(\s(as|AS))?(\s(?P<alias>\w+))?`
 			reg,err :=regexp.Compile(exp)
 			if err!= nil{
-				panic("some thing went wrong while parsing query ")
+				panic("some thing went wrong while parsing query might be syntax error ")
 			}
 			params := regparser.ExtractParams(reg,field)
 			for key,value := range params{
@@ -69,13 +69,16 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			}
 
 		case "table2":
-			exp := `(?P<name>\w+)(\s(as|AS))?\s(?P<alias>\w+)`
+
+			exp := `(?P<name>\w+)(\s(as|AS))?(\s(?P<alias>\w+))?`
 			reg,err :=regexp.Compile(exp)
 			if err!= nil{
-				panic("some thing went wrong while parsing query ")
+				panic("some thing went wrong while parsing query might be syntax error ")
 			}
+
 			params := regparser.ExtractParams(reg,field)
 			for key,value := range params{
+
 				if key ==  "name"{
 					qp.SecondTable.Name = value
 				}else if key== "alias"{

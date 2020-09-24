@@ -19,7 +19,7 @@ type numberGenerator struct {
 func newNumberGenerator(maxVal uint64) Executor {
 	return &numberGenerator{name: "Inline", curVal: 0, maxVal: maxVal}
 }
-func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) bool {
+func (s *numberGenerator) Execute(m MsgPod, proc IProcessorForExecutor) bool {
 	if s.curVal >= s.maxVal {
 		proc.Done()
 		return true
@@ -28,7 +28,7 @@ func (s *numberGenerator) Execute(m message.Msg, proc IProcessorForExecutor) boo
 	s.curVal++
 	content := content2.New()
 	content = content.Add("value", content2.NewFieldValue(s.curVal, content2.INT))
-	proc.Result(m, content, nil)
+	proc.Result(m.Msg, content, nil)
 	return false
 }
 func (s *numberGenerator) ExecutorType() ExecutorType {
@@ -58,8 +58,8 @@ func newSink(ch chan message.Msg) Executor {
 func (s *channelSink) ExecutorType() ExecutorType {
 	return SINK
 }
-func (s *channelSink) Execute(m message.Msg, pr IProcessorForExecutor) bool {
-	s.channel <- m
+func (s *channelSink) Execute(m MsgPod, pr IProcessorForExecutor) bool {
+	s.channel <- m.Msg
 	return true
 }
 func (s *channelSink) HasLocalState() bool {
