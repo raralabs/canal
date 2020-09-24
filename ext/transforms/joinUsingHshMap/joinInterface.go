@@ -42,9 +42,6 @@ type StreamJoin interface{
 	//get stream from 2nd route
 	ProcessStreamSec(msg content.IContent,fields []string)(interface{},bool)
 	//
-	//prepares query for the join
-	Condition(query string)([]string,[]string)
-
 
 	////gives the right table
 	//RightTable() []stream

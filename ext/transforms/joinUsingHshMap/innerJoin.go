@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
-	"github.com/raralabs/canal/utils/regparser"
-	"regexp"
 	"strings"
 )
 
@@ -93,26 +91,6 @@ func(in *innerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []str
 		return result,ok
 	}
 	return nil,false
-}
-//not used in the current version of the code
-func(in *innerJoin) Condition(query string)([]string,[]string){
-	var cleanedFields1 []string //to hold join keys for the first stream
-	var cleanedFields2 []string // to hold the join keys for the second stream
-	regEx,_ := regexp.Compile(`ON\s+?(?P<seg1>[^=]+)\s?\=\s+?(?P<seg2>[^\s\s\s+]+)`)
-	params := regparser.ExtractParams(regEx,query)
-
-	rawFields1 := strings.Split(params["seg1"], ",")
-	rawFields2 := strings.Split(params["seg2"], ",")
-
-	for _,field := range rawFields1{
-		reqField := strings.Split(field,".")[1]
-		cleanedFields1 = append(cleanedFields1,strings.TrimSpace(reqField))
-	}
-	for _,field := range rawFields2{
-		reqField := strings.Split(field,".")[1]
-		cleanedFields2 = append(cleanedFields2,reqField)
-	}
-	return cleanedFields1,cleanedFields2
 }
 
 

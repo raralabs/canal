@@ -7,22 +7,21 @@ import (
 	"strings"
 )
 
-//SELECT\s+(?P<selectfield>(\w+\,?)+)\s+FROM\s+(?P<table1>\w+(\s+\w+)?)\s+
-//	?(?P<jointype>[A-Za-z]+JOIN)\s+(?P<table2>\w+(\s+\w+)?)\s+?on\s+
-//	(?P<fields1>\w+\.?\w+)\s?\s?=\s?\s?(?P<fields2>\w+\.?\w*)
-//
-
+//data structure to hold the name of stream and their alias if provided
 type tableValues struct{
 	alias 		string
 	Name        string
 }
 
+//data structure to hold the condition for the join, left equation,operator and right equation
+//of the query
 type condition struct{
 	Fields1    []string
 	Fields2	   []string
 	Operator  string
 }
 
+//to hold the intermediate parsed values
 type queryParser struct{
 	query		string
 	Select 		[]string
@@ -75,7 +74,6 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			if err!= nil{
 				panic("some thing went wrong while parsing query might be syntax error ")
 			}
-
 			params := regparser.ExtractParams(reg,field)
 			for key,value := range params{
 
@@ -118,7 +116,6 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 					qp.Condition.Fields2 = append(qp.Condition.Fields2,strings.TrimSpace(AliasedField[0]))
 				}
 			}
-
 			default:
 		}
 	}
