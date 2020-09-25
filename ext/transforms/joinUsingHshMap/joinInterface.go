@@ -1,6 +1,7 @@
 package joinUsingHshMap
 
 import (
+	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/core/message/content"
 )
 
@@ -32,9 +33,7 @@ type StreamJoin interface{
 	Type() JoinType
 
 	//joins two stream instances
-	Join(inStream1,inStream2 content.IContent,selectFields []string)content.IContent
-
-	//returns the joined streams of message
+	Join(pipeline.MsgPod,[]string,[]string,pipeline.IProcessorForExecutor)bool
 
 	//get stream from 1st route
 	ProcessStreamFirst(msg content.IContent,fields []string)
@@ -42,6 +41,8 @@ type StreamJoin interface{
 	//get stream from 2nd route
 	ProcessStreamSec(msg content.IContent,fields []string)(interface{},bool)
 	//
+	//returns the joined streams of message
+	mergeContent(content.IContent,content.IContent)content.IContent
 
 	////gives the right table
 	//RightTable() []stream
