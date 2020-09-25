@@ -22,6 +22,7 @@ const (
 const (
 	INNER     	JoinType = iota + 1 // For inner join
 	LEFTOUTER
+	RIGHTOUTER
 )
 
 type join interface{

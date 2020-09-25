@@ -17,11 +17,7 @@ type joinProcessor struct{
 	Joiner			joinUsingHshMap.StreamJoin //Join function to join the streams
 	fields1  		[]string //condition fields for the join from table 1
 	fields2  		[]string // condition fields for the join from table 2
-	//selectFields	[]string // select fields from the two tables
-	//secondContainer []content.IContent //container to hold the msg from second path
-	                // while the first one is getting fed into the hash table
-	//mergeLock 		bool //merge lock enables to start merging once the streams of path1
-	                // are completely fed into the hash table
+
 }
 
 //create a processor that contains attributes for the join
@@ -36,6 +32,9 @@ func NewJoinProcessor(name string,query string) *joinProcessor {
 		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
 	case joinUsingHshMap.LEFTOUTER:
 		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)
+		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
+	case joinUsingHshMap.RIGHTOUTER:
+		joiner := joinUsingHshMap.NewRightOuterJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)
 		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
 	default:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)

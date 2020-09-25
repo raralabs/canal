@@ -1,6 +1,7 @@
 package joinqryparser
 
 import (
+	"fmt"
 	"github.com/raralabs/canal/ext/transforms/joinUsingHshMap"
 	"github.com/raralabs/canal/utils/regparser"
 	"regexp"
@@ -84,13 +85,18 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 				}
 			}
 
+
 		case "joinType":
 			joinType := strings.ToUpper(field)
+
 			switch joinType{
 			case "INNERJOIN":
 				qp.JoinType=joinUsingHshMap.INNER
 			case "LEFTOUTERJOIN":
 				qp.JoinType = joinUsingHshMap.LEFTOUTER
+			case "RIGHTOUTERJOIN":
+				fmt.Println("joinType",joinType)
+				qp.JoinType = joinUsingHshMap.RIGHTOUTER
 			default:
 				panic("join type not recognized, currenlty support for INNERJOIN and LEFTOUTERJOIN")
 			}
