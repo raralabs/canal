@@ -7,8 +7,17 @@ import (
 	"strings"
 )
 
+type JoinSubType uint8
+
+const (
+	INN			JoinSubType = iota+1
+	FULLOUTER
+	LEFTOUTER
+	RIGHTOUTER
+)
 type outerJoin struct{
 	joinType   		JoinType
+	subType		JoinSubType
 	hashTable  		*HashTable
 	streamContainer []message.Msg
 	mergedContent 	[]content.IContent
@@ -21,21 +30,21 @@ type outerJoin struct{
 }
 
 
-func NewOuterJoin(strategy JoinStrategy,firstPath,secondPath string,selectFields []string)*outerJoin{
+func NewOuterJoin(strategy JoinStrategy,firstPath,secondPath string,selectFields []string,subType JoinSubType)*outerJoin{
 	switch strategy {
 	case HASH://join using hash table
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy:HASH,
+			mergedContent: []content.IContent{},JoinStrategy:HASH,subType: subType,
 			firstPath: firstPath,secondPath: secondPath,
 			selectFields: selectFields}
 	case TABLE://join using temporal table
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy: TABLE,
+			mergedContent: []content.IContent{},JoinStrategy: TABLE,subType: subType,
 			firstPath: firstPath,secondPath: secondPath,
 			selectFields: selectFields}
 	default:
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy: HASH,
+			mergedContent: []content.IContent{},JoinStrategy: HASH,subType: subType,
 			firstPath: firstPath,secondPath: secondPath,
 			selectFields: selectFields}
 	}
@@ -77,7 +86,6 @@ func(oj *outerJoin) mergeContent(inStream1,inStream2 content.IContent)content.IC
 			newMsgContent.Add(key, content.NewFieldValue(value, dataTypeTracker2[key]))
 		}
 	}
-
 	//in.mergedContent = append(in.mergedContent,merged)
 	return newMsgContent
 }
@@ -87,18 +95,40 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	m := messagePod.Msg
 	//checks if the message is from first path or not if yes insert into the hash table till
 	//eof is obtained
-	if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
-		//if streams from path2 are live
-		if m.Content().Keys()[0] != "eof" {
-			oj.ProcessStreamFirst(m.Content(), fields2)
+	if oj.subType == RIGHTOUTER||oj.subType==FULLOUTER{
+		if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route {
+			//if streams from path2 are live
+			if m.Content().Keys()[0] != "eof" {
+				oj.ProcessStreamFirst(m.Content(), fields1)
+			}else{
+				if oj.subType==FULLOUTER{
+					oj.mergeLock = true
+				}
+			}
+			//if stream is from first path then insert into the array till incoming msg from
+			//path1 is complete
+
+		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
+			if m.Content().Keys()[0] != "eof" {
+				oj.secondContainer = append(oj.secondContainer, m.Content())
+			} else { //after eof is obtained set the mergelock to true for merging
+				oj.mergeLock = true
+			}
 		}
-	//if stream is from first path then insert into the array till incoming msg from
-	//path1 is complete
-	}else if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route{
-		if m.Content().Keys()[0] !="eof" {
-			oj.secondContainer = append(oj.secondContainer, m.Content())
-		}else{//after eof is obtained set the mergelock to true for merging
-			oj.mergeLock = true
+	}else if oj.subType==LEFTOUTER{
+		if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
+			//if streams from path2 are live
+			if m.Content().Keys()[0] != "eof" {
+				oj.ProcessStreamFirst(m.Content(), fields2)
+			}
+			//if stream is from first path then insert into the array till incoming msg from
+			//path1 is complete
+		} else if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route {
+			if m.Content().Keys()[0] != "eof" {
+				oj.secondContainer = append(oj.secondContainer, m.Content())
+			} else { //after eof is obtained set the mergelock to true for merging
+				oj.mergeLock = true
+			}
 		}
 	}
 	//var previous_content content.IContent = nil
@@ -106,15 +136,36 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	if oj.mergeLock ==true{
 		for _,msg := range oj.secondContainer {
 			result,ok := oj.ProcessStreamSec(msg,fields1)
-			if ok{
-				merged := oj.mergeContent(msg,result.(content.IContent))
-				//previous_content = merged
-				proc.Result(messagePod.Msg,merged,nil)
-			}else{
-				msgCont:=  content.New()
-				merged := oj.mergeContent(msg,msgCont)
-				proc.Result(messagePod.Msg,merged,nil)
+			switch oj.subType{
+			case LEFTOUTER:
+				if ok{
+					merged := oj.mergeContent(msg,result.(content.IContent))
+					proc.Result(messagePod.Msg,merged,nil)
+				}else{
+					msgCont := content.New()
+					merged := oj.mergeContent(msg,msgCont)
+					proc.Result(messagePod.Msg,merged,nil)
+				}
+			case RIGHTOUTER:
+				if ok{
+					merged := oj.mergeContent(result.(content.IContent),msg)
+					//previous_content = merged
+					proc.Result(messagePod.Msg,merged,nil)
+				}else {
+					msgCont := content.New()
+					merged := oj.mergeContent(msgCont, msg)
+					proc.Result(messagePod.Msg, merged, nil)
+				}
+			default:
+				if ok{
+					merged := oj.mergeContent(result.(content.IContent),msg)
+
+					proc.Result(messagePod.Msg,merged,nil)
+				}else{
+
+				}
 			}
+
 		}
 		oj.secondContainer = nil
 	}
@@ -146,6 +197,7 @@ func(oj *outerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []str
 	}
 	return nil,false
 }
+
 
 
 

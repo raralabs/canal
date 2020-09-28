@@ -99,6 +99,7 @@ func(in *innerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 				merged := in.mergeContent(msg,result.(content.IContent))
 				//previous_content = merged
 				proc.Result(messagePod.Msg,merged,nil)
+				continue
 			}
 		}
 		in.secondContainer = nil

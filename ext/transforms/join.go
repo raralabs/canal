@@ -30,11 +30,8 @@ func NewJoinProcessor(name string,query string) *joinProcessor {
 	case joinUsingHshMap.INNER:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)
 		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
-	case joinUsingHshMap.LEFTOUTER:
-		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)
-		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
-	case joinUsingHshMap.RIGHTOUTER:
-		joiner := joinUsingHshMap.NewRightOuterJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)
+	case joinUsingHshMap.OUTER:
+		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields,queryProcessor.SubType)
 		return &joinProcessor{name: name, Joiner: joiner, query: query, fields1: fields1, fields2: fields2}
 	default:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)

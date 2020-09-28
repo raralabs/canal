@@ -1,7 +1,6 @@
 package joinqryparser
 
 import (
-	"fmt"
 	"github.com/raralabs/canal/ext/transforms/joinUsingHshMap"
 	"github.com/raralabs/canal/utils/regparser"
 	"regexp"
@@ -25,6 +24,7 @@ type condition struct{
 //to hold the intermediate parsed values
 type queryParser struct{
 	query		string
+	SubType		joinUsingHshMap.JoinSubType
 	Select 		[]string
 	FirstTable	tableValues
 	JoinType    joinUsingHshMap.JoinType
@@ -93,10 +93,11 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			case "INNERJOIN":
 				qp.JoinType=joinUsingHshMap.INNER
 			case "LEFTOUTERJOIN":
-				qp.JoinType = joinUsingHshMap.LEFTOUTER
+				qp.JoinType = joinUsingHshMap.OUTER
+				qp.SubType = joinUsingHshMap.LEFTOUTER
 			case "RIGHTOUTERJOIN":
-				fmt.Println("joinType",joinType)
-				qp.JoinType = joinUsingHshMap.RIGHTOUTER
+				qp.JoinType = joinUsingHshMap.OUTER
+				qp.SubType = joinUsingHshMap.RIGHTOUTER
 			default:
 				panic("join type not recognized, currenlty support for INNERJOIN and LEFTOUTERJOIN")
 			}

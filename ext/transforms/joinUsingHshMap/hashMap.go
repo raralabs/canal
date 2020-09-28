@@ -58,7 +58,6 @@ func index(hash uint64)uint64{
 //we iterate through the list and check whether the node needs
 //update or should we add new node
 func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
-
 	hash := createHash(concatKey)
 	index := index(hash)
 	if hshTable.data[index] == nil {
@@ -85,25 +84,68 @@ func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
 
 //Get method calculates the index and then we look through the linked list
 //and look for the required value
-func (hshTable *HashTable)Get(concatKey string) (result interface{},ok bool){
-	hash := createHash(concatKey)
+//func (hshTable *HashTable)Get(concatKey string) (result interface{},ok bool){
+//	hash := createHash(concatKey)
+//	index := index(hash)
+//	linkedList := hshTable.data[index]
+//	if linkedList == nil{
+//		return nil,false
+//	}
+//	node := linkedList.Head
+//	for {
+//		if node !=nil{
+//			d := node.Data.(listData)
+//
+//			if d.key == hash{
+//				return d.value,true
+//			}
+//		}else{
+//			return nil,false
+//		}
+//		node = node.Next
+//	}
+//
+//}
+//modified for the outer join
+func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
+	hash := createHash(ConcatKey)
 	index := index(hash)
 	linkedList := hshTable.data[index]
 	if linkedList == nil{
 		return nil,false
 	}
+
 	node := linkedList.Head
 	for {
 		if node !=nil{
 			d := node.Data.(listData)
 			if d.key == hash{
+				for {
+					if node.Next != nil{
+						node.Next = node.Next.Next
+						node.Data = node.Next.Data
+					}else{
+						node = nil
+						break
+					}
+				}
+
 				return d.value,true
+				}
+			}else{
+				return nil,false
 			}
-		}else{
-			return nil,false
-		}
 		node = node.Next
 	}
-
 }
 
+func (hshTable *HashTable)iterate(){
+	linkedList := hshTable.data
+	for idx,table := range(linkedList){
+		if table!=nil {
+			data := linkedList[idx]
+			node := data.Head
+			fmt.Println("message",node)
+		}
+	}
+}

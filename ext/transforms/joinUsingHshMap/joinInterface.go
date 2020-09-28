@@ -21,8 +21,8 @@ const (
 // These are the currently supported types of join
 const (
 	INNER     	JoinType = iota + 1 // For inner join
-	LEFTOUTER
-	RIGHTOUTER
+	OUTER
+
 )
 
 type join interface{
