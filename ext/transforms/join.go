@@ -1,6 +1,7 @@
 package transforms
 
 import (
+	"fmt"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
@@ -26,6 +27,7 @@ func NewJoinProcessor(name string,query string) *joinProcessor {
 	queryProcessor.PrepareQuery()
 	fields1, fields2 := queryProcessor.Condition.Fields1, queryProcessor.Condition.Fields2
 	selectFields, joinType := queryProcessor.Select, queryProcessor.JoinType
+	fmt.Println("jointype",joinType)
 	switch joinType {
 	case joinUsingHshMap.INNER:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, queryProcessor.FirstTable.Name,queryProcessor.SecondTable.Name,selectFields)

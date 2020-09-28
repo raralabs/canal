@@ -159,13 +159,23 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 			default:
 				if ok{
 					merged := oj.mergeContent(result.(content.IContent),msg)
-
 					proc.Result(messagePod.Msg,merged,nil)
 				}else{
+					msgCont := content.New()
+					merged := oj.mergeContent(msgCont,msg)
+					proc.Result(messagePod.Msg,merged,nil)
 
 				}
 			}
-
+		if oj.subType == FULLOUTER {
+			msgChannel := make(chan content.IContent)
+			//msgCont := content.New()
+			go oj.hashTable.iterate(msgChannel)
+			//for msg := range msgChannel {
+			//	merged := oj.mergeContent(msgCont,msg)
+			//	proc.Result(messagePod.Msg,merged,nil)
+			//}
+		}
 		}
 		oj.secondContainer = nil
 	}

@@ -98,8 +98,13 @@ func(qp *queryParser) PrepareQuery()*queryParser{
 			case "RIGHTOUTERJOIN":
 				qp.JoinType = joinUsingHshMap.OUTER
 				qp.SubType = joinUsingHshMap.RIGHTOUTER
-			default:
-				panic("join type not recognized, currenlty support for INNERJOIN and LEFTOUTERJOIN")
+			case "FULLOUTERJOIN":
+				qp.JoinType = joinUsingHshMap.OUTER
+				qp.SubType = joinUsingHshMap.FULLOUTER
+
+				default:
+
+				panic("join type not recognized, currenlty support for INNERJOIN,RIGHTOUTERJOIN,LEFTOUTERJOIN,FULLOUTERJOIN")
 			}
 
 		case "condition":

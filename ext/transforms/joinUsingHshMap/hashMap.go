@@ -3,6 +3,7 @@ package joinUsingHshMap
 import (
 	"fmt"
 	"github.com/dorin131/go-data-structures/linkedlist"
+	"github.com/raralabs/canal/core/message/content"
 	"math"
 	"strings"
 )
@@ -114,7 +115,6 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 	if linkedList == nil{
 		return nil,false
 	}
-
 	node := linkedList.Head
 	for {
 		if node !=nil{
@@ -139,13 +139,18 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 	}
 }
 
-func (hshTable *HashTable)iterate(){
+func (hshTable *HashTable)iterate(messageChannel chan content.IContent) bool{
 	linkedList := hshTable.data
 	for idx,table := range(linkedList){
 		if table!=nil {
 			data := linkedList[idx]
 			node := data.Head
-			fmt.Println("message",node)
+			fmt.Println(idx,table)
+			messageChannel <- node.Data.(listData).value.(content.IContent)
 		}
+
 	}
+
+	close(messageChannel)
+	return true
 }
