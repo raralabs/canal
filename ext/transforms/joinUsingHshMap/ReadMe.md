@@ -1,10 +1,7 @@
-###About Draft Code 
+### updates 2.0 
 
-- This draft code implements the concept of join using Hash Map
-- To check the output simply run join_test.go file 
-- mock_message creates dummy msg that immitates the msg through route
-- hashMap.go contains the HashMap table to store the stream1
-- hashMap also provides function to check the presence of item in the 
-hash map
-- merger joins the two messages if hash of message 2 is found on hash table
-
+- all the codes for different types of outer join merged in to outer.go file
+- current support for simple queries
+- support for equal operator only at current state
+- inner ,and all outer joins implemented. Currently tested with dummy data
+- issues might be observed with the real data

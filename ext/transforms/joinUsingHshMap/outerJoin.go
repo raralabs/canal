@@ -1,7 +1,6 @@
 package joinUsingHshMap
 
 import (
-	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"strings"
@@ -17,20 +16,18 @@ const (
 	RIGHTOUTER
 )
 type outerJoin struct{
-	joinType   		JoinType
-	subType		JoinSubType
-	hashTable  		*HashTable
-	streamContainer []message.Msg
-	mergedContent 	[]content.IContent
-	JoinStrategy	JoinStrategy
-	firstPath		string
-	secondPath		string
-	mergeLock 		bool
-	mutex			sync.Mutex
-	secondContainer []content.IContent
-	selectFields 	[]string
-	firstPathEnd	bool
-	secondPathEnd	bool
+	joinType   		JoinType //holds the type of join
+	subType		JoinSubType // sub type of outer join like left right full
+	hashTable  		*HashTable // hash table to hold the information from one of the path
+	JoinStrategy	JoinStrategy // strategy of join like hash, window etc
+	firstPath		pipeline.MsgRouteParam // name of the first path
+	secondPath		pipeline.MsgRouteParam // name of the second path
+	mergeLock 		bool                   // lock to start merging
+	mutex			sync.Mutex            // mutex to lock certain process
+	secondContainer []content.IContent	  //container holds the streams from second path
+	selectFields 	[]string			// select fields from the query
+	firstPathEnd	bool				//true if the incoming msg from first path are complete
+	secondPathEnd	bool				// true if the incoming msg from the second path are complete
 }
 
 
@@ -38,18 +35,18 @@ func NewOuterJoin(strategy JoinStrategy,firstPath,secondPath string,selectFields
 	switch strategy {
 	case HASH://join using hash table
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy:HASH,subType: subType,
-			firstPath: firstPath,secondPath: secondPath,
+			JoinStrategy:HASH,subType: subType,
+			firstPath: pipeline.MsgRouteParam(firstPath),secondPath: pipeline.MsgRouteParam(secondPath),
 			selectFields: selectFields}
 	case TABLE://join using temporal table
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy: TABLE,subType: subType,
-			firstPath: firstPath,secondPath: secondPath,
+			JoinStrategy: TABLE,subType: subType,
+			firstPath: pipeline.MsgRouteParam(firstPath),secondPath: pipeline.MsgRouteParam(secondPath),
 			selectFields: selectFields}
 	default:
 		return &outerJoin{hashTable: NewHashMap(),
-			mergedContent: []content.IContent{},JoinStrategy: HASH,subType: subType,
-			firstPath: firstPath,secondPath: secondPath,
+			JoinStrategy: HASH,subType: subType,
+			firstPath: pipeline.MsgRouteParam(firstPath),secondPath: pipeline.MsgRouteParam(secondPath),
 			selectFields: selectFields}
 	}
 }
@@ -64,7 +61,6 @@ func(oj *outerJoin) mergeContent(inStream1,inStream2 content.IContent)content.IC
 	messageContent1 := inStream1.Values()
 	messageContent2 := inStream2.Values()
 	newMsgContent := content.New()
-
 	if oj.selectFields[0]!="*" {
 		for _, key := range oj.selectFields {
 			newMsgField1, ok1 := messageContent1[key]
@@ -90,7 +86,6 @@ func(oj *outerJoin) mergeContent(inStream1,inStream2 content.IContent)content.IC
 			newMsgContent.Add(key, content.NewFieldValue(value, dataTypeTracker2[key]))
 		}
 	}
-	//in.mergedContent = append(in.mergedContent,merged)
 	return newMsgContent
 }
 
@@ -142,8 +137,8 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	//var previous_content content.IContent = nil
 	//if mergelock is true start merging the streams
 	if oj.mergeLock ==true{
-		oj.mutex.Lock()
-		for _,msg := range oj.secondContainer {
+		oj.mutex.Lock() //lock the merging process so as to avoid race conditions
+		for _,msg := range oj.secondContainer { //read the container and merge according to the type of joins
 			if oj.subType == LEFTOUTER {
 				result, ok := oj.ProcessStreamSec(msg, fields1)
 				if ok {
@@ -155,7 +150,7 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 					proc.Result(messagePod.Msg, merged, nil)
 				}
 
-				oj.secondContainer = nil
+				oj.secondContainer = nil //clean containers to avoid msg duplications
 			} else if oj.subType == RIGHTOUTER {
 				result, ok := oj.ProcessStreamSec(msg, fields2)
 				if ok {
@@ -167,10 +162,10 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 					merged := oj.mergeContent(msgCont, msg)
 					proc.Result(messagePod.Msg, merged, nil)
 				}
-				oj.secondContainer = nil
+				oj.secondContainer = nil //clean container to avoid msg duplications
 			} else {
 				result, ok := oj.ProcessStreamSec(msg, fields2)
-				if ok {
+				if ok { //if found on the hash map merge returned result and current msg
 					merged := oj.mergeContent(result.(content.IContent), msg)
 					proc.Result(messagePod.Msg, merged, nil)
 				} else {
@@ -178,12 +173,12 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 					merged := oj.mergeContent(msgCont, msg)
 					proc.Result(messagePod.Msg, merged, nil)
 				}
-				oj.secondContainer = nil
+				oj.secondContainer = nil //after merging clean container to avoid msg duplications
 			}
 
 		}
+		//incase of full outer joins perform this additional steps to merge the left side table
 		if oj.subType == FULLOUTER && oj.secondPathEnd==true{
-
 			linkedList := oj.hashTable.data
 			for _,table := range(linkedList){
 				if table!=nil {
@@ -205,7 +200,9 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 
 }
 
+//the data from first streams are inserted into the hash table
 func(oj *outerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []string){
+
 	if oj.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}
 		for _,field := range fieldsFromStream1{
@@ -215,6 +212,7 @@ func(oj *outerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []s
 		oj.hashTable.Set(msg,key)
 	}
 }
+//check if the data from second streams matches that of the hash table
 func(oj *outerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []string)(interface{},bool){
 	if oj.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}

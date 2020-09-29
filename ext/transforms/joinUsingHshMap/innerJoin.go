@@ -53,7 +53,6 @@ func(in *innerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []s
 
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
-
 		key := concatKeys(joinFieldsVal)
 		in.hashTable.Set(msg,key)
 	}
@@ -108,7 +107,6 @@ func(in *innerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 }
 
 func(in *innerJoin) mergeContent(inStream1,inStream2 content.IContent)content.IContent{
-	fmt.Println("msgcontent",inStream2)
 	dataTypeTracker1 := inStream1.Types()
 	dataTypeTracker2 := inStream2.Types()
 	messageContent1 := inStream1.Values()
