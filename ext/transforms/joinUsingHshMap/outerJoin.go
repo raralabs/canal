@@ -5,6 +5,7 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"strings"
+	"sync"
 )
 
 type JoinSubType uint8
@@ -25,8 +26,11 @@ type outerJoin struct{
 	firstPath		string
 	secondPath		string
 	mergeLock 		bool
+	mutex			sync.Mutex
 	secondContainer []content.IContent
 	selectFields 	[]string
+	firstPathEnd	bool
+	secondPathEnd	bool
 }
 
 
@@ -97,22 +101,21 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	//eof is obtained
 	if oj.subType == RIGHTOUTER||oj.subType==FULLOUTER{
 		if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route {
-			//if streams from path2 are live
+			//if streams from path1 are live
 			if m.Content().Keys()[0] != "eof" {
 				oj.ProcessStreamFirst(m.Content(), fields1)
 			}else{
-				if oj.subType==FULLOUTER{
-					oj.mergeLock = true
-				}
+				oj.firstPathEnd = true
+				oj.mergeLock = true
 			}
 			//if stream is from first path then insert into the array till incoming msg from
 			//path1 is complete
-
-		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
+		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route{
 			if m.Content().Keys()[0] != "eof" {
 				oj.secondContainer = append(oj.secondContainer, m.Content())
 			} else { //after eof is obtained set the mergelock to true for merging
-				oj.mergeLock = true
+				oj.secondPathEnd = true
+
 			}
 		}
 	}else if oj.subType==LEFTOUTER{
@@ -120,65 +123,84 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 			//if streams from path2 are live
 			if m.Content().Keys()[0] != "eof" {
 				oj.ProcessStreamFirst(m.Content(), fields2)
+			}else{
+				oj.secondPathEnd = true
+				oj.mergeLock = true
 			}
 			//if stream is from first path then insert into the array till incoming msg from
 			//path1 is complete
-		} else if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route {
+		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
 			if m.Content().Keys()[0] != "eof" {
 				oj.secondContainer = append(oj.secondContainer, m.Content())
 			} else { //after eof is obtained set the mergelock to true for merging
-				oj.mergeLock = true
+				oj.firstPathEnd= true
+
 			}
 		}
+
 	}
 	//var previous_content content.IContent = nil
 	//if mergelock is true start merging the streams
 	if oj.mergeLock ==true{
+		oj.mutex.Lock()
 		for _,msg := range oj.secondContainer {
-			result,ok := oj.ProcessStreamSec(msg,fields1)
-			switch oj.subType{
-			case LEFTOUTER:
-				if ok{
-					merged := oj.mergeContent(msg,result.(content.IContent))
-					proc.Result(messagePod.Msg,merged,nil)
-				}else{
+			if oj.subType == LEFTOUTER {
+				result, ok := oj.ProcessStreamSec(msg, fields1)
+				if ok {
+					merged := oj.mergeContent(msg, result.(content.IContent))
+					proc.Result(messagePod.Msg, merged, nil)
+				} else {
 					msgCont := content.New()
-					merged := oj.mergeContent(msg,msgCont)
-					proc.Result(messagePod.Msg,merged,nil)
+					merged := oj.mergeContent(msg, msgCont)
+					proc.Result(messagePod.Msg, merged, nil)
 				}
-			case RIGHTOUTER:
-				if ok{
-					merged := oj.mergeContent(result.(content.IContent),msg)
+
+				oj.secondContainer = nil
+			} else if oj.subType == RIGHTOUTER {
+				result, ok := oj.ProcessStreamSec(msg, fields2)
+				if ok {
+					merged := oj.mergeContent(result.(content.IContent), msg)
 					//previous_content = merged
-					proc.Result(messagePod.Msg,merged,nil)
-				}else {
+					proc.Result(messagePod.Msg, merged, nil)
+				} else {
 					msgCont := content.New()
 					merged := oj.mergeContent(msgCont, msg)
 					proc.Result(messagePod.Msg, merged, nil)
 				}
-			default:
-				if ok{
-					merged := oj.mergeContent(result.(content.IContent),msg)
-					proc.Result(messagePod.Msg,merged,nil)
-				}else{
+				oj.secondContainer = nil
+			} else {
+				result, ok := oj.ProcessStreamSec(msg, fields2)
+				if ok {
+					merged := oj.mergeContent(result.(content.IContent), msg)
+					proc.Result(messagePod.Msg, merged, nil)
+				} else {
 					msgCont := content.New()
-					merged := oj.mergeContent(msgCont,msg)
-					proc.Result(messagePod.Msg,merged,nil)
+					merged := oj.mergeContent(msgCont, msg)
+					proc.Result(messagePod.Msg, merged, nil)
+				}
+				oj.secondContainer = nil
+			}
 
+		}
+		if oj.subType == FULLOUTER && oj.secondPathEnd==true{
+
+			linkedList := oj.hashTable.data
+			for _,table := range(linkedList){
+				if table!=nil {
+					node :=table.Head
+					for node!= nil{
+						merged := oj.mergeContent(node.Data.(listData).value.(content.IContent),content.New())
+						proc.Result(messagePod.Msg,merged,nil)
+						node = node.Next
+					}
 				}
 			}
-		if oj.subType == FULLOUTER {
-			msgChannel := make(chan content.IContent)
-			//msgCont := content.New()
-			go oj.hashTable.iterate(msgChannel)
-			//for msg := range msgChannel {
-			//	merged := oj.mergeContent(msgCont,msg)
-			//	proc.Result(messagePod.Msg,merged,nil)
-			//}
-		}
-		}
+			}
+
 		oj.secondContainer = nil
+		oj.mutex.Unlock()
 	}
+
 	return true
 
 }

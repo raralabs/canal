@@ -36,7 +36,7 @@ func main() {
 	f1 := delay1.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	delay2 := newPipeline.AddTransform("Delay")
 	f2 := delay2.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path2")
-	query := "SELECT first_name,full_name FROM path3 c FULLOUTERJOIN path4 d on path3.age = path4.age"
+	query := "SELECT first_name,full_name,age FROM path3 c FULLOUTERJOIN path4 d on path3.age = path4.age"
 	joinStage := newPipeline.AddTransform("join")
 	j1 := joinStage.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("outerjoin",query),"path3","path4")
 	delay1.ReceiveFrom("path1", sp1)

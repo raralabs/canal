@@ -6,12 +6,15 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"math"
 	"strings"
+	"sync"
 )
 
 const arrayLength = uint64(1000)
 
 type HashTable struct {
+
 	data   [arrayLength]*linkedlist.LinkedList
+	iterateLock 	sync.Mutex
 }
 
 type listData struct{
@@ -21,9 +24,7 @@ type listData struct{
 
 //creates a new Hash Table for storing data
 func NewHashMap() *HashTable{
-	return &HashTable{
-		[arrayLength]*linkedlist.LinkedList{},
-	}
+	return &HashTable{data: [arrayLength]*linkedlist.LinkedList{}}
 }
 func concatKeys(keys []interface{})string{
 	concatenatedkey := ""
@@ -109,27 +110,24 @@ func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
 //}
 //modified for the outer join
 func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
+
 	hash := createHash(ConcatKey)
 	index := index(hash)
 	linkedList := hshTable.data[index]
 	if linkedList == nil{
 		return nil,false
 	}
+
 	node := linkedList.Head
 	for {
 		if node !=nil{
+
 			d := node.Data.(listData)
 			if d.key == hash{
-				for {
-					if node.Next != nil{
-						node.Next = node.Next.Next
-						node.Data = node.Next.Data
-					}else{
-						node = nil
-						break
-					}
+				for node.Next != nil {
+					node.Next = node.Next.Next
 				}
-
+				node = node.Next
 				return d.value,true
 				}
 			}else{
@@ -137,20 +135,20 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 			}
 		node = node.Next
 	}
+
 }
 
-func (hshTable *HashTable)iterate(messageChannel chan content.IContent) bool{
+func (hshTable *HashTable)iterate(messageChannel chan <- content.IContent) bool{
 	linkedList := hshTable.data
-	for idx,table := range(linkedList){
+	for _,table := range(linkedList){
 		if table!=nil {
-			data := linkedList[idx]
-			node := data.Head
-			fmt.Println(idx,table)
-			messageChannel <- node.Data.(listData).value.(content.IContent)
+			node :=table.Head
+			for node!= nil{
+				messageChannel<- node.Data.(listData).value.(content.IContent)
+				node = node.Next
+			}
 		}
-
 	}
-
 	close(messageChannel)
 	return true
 }
