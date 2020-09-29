@@ -137,7 +137,7 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 	}
 
 }
-
+//function that iterates through all the nodes of the hash table and feeds them in a channel
 func (hshTable *HashTable)iterate(messageChannel chan <- content.IContent) bool{
 	linkedList := hshTable.data
 	for _,table := range(linkedList){
@@ -152,3 +152,4 @@ func (hshTable *HashTable)iterate(messageChannel chan <- content.IContent) bool{
 	close(messageChannel)
 	return true
 }
+

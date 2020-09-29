@@ -9,7 +9,7 @@ import (
 
 func TestNewInnerJoin(t *testing.T) {
 	t.Run("create new innerjoin", func(t *testing.T) {
-		innerJoin:= NewInnerJoin(HASH)
+		innerJoin:= NewInnerJoin(HASH,"path1","path2",[]string{"id","roll no"})
 		assert.Equal(t,innerJoin.JoinStrategy,HASH,"strategy mismatch")
 		assert.Equal(t,reflect.TypeOf(innerJoin.hashTable).String(),"*joinUsingHshMap.HashTable","table type didn't match")
 	})
