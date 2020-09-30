@@ -3,7 +3,7 @@ package joinUsingHshMap
 import (
 	"fmt"
 	"github.com/dorin131/go-data-structures/linkedlist"
-	"github.com/raralabs/canal/core/message/content"
+	//"github.com/raralabs/canal/core/message/content"
 	"math"
 	"strings"
 	"sync"
@@ -26,6 +26,7 @@ type listData struct{
 func NewHashMap() *HashTable{
 	return &HashTable{data: [arrayLength]*linkedlist.LinkedList{}}
 }
+//function that concats all the values in the slice. The concatenated values are separted by white space.
 func concatKeys(keys []interface{})string{
 	concatenatedkey := ""
 	for _,key := range keys{
@@ -117,19 +118,24 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 	if linkedList == nil{
 		return nil,false
 	}
-
 	node := linkedList.Head
+
+
 	for {
 		if node !=nil{
-
 			d := node.Data.(listData)
-			if d.key == hash{
-				for node.Next != nil {
-					node.Next = node.Next.Next
+			if d.key == hash {
+				if node.Next != nil {
+					//retunval := d.value
+					//node.Data = node.Next.Data
+					//node.Next = node.Next.Next
+					return d.value, true
+				} else {
+					node.Next = nil
+					node.Data = nil
+
 				}
-				node = node.Next
-				return d.value,true
-				}
+			}
 			}else{
 				return nil,false
 			}
@@ -138,18 +144,18 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 
 }
 //function that iterates through all the nodes of the hash table and feeds them in a channel
-func (hshTable *HashTable)iterate(messageChannel chan <- content.IContent) bool{
+func (hshTable *HashTable)iterate()bool{//messageChannel chan <- content.IContent) bool{
 	linkedList := hshTable.data
 	for _,table := range(linkedList){
 		if table!=nil {
 			node :=table.Head
 			for node!= nil{
-				messageChannel<- node.Data.(listData).value.(content.IContent)
+				//messageChannel<- node.Data.(listData).value.(content.IContent)
 				node = node.Next
 			}
 		}
 	}
-	close(messageChannel)
+	//close(messageChannel)
 	return true
 }
 

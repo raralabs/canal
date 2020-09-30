@@ -45,8 +45,8 @@ type StreamJoin interface{
 	//returns the joined streams of message
 	mergeContent(content.IContent,content.IContent)content.IContent
 
-	////gives the right table
 	//RightTable() []stream
+
 }
 
 

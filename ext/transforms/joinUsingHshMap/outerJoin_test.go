@@ -156,7 +156,11 @@ func TestOuterJoin_mergeContent(t *testing.T){
 			sort.Strings(b)
 			assert.Equal(t,a,b,"Extracted keys are different")
 		}else{
-			assert.Equal(t,merged.Keys(),test.selectFields)
+			a := test.selectFields
+			sort.Strings(a)
+			b := merged.Keys()
+			sort.Strings(b)
+			assert.Equal(t,a,b,"Extracted kyes are different")
 		}
 	}
 }
