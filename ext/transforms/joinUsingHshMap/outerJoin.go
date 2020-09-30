@@ -202,14 +202,15 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 
 //the data from first streams are inserted into the hash table
 func(oj *outerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []string){
-
+	//for join using hash
 	if oj.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}
+		//get all the field values of stream 1 like age =18 name=ram kumar etc
 		for _,field := range fieldsFromStream1{
-			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
+			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)]) //eats any unwanted white spaces..Note:may be the code is reduandant and may require cleaning in later version
 		}
-		key := concatKeys(joinFieldsVal)
-		oj.hashTable.Set(msg,key)
+		key := concatKeys(joinFieldsVal) //concats the fields '18 ram kumar' is obtained
+		oj.hashTable.Set(msg,key)// inserts the concat values as key and msg as the value in the hash table
 	}
 }
 //check if the data from second streams matches that of the hash table
