@@ -1,9 +1,8 @@
 package joinUsingHshMap
 
 import (
-	"fmt"
-	"github.com/raralabs/canal/core/message/content"
 	"github.com/dorin131/go-data-structures/linkedlist"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -72,10 +71,14 @@ func TestHashTable_Set_Get(t *testing.T) {
 			assert.Equal(t,false,ok,"hash table should be empty at the begining")
 			hashTable.Set(test.msg,test.concatKey)
 			value,ok := hashTable.Get(test.concatKey)
-			fmt.Println("here")
+			hashTable.iterate()
 			assert.Equal(t,true,ok)
 			assert.Equal(t,value,test.msg)
 			hashTable.iterate()
+			value,ok = hashTable.Get(test.concatKey)
+			assert.Equal(t,false,ok)
+			assert.Equal(t,nil,value)
+
 		})
 	}
 }

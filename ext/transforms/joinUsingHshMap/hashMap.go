@@ -119,24 +119,18 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 		return nil,false
 	}
 	node := linkedList.Head
-
-
+	//nodeTracker := 0
 	for {
 		if node !=nil{
 			d := node.Data.(listData)
 			if d.key == hash {
-				if node.Next != nil {
-					//retunval := d.value
-					//node.Data = node.Next.Data
-					//node.Next = node.Next.Next
-					return d.value, true
-				} else {
-					node.Next = nil
-					node.Data = nil
+				returnVal := d.value
+				linkedList.DeleteWithValue(node.Data)
+				return returnVal, true
 
-				}
 			}
 			}else{
+				fmt.Println("iam in")
 				return nil,false
 			}
 		node = node.Next
@@ -150,6 +144,7 @@ func (hshTable *HashTable)iterate()bool{//messageChannel chan <- content.IConten
 		if table!=nil {
 			node :=table.Head
 			for node!= nil{
+				fmt.Println(node)
 				//messageChannel<- node.Data.(listData).value.(content.IContent)
 				node = node.Next
 			}
