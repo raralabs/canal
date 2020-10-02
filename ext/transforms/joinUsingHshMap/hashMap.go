@@ -63,8 +63,10 @@ func index(hash uint64)uint64{
 func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
 	hash := createHash(concatKey)
 	index := index(hash)
+
 	if hshTable.data[index] == nil {
 		hshTable.data[index] = linkedlist.New()
+
 		hshTable.data[index].Append(listData{hash, v})
 	} else {
 		node := hshTable.data[index].Head
@@ -81,6 +83,7 @@ func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
 			}
 		}
 	}
+
 	return hshTable
 }
 
@@ -109,28 +112,57 @@ func (hshTable *HashTable) Set(v interface{},concatKey string) *HashTable {
 //	}
 //
 //}
+
+// DeleteWithValue : Deletes node which has a specific value
+//func (hsh *HashTable) Delete(v interface{},ll *linkedlist.LinkedList) *linkedlist.LinkedList {
+//	var node = ll.Head
+//	fmt.Println(node.Data.(listData).value,v.(listData).value)
+//	if node.Data.(listData).value == v.(listData).value {
+//
+//		ll.Head = ll.Head.Next
+//		return ll
+//	}
+//	for {
+//		if v == node.Next.Data {
+//			if node.Next.Next != nil {
+//				node.Next = node.Next.Next
+//				break
+//			}
+//			node.Next = nil
+//			break
+//		}
+//		node = node.Next
+//	}
+//	return ll
+//}
+
 //modified for the outer join
 func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 
 	hash := createHash(ConcatKey)
 	index := index(hash)
+
 	linkedList := hshTable.data[index]
+
 	if linkedList == nil{
+
 		return nil,false
 	}
 	node := linkedList.Head
+
 	//nodeTracker := 0
 	for {
 		if node !=nil{
 			d := node.Data.(listData)
 			if d.key == hash {
 				returnVal := d.value
-				linkedList.DeleteWithValue(node.Data)
+
+				//hshTable.Delete(d,linkedList)
+
 				return returnVal, true
 
 			}
 			}else{
-				fmt.Println("iam in")
 				return nil,false
 			}
 		node = node.Next
@@ -141,9 +173,13 @@ func (hshTable *HashTable)Get(ConcatKey string)(result interface{},ok bool){
 func (hshTable *HashTable)iterate()bool{//messageChannel chan <- content.IContent) bool{
 	linkedList := hshTable.data
 	for _,table := range(linkedList){
+
 		if table!=nil {
+
 			node :=table.Head
+
 			for node!= nil{
+
 				fmt.Println(node)
 				//messageChannel<- node.Data.(listData).value.(content.IContent)
 				node = node.Next

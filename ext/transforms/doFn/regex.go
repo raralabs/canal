@@ -1,6 +1,7 @@
 package doFn
 
 import (
+	"fmt"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
@@ -8,6 +9,42 @@ import (
 	"log"
 	"regexp"
 )
+
+func RegexValidator(exp, key string, f func(*regexp.Regexp, string) bool) pipeline.Executor {
+	reg, err := regexp.Compile(exp)
+	if err != nil {
+		log.Panicf("Could not parse regular expression: %s", exp)
+	}
+
+	df := func(m message.Msg,proc pipeline.IProcessorForExecutor)bool {
+		msg := m.Content().Copy()
+		types := m.Types()
+		if v, ok := msg.Get("eof"); ok {
+			if v.Val == true {
+				proc.Result(m, msg, nil)
+				return true
+			}
+		}
+		str, _ := msg.Get(key)
+		var s bool
+		switch types[key] {
+		case content.STRING:
+			s = f(reg, str.Val.(string))
+		case content.INT:
+			s = f(reg, (fmt.Sprintf("%v", str)))
+
+		default:
+			fmt.Println("String",str)
+			s = false
+		}
+		if s{
+			proc.Result(m,msg,nil)
+		}
+		return true
+	}
+
+	return do.NewOperator(df)
+}
 
 
 

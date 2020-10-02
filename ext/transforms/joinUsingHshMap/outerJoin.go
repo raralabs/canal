@@ -95,7 +95,7 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	//checks if the message is from first path or not if yes insert into the hash table till
 	//eof is obtained
 	if oj.subType == RIGHTOUTER||oj.subType==FULLOUTER{
-		if pipeline.MsgRouteParam(oj.firstPath) == messagePod.Route {
+		if oj.firstPath == messagePod.Route {
 			//if streams from path1 are live
 			if m.Content().Keys()[0] != "eof" {
 				oj.ProcessStreamFirst(m.Content(), fields1)
@@ -105,16 +105,15 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 			}
 			//if stream is from first path then insert into the array till incoming msg from
 			//path1 is complete
-		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route{
+		} else if oj.secondPath == messagePod.Route{
 			if m.Content().Keys()[0] != "eof" {
 				oj.secondContainer = append(oj.secondContainer, m.Content())
 			} else { //after eof is obtained set the mergelock to true for merging
 				oj.secondPathEnd = true
-
 			}
 		}
 	}else if oj.subType==LEFTOUTER{
-		if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
+		if oj.secondPath == messagePod.Route {
 			//if streams from path2 are live
 			if m.Content().Keys()[0] != "eof" {
 				oj.ProcessStreamFirst(m.Content(), fields2)
@@ -124,7 +123,7 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 			}
 			//if stream is from first path then insert into the array till incoming msg from
 			//path1 is complete
-		} else if pipeline.MsgRouteParam(oj.secondPath) == messagePod.Route {
+		} else if oj.firstPath == messagePod.Route {
 			if m.Content().Keys()[0] != "eof" {
 				oj.secondContainer = append(oj.secondContainer, m.Content())
 			} else { //after eof is obtained set the mergelock to true for merging
@@ -132,6 +131,7 @@ func(oj *outerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 
 			}
 		}
+
 
 	}
 	//var previous_content content.IContent = nil
@@ -217,13 +217,13 @@ func(oj *outerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []s
 func(oj *outerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []string)(interface{},bool){
 	if oj.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}
-
 		for _,field := range fieldsFromStream2{
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
-
 		key := concatKeys(joinFieldsVal)
+
 		result,ok:= oj.hashTable.Get(key)
+
 		return result,ok
 	}
 	return nil,false
