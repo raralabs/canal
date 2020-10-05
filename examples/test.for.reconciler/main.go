@@ -1,8 +1,9 @@
 package main
 import (
 	"bufio"
+	"github.com/Knetic/govaluate"
+	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/ext/transforms"
-
 	"regexp"
 	"github.com/raralabs/canal/utils/regparser"
 	"context"
@@ -29,7 +30,6 @@ func main() {
 	secReadFile := dir +"tax.csv"
 	file, err := os.Open(readFile)
 	secFile,_:= os.Open(secReadFile)
-
 	r := bufio.NewReader(file)
 	r2 := bufio.NewReader(secFile)
 	newPipeline:= pipeline.NewPipeline(1)
@@ -49,8 +49,18 @@ func main() {
 				return matched
 			}),
 		"path3")
+
+	enricher := newPipeline.AddTransform("enrich data")
+	evaluableExp,_ := govaluate.NewEvaluableExpression("first_name+' '+last_name")
+	e1 := enricher.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("full_name",evaluableExp,func(m message.Msg)bool{
+		if m.Content().Keys()[0] == "eof"{
+		return true
+	}else{
+		return false
+		}
+	}),"path0")
 	joiner := newPipeline.AddTransform("innerJoin")
-	query := "SELECT id,phone ,first_name,full_name,age,amount,tax FROM path4 c INNERJOIN path5 d on path4.emp_id = path5.id"
+	query := "SELECT id,phone ,first_name,full_name,age,tax FROM path4 c INNERJOIN path5 d on path4.emp_id = path5.id"
 	j1 := joiner.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("outerjoin",query),"path4","path5")
 
 	//enricher := newPipeline.AddTransform("enricher")
@@ -61,8 +71,11 @@ func main() {
 	delay1.ReceiveFrom("path1", sp1)
 	delay2.ReceiveFrom("path2",sp2)
 	filter.ReceiveFrom("path3",d1)
+	//for enrichment
+	enricher.ReceiveFrom("path0",f1)
+
 	//for inner join
-	joiner.ReceiveFrom("path4",f1)
+	joiner.ReceiveFrom("path4",e1)
 	joiner.ReceiveFrom("path5",d2)
 
 	sink.ReceiveFrom("sink",j1)
