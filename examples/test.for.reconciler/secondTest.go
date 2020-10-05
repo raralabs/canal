@@ -3,14 +3,16 @@ import (
 	"bufio"
 	"context"
 	"github.com/Knetic/govaluate"
+	"regexp"
+
+	//"fmt"
+	//"github.com/Knetic/govaluate"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/ext/transforms"
 	"github.com/raralabs/canal/utils/regparser"
-	"regexp"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	//"regexp"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"os"
@@ -26,8 +28,8 @@ func main() {
 		log.Panicf("Could not read source folder through git")
 	}
 	dir := strings.TrimSpace(string(cmdOut)) + "/examples/test.for.reconciler/"
-	readFile := dir + "empinfo.csv"
-	secReadFile := dir +"tax.csv"
+	readFile := dir + "data1.csv"
+	secReadFile := dir +"data2.csv"
 	file, err := os.Open(readFile)
 	secFile,_:= os.Open(secReadFile)
 	r := bufio.NewReader(file)
@@ -43,51 +45,40 @@ func main() {
 	d2 := delay2.AddProcessor(pipeline.DefaultProcessorOptions,doFn.DelayFunction(100*time.Millisecond),"path2")
 	filter := newPipeline.AddTransform("regex fiter")
 	f1 := filter.AddProcessor(pipeline.DefaultProcessorOptions,
-		doFn.RegexValidator(`\d{10}`,"phone ",
+		doFn.RegexValidator(`[A-Za-z]+[-]\d{5}$`,"trans_description",
 			func(reg *regexp.Regexp, str string)bool{
 				matched :=regparser.ValidateData(reg,str)
 				return matched
 			}),
 		"path3")
-
 	functions := map[string]govaluate.ExpressionFunction{
-		"class":func(args ...interface{})(interface{},error){
-			var class string
-			for _,arg := range(args){
-				if arg == "shrestha"||arg =="bajracharya"||arg =="Tamang"||arg=="Rai"{
-					class = "Bhaisya"
-				}else if arg == "Kumar"|| arg=="Bahadur"|| arg=="Basnet" ||arg =="Sharma"{
-					class = "Brahmin"
-				}else if arg == "Chettri" || arg == "Krishna"|| arg == "Kumar"{
-					class = "Chettri"
-				}else{
-					class = "undefined"
-				}
+			"getTranId":func(args ...interface{})(interface{},error){
+			var extractedTranId map[string]string
+			reg,err := regexp.Compile(`[A-Za-z]+[-](?P<tran_id>\d{5})`)
+			if err!=nil{
+				panic("couldn't compile regex")
 			}
-			return class,nil
+			for _,arg := range args{
+				extractedTranId = regparser.ExtractParams(reg,arg.(string))
+
+			}
+			return extractedTranId["tran_id"],nil
 		},
 	}
-	expression, _ := govaluate.NewEvaluableExpressionWithFunctions("class(last_name)", functions)
-	labelGen := newPipeline.AddTransform("label data")
-	l1 := labelGen.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("label",expression, func(m message.Msg) bool {
+
+	expression, _ := govaluate.NewEvaluableExpressionWithFunctions("getTranId(trans_description)", functions)
+	enricher := newPipeline.AddTransform("label_data")
+	l1 := enricher.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("transaction_id",expression, func(m message.Msg) bool {
 		if m.Content().Keys()[0] == "eof"{
 			return true
 		}else{
 			return false
 		}
 	}),"path18")
-	enricher := newPipeline.AddTransform("enrich data")
-	evaluableExp,_ := govaluate.NewEvaluableExpression("first_name+' '+last_name")
-	e1 := enricher.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("full_name",evaluableExp,func(m message.Msg)bool{
-		if m.Content().Keys()[0] == "eof"{
-		return true
-	}else{
-		return false
-		}
-	}),"path0")
+
 	joiner := newPipeline.AddTransform("innerJoin")
-	query := "SELECT id,phone ,first_name,full_name,age,tax,label FROM path4 c INNERJOIN path5 d on path4.emp_id = path5.id"
-	j1 := joiner.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("outerjoin",query),"path4","path5")
+	query := "SELECT trans_date,trans_id,amount,cr_amount FROM path4 c INNERJOIN path5 d on path4.transaction_id,path4.amount = path5.trans_id,path5.cr_amount"
+	j1 := joiner.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("innerjoin",query),"path4","path5")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 
@@ -95,11 +86,11 @@ func main() {
 	delay2.ReceiveFrom("path2",sp2)
 	filter.ReceiveFrom("path3",d1)
 	//for enrichment
-	labelGen.ReceiveFrom("path18",f1)
-	enricher.ReceiveFrom("path0",l1)
+	enricher.ReceiveFrom("path18",f1)
+	//enricher.ReceiveFrom("path0",l1)
 
 	//for inner join
-	joiner.ReceiveFrom("path4",e1)
+	joiner.ReceiveFrom("path4",l1)
 	joiner.ReceiveFrom("path5",d2)
 
 	sink.ReceiveFrom("sink",j1)
