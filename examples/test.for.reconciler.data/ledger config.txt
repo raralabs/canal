@@ -1,0 +1,14 @@
+{"block_expression":"",
+"config":[{"display_name":"Card No","name":"card_no","validation":{"required":false,"type":"string"}},
+{"display_name":"Transaction date","name":"transaction_date","validation":{"required":true,"type":"date"}},
+{"display_name":"Account No","name":"account_no","validation":{"required":false,"type":"string"}},
+{"display_name":"Trace ID","name":"trace_id","validation":{"pre_validation":"str(int(trace_id)) if trace_id else trace_id","required":false,"type":"string"}},
+{"display_name":"Auth No","name":"auth_no","validation":{"required":false,"type":"string"}},
+{"display_name":"Ft Id","name":"ft_id","validation":{"required":false,"type":"string"}},
+{"display_name":"Terminal Id","name":"terminal_id","validation":{"required":false,"type":"string"}},
+{"display_name":"Transaction Amount","name":"transaction_amount","validation":{"required":false,"type":"decimal"}},
+{"display_name":"Opening Balance","name":"opening_balance","validation":{"required":false,"type":"decimal"}},
+{"display_name":"Closing Balance","name":"closing_balance","validation":{"required":false,"type":"decimal"}},
+{"display_name":"Account Name","name":"account_name","validation":{"required":false,"type":"string"}},
+{"display_name":"Status","name":"status","validation":{"required":false,"type":"string"}}]
+}
