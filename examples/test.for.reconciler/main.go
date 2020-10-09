@@ -10,7 +10,6 @@ import (
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
-	//"regexp"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
 	"os"
@@ -53,6 +52,7 @@ func main() {
 	functions := map[string]govaluate.ExpressionFunction{
 		"class":func(args ...interface{})(interface{},error){
 			var class string
+
 			for _,arg := range(args){
 				if arg == "shrestha"||arg =="bajracharya"||arg =="Tamang"||arg=="Rai"{
 					class = "Bhaisya"

@@ -11,17 +11,18 @@ import (
 
 // EnrichFunction adds values to the messages and send them out.
 func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func(m message.Msg) bool) pipeline.Executor {
-
 	return do.NewOperator(func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 
 		contents := content.Builder(m.Content())
 		pContent := content.Builder(m.PrevContent())
+
 		if !done(m) {
 			// Enrich here
 
 			if contents != nil {
 				values := contents.Values()
 				val, err := expr.Evaluate(values)
+
 				if err != nil {
 					return false
 				}
@@ -40,7 +41,6 @@ func EnrichFunction(field string, expr *govaluate.EvaluableExpression, done func
 				pContent = pContent.Add(field, content.NewFieldValue(v, vt))
 
 			}
-
 			proc.Result(m, contents, pContent)
 			return false
 		}

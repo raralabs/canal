@@ -7,6 +7,7 @@ require (
 	github.com/antonmedv/expr v1.8.2 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dorin131/go-data-structures v0.0.0-20200112181556-cfb304c8c6e8
+	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259 // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/jfeliu007/goplantuml v1.5.0 // indirect

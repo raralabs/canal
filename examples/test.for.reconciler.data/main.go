@@ -1,9 +1,9 @@
 package main
 
 import (
-	//"bufio"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/utils/regparser"
+	"github.com/raralabs/canal/ext/transforms"
 	"context"
 	"github.com/Knetic/govaluate"
 	"os"
@@ -13,7 +13,6 @@ import (
 	"github.com/raralabs/canal/ext/sources"
 	"github.com/raralabs/canal/ext/transforms/doFn"
 	"log"
-
 	"os/exec"
 	"strings"
 	"time"
@@ -49,10 +48,19 @@ func main() {
 		"ft_id","auth_no","terminal_id","opening_balance",
 		"closing_balance","account_name","status","trace_id"),"path2")
 
+	journalValidator := newPipeline.AddTransform("journalValidator")
+	journalValidator_obj := doFn.NewJournalValidator()
+	j1 := journalValidator.AddProcessor(pipeline.DefaultProcessorOptions,journalValidator_obj.JournalFieldValidator(
+		"card_no","txn_date","account_no","terminal_id","status","trace_id","trace_id1",
+		"count1","count2", "txn_type","trx_no","txn_amount","currency","response","deno1",
+		"deno2","reject1","reject2","total_count1","total_count2"),"path9")
+
+
+
 	functions := map[string]govaluate.ExpressionFunction{
 		"extractCardNum":func(args ...interface{})(interface{},error){
 			var class map[string]string
-			regRule := `\d{1,6}[X]+\d{1}?(?P<lastdigits>\d{3})$`
+			regRule := `\d{1,6}[X|*]+\d{1}?(?P<lastdigits>\d{3})$`
 			regEx,err := regexp.Compile(regRule)
 			if err != nil{
 				panic ("Could not compile regex")
@@ -64,7 +72,6 @@ func main() {
 		},
 	}
 
-
 	enricher := newPipeline.AddTransform("Enricher")
 	expression, _ := govaluate.NewEvaluableExpressionWithFunctions("extractCardNum(card_no)", functions)
 	e1 := enricher.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("CardLastDigits",expression,func(m message.Msg)bool{
@@ -75,13 +82,30 @@ func main() {
 		}
 	}),"path3")
 
+	enricher2 := newPipeline.AddTransform("secondEnricher")
+	e2 := enricher2.AddProcessor(pipeline.DefaultProcessorOptions,doFn.EnrichFunction("CardLastDigits",expression,func(m message.Msg)bool{
+		if m.Content().Keys()[0] == "eof"{
+			return true
+		}else{
+			return false
+		}
+	}),"pathx")
+
+	joiner := newPipeline.AddTransform("innerJoin")
+	query := "SELECT transaction_amount,card_no,transaction_date FROM path4 c INNERJOIN path5 d on path4.CardLastDigits=path5.CardLastDigits"
+	jo1 := joiner.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("outerjoin",query),"path4","path5")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
 	delay1.ReceiveFrom("path1", sp1)
 	delay2.ReceiveFrom("path0",sp2)
 	ledgervalidator.ReceiveFrom("path2",d1)
+	journalValidator.ReceiveFrom("path9",d2)
 	enricher.ReceiveFrom("path3",v1)
-	sink.ReceiveFrom("sink",e1,d2)
+	enricher2.ReceiveFrom("pathx",j1)
+	joiner.ReceiveFrom("path4",e1)
+	joiner.ReceiveFrom("path5",e2)
+
+	sink.ReceiveFrom("sink",jo1)
 	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	newPipeline.Validate()
 	newPipeline.Start(c, cancel)

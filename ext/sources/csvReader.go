@@ -2,7 +2,6 @@ package sources
 
 import (
 	"encoding/csv"
-	"fmt"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/utils/extract"
 	"io"
@@ -28,7 +27,6 @@ func NewCsvReader(r io.Reader, maxRows int) *CsvReader {
 	header, err := csr.Read()
 
 	if err != nil { //read header
-		fmt.Println("err",err)
 		log.Panic(err)
 	}
 

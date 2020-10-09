@@ -81,7 +81,6 @@ func main() {
 	j1 := joiner.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("innerjoin",query),"path4","path5")
 	sink := newPipeline.AddSink("Sink")
 	sink.AddProcessor(pipeline.DefaultProcessorOptions, sinks.NewStdoutSink(), "sink")
-
 	delay1.ReceiveFrom("path1", sp1)
 	delay2.ReceiveFrom("path2",sp2)
 	filter.ReceiveFrom("path3",d1)

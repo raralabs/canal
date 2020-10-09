@@ -21,3 +21,12 @@ func ExtractParams(regEx *regexp.Regexp, msg string) (paramsMap map[string]strin
 	}
 	return paramsMap
 }
+
+func ExtractSubStrings(msg string,expressions map[string]string)map[string]string{
+	matchedStrings := make(map[string]string)
+	for key,exp := range expressions{
+		regExp := regexp.MustCompile(exp)
+		matchedStrings[key] = regExp.FindString(msg)
+	}
+	return matchedStrings
+}

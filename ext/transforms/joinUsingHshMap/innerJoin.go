@@ -54,6 +54,7 @@ func(in *innerJoin)ProcessStreamFirst(msg content.IContent,fieldsFromStream1 []s
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
 		key := concatKeys(joinFieldsVal)
+
 		in.hashTable.Set(msg,key)
 	}
 }
@@ -62,6 +63,7 @@ func(in *innerJoin)ProcessStreamSec(msg content.IContent,fieldsFromStream2 []str
 	if in.JoinStrategy == HASH{
 		var joinFieldsVal []interface{}
 		for _,field := range fieldsFromStream2{
+
 			joinFieldsVal= append(joinFieldsVal,msg.Values()[strings.TrimSpace(field)])
 		}
 		key := concatKeys(joinFieldsVal)
@@ -77,6 +79,7 @@ func(in *innerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 	//checks if the message is from first path or not if yes insert into the hash table till
 	//eof is obtained
 	if pipeline.MsgRouteParam(in.firstPath) == messagePod.Route{
+
 		//if streams from path1 are live
 		if m.Content().Keys()[0] != "eof" {
 			in.ProcessStreamFirst(m.Content(), fields1)
@@ -96,7 +99,6 @@ func(in *innerJoin)Join(messagePod pipeline.MsgPod,fields1,fields2 []string,proc
 			result,ok := in.ProcessStreamSec(msg,fields2)
 			if ok{
 				merged := in.mergeContent(msg,result.(content.IContent))
-				//previous_content = merged
 				proc.Result(messagePod.Msg,merged,nil)
 				continue
 			}
