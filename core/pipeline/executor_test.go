@@ -16,7 +16,8 @@ type dummyExecutor struct {
 func newDummyExecutor(typ ExecutorType) Executor {
 	return &dummyExecutor{exeType: typ}
 }
-func (dummy *dummyExecutor) Execute(m message.Msg, proc IProcessorForExecutor) bool {
+func (dummy *dummyExecutor) Execute(mpd MsgPod, proc IProcessorForExecutor) bool {
+	m := mpd.Msg
 	proc.Result(m, m.Content(), nil)
 	//proc.Done()
 	return true

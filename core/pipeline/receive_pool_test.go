@@ -13,7 +13,7 @@ import (
 
 // This dummy struct mocks a Processor from the perspective of a receive pool in the next stage
 type dummyProcessorForReceiver struct {
-	sendChannel chan msgPod
+	sendChannel chan MsgPod
 }
 
 func (d *dummyProcessorForReceiver) Error(u uint8, err error) {
@@ -21,9 +21,9 @@ func (d *dummyProcessorForReceiver) Error(u uint8, err error) {
 func (d *dummyProcessorForReceiver) Done() {
 }
 func (d *dummyProcessorForReceiver) addSendTo(stg *stage, route MsgRouteParam) {
-	d.sendChannel = make(chan msgPod, _SendBufferLength)
+	d.sendChannel = make(chan MsgPod, _SendBufferLength)
 }
-func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan msgPod {
+func (d *dummyProcessorForReceiver) channelForStageId(stg *stage) <-chan MsgPod {
 	return d.sendChannel
 }
 func (d *dummyProcessorForReceiver) isConnected() bool {
@@ -166,7 +166,7 @@ func TestReceiverPool_loop(t *testing.T){
 	msgContent := content2.New()
 	msgContent.Add("greet",content2.NewFieldValue("hello",content2.STRING))
 	msg := msgFactory.NewExecuteRoot(msgContent,false)
-	packet := msgPod{msg:msg, route:"path",}
+	packet := MsgPod{Msg:msg, Route:"path",}
 	stgFactory := newStageFactory(newPipeLine)
 
 	// Create a receiving stage
@@ -193,7 +193,7 @@ func TestReceiverPool_loop(t *testing.T){
 			if !ok {
 				break
 			}
-			m := rcvd.msg
+			m := rcvd.Msg
 			if !reflect.DeepEqual(m.Content(), msg.Content()) {
 				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 			}
@@ -221,9 +221,9 @@ func TestReceivePool(t *testing.T) {
 		msg := msgF.NewExecuteRoot(content, false)
 
 		routeParam := MsgRouteParam("path1")
-		msgPack := msgPod{
-			msg:   msg,
-			route: routeParam,
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: routeParam,
 		}
 
 		pipeline := NewPipeline(pipelineId)
@@ -254,7 +254,7 @@ func TestReceivePool(t *testing.T) {
 				if !ok {
 					break
 				}
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -284,9 +284,9 @@ func BenchmarkReceivePool(b *testing.B) {
 		msg := msgF.NewExecuteRoot(content, false)
 
 		routeParam := MsgRouteParam("path1")
-		msgPack := msgPod{
-			msg:   msg,
-			route: routeParam,
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: routeParam,
 		}
 
 		pipeline := NewPipeline(pipelineId)

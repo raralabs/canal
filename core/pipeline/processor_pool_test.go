@@ -15,7 +15,7 @@ import (
 // execute(), done()
 type dummyProcessorPool struct {
 	routeMu    *sync.Mutex
-	outRoute   chan msgPod
+	outRoute   chan MsgPod
 	chanClosed bool
 	stg        *stage
 	runLock    atomic.Value
@@ -23,7 +23,7 @@ type dummyProcessorPool struct {
 
 
 func newDummyProcessorPool(route MsgRouteParam, stg *stage) *dummyProcessorPool {
-	sendChannel := make(chan msgPod, _SendBufferLength)
+	sendChannel := make(chan MsgPod, _SendBufferLength)
 	return &dummyProcessorPool{
 
 		outRoute:   sendChannel,
@@ -58,7 +58,7 @@ func (d *dummyProcessorPool) attach(pool ...IProcessorForPool) {
 }
 func (d *dummyProcessorPool) detach(pool ...IProcessorForPool) {
 }
-func (d *dummyProcessorPool) execute(pod msgPod) {
+func (d *dummyProcessorPool) execute(pod MsgPod) {
 	//if d.IsClosed() {
 	//	return
 	//}
@@ -198,14 +198,14 @@ func TestProcessorPool_shortCircuit(t *testing.T) {
 		msgContent := content2.New()
 		msgContent.Add("greetings",content2.NewFieldValue("hello",content2.STRING))
 		msg := msgFact.NewExecuteRoot(msgContent,false)
-		msgPackets := msgPod{
-			msg:   msg,
-			route: "path",
+		msgPackets := MsgPod{
+			Msg:   msg,
+			Route: "path",
 		}
 		//processor1.meta = newMetadata()
 		//processor2.meta = newMetadata()
 		for path, procs := range procPool.procMsgPaths {
-			if path != msgPackets.route {
+			if path != msgPackets.Route {
 				continue
 			}
 			for _, proc := range procs {
@@ -214,7 +214,7 @@ func TestProcessorPool_shortCircuit(t *testing.T) {
 					continue
 				}
 
-				accepted := proc.process(msg)
+				accepted := proc.process(msgPackets)
 
 				if accepted && procPool.shortCircuit {
 					break
@@ -274,9 +274,9 @@ func TestProcessorPool_execute(t *testing.T){
 	prcPool.lock(route)
 
 	t.Run("single processor sending to the stage", func(t *testing.T) {
-		msgPack := msgPod{
-			msg:   msg,
-			route: MsgRouteParam("path"),
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: MsgRouteParam("path"),
 		}
 
 		// check if the processor is closed before complete execution
@@ -284,7 +284,7 @@ func TestProcessorPool_execute(t *testing.T){
 		prcPool.execute(msgPack)
 		select {
 		case receivedMsg := <-receiver:
-			m := receivedMsg.msg
+			m := receivedMsg.Msg
 			if !reflect.DeepEqual(m.Content(), msg.Content()) {
 				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 			}
@@ -297,20 +297,20 @@ func TestProcessorPool_execute(t *testing.T){
 	//multiple channel from multiple processor to one receiving stage
 
 	t.Run("multiple processor sending to same stage", func(t *testing.T) {
-		msgPack := msgPod{
-			msg:   msg,
-			route: MsgRouteParam("path"),
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: MsgRouteParam("path"),
 		}
 		prcPool.execute(msgPack)
 		select {
 		case receivedMsg2 := <-receiver2:
-			m := receivedMsg2.msg
+			m := receivedMsg2.Msg
 			if !reflect.DeepEqual(m.Content(), msg.Content()) {
 				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 			}
 			assert.Equal(t, msg.Id(), m.Id())
 		case receivedMsg3 := <-receiver3:
-			m := receivedMsg3.msg
+			m := receivedMsg3.Msg
 			if !reflect.DeepEqual(m.Content(), msg.Content()) {
 				t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 			}
@@ -352,15 +352,15 @@ func TestProcessorPool(t *testing.T) {
 		receiver := pr.channelForStageId(stg)
 		procPool.lock(route)
 		t.Run("Test1", func(t *testing.T) {
-			msgPack := msgPod{
-				msg:   msg,
-				route: routeParam,
+			msgPack := MsgPod{
+				Msg:   msg,
+				Route: routeParam,
 			}
 
 			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -370,15 +370,15 @@ func TestProcessorPool(t *testing.T) {
 
 		t.Run("Test2", func(t *testing.T) {
 			msg2 := msgF.NewExecute(msg, content, nil)
-			msgPack := msgPod{
-				msg:   msg2,
-				route: routeParam,
+			msgPack := MsgPod{
+				Msg:   msg2,
+				Route: routeParam,
 			}
 
 			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -388,15 +388,15 @@ func TestProcessorPool(t *testing.T) {
 
 		t.Run("Test3", func(t *testing.T) {
 			msg2 := msgF.NewExecute(msg, content, nil)
-			msgPack := msgPod{
-				msg:   msg2,
-				route: routeParam,
+			msgPack := MsgPod{
+				Msg:   msg2,
+				Route: routeParam,
 			}
 
 			procPool.execute(msgPack)
 			select {
 			case rcvd := <-receiver:
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg2.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -443,9 +443,9 @@ func TestProcessorPool(t *testing.T) {
 		pr2.addSendTo(stg2, "test2")
 		pr2Receiver := pr2.channelForStageId(stg2)
 
-		msgPack := msgPod{
-			msg:   msg,
-			route: routeParam,
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: routeParam,
 		}
 
 		procPool.attach(pr1, pr2)
@@ -459,7 +459,7 @@ func TestProcessorPool(t *testing.T) {
 
 			t.Run("Check First", func(t *testing.T) {
 				rcvd := <-pr1Receiver
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -468,7 +468,7 @@ func TestProcessorPool(t *testing.T) {
 
 			t.Run("Check Second", func(t *testing.T) {
 				rcvd := <-pr2Receiver
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -486,7 +486,7 @@ func TestProcessorPool(t *testing.T) {
 				time.Sleep(1 * time.Microsecond)
 
 				rcvd := <-pr2Receiver
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -503,7 +503,7 @@ func TestProcessorPool(t *testing.T) {
 				time.Sleep(1 * time.Microsecond)
 
 				rcvd := <-pr1Receiver
-				m := rcvd.msg
+				m := rcvd.Msg
 				if !reflect.DeepEqual(m.Content(), msg.Content()) {
 					t.Errorf("Want: %v\nGot: %v\n", msg.Content(), m.Content())
 				}
@@ -548,9 +548,9 @@ func BenchmarkProcessorPool(b *testing.B) {
 
 		procPool.lock(route)
 
-		msgPack := msgPod{
-			msg:   msg,
-			route: routeParam,
+		msgPack := MsgPod{
+			Msg:   msg,
+			Route: routeParam,
 		}
 
 		for i := 0; i < b.N; i++ {

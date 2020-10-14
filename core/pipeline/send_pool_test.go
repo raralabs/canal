@@ -57,7 +57,7 @@ func TestSendPool(t *testing.T){
 
 		//msg := msgF.NewExecuteRoot(content, false)
 		channels := sendingProcessor.sndPool.getChannel(receivingStg)
-		assert.Equal(t, "<-chan pipeline.msgPod", reflect.TypeOf(channels).String())
+		assert.Equal(t, "<-chan pipeline.MsgPod", reflect.TypeOf(channels).String())
 	//
 	//	t.Run("Test1", func(t *testing.T) {
 	//		msgPack := msgPod{

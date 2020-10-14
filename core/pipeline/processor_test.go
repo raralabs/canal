@@ -19,7 +19,9 @@ func newDummyProcessorExecutor(exec Executor) *dummyProcessorExecutor {
 	return &dummyProcessorExecutor{exec: exec}
 }
 func (dp *dummyProcessorExecutor) process(msg message.Msg) bool {
-	return dp.exec.Execute(msg, dp)
+	msgPod := MsgPod{Msg: msg,
+					Route: ""}
+	return dp.exec.Execute(msgPod, dp)
 }
 func (dp *dummyProcessorExecutor) Result(srcMsg message.Msg, content, prevContent content.IContent) {
 	dp.resSrcMsg = srcMsg
@@ -53,9 +55,9 @@ func newDummyProcessor(exec Executor, routes msgRoutes, prPool IProcessorPool) *
 	}
 }
 func (d *dummyProcessor) Result(msg message.Msg, content, prevContent content.IContent) {
-	msgPack := msgPod{
-		msg:   msg,
-		route: d.outRoute.route,
+	msgPack := MsgPod{
+		Msg:   msg,
+		Route: d.outRoute.route,
 	}
 
 	d.outRoute.sendChannel <- msgPack
@@ -69,8 +71,8 @@ func (d *dummyProcessor) Done() {
 	close(d.outRoute.sendChannel)
 	d.closed = true
 }
-func (d *dummyProcessor) process(msg message.Msg) bool {
-	return d.exec.Execute(msg, d)
+func (d *dummyProcessor) process(msgPod MsgPod) bool {
+	return d.exec.Execute(msgPod, d)
 }
 func (d *dummyProcessor) incomingRoutes() msgRoutes {
 	return d.routes
@@ -86,10 +88,10 @@ func (d *dummyProcessor) IsClosed() bool {
 	return d.closed
 }
 func (d *dummyProcessor) addSendTo(s *stage, route MsgRouteParam) {
-	sendChannel := make(chan msgPod, _SendBufferLength)
+	sendChannel := make(chan MsgPod, _SendBufferLength)
 	d.outRoute = newSendRoute(sendChannel, route)
 }
-func (d *dummyProcessor) channelForStageId(stage *stage) <-chan msgPod {
+func (d *dummyProcessor) channelForStageId(stage *stage) <-chan MsgPod {
 	return d.outRoute.sendChannel
 }
 func (d *dummyProcessor) isConnected() bool {
@@ -181,10 +183,11 @@ func TestProcessor_process(t *testing.T){
 	msgContent2.Add("greet",content.NewFieldValue("hello",content.STRING))
 	msg1:= msgFactory1.NewExecuteRoot(msgContent1,false)
 	msg2 := msgFactory2.NewExecuteRoot(msgContent2,false)
-	result1 := prcForStg1.process(msg1)
+
+	result1 := prcForStg1.process(MsgPod{Msg:msg1})
 
 	assert.Equal(t,true,result1)
-	result2 := prcForStg2.process(msg2)
+	result2 := prcForStg2.process(MsgPod{Msg:msg2})
 	assert.Equal(t,true,result2)
 	//prcForStg1.Done()
 	//prcForStg2.Done()
@@ -237,7 +240,7 @@ func TestTransformFactory(t *testing.T) {
 	}
 
 	proc.lock(nil)
-	proc.process(proc.mesFactory.NewExecuteRoot(nil, false))
+	proc.process(MsgPod{Msg:proc.mesFactory.NewExecuteRoot(nil, false)})
 }
 
 func BenchmarkProcessor(b *testing.B) {
@@ -265,7 +268,7 @@ func BenchmarkProcessor(b *testing.B) {
 	proc.sndPool.close()
 
 	for i := 0; i < b.N; i++ {
-		proc.process(proc.mesFactory.NewExecuteRoot(nil, false))
+		proc.process(MsgPod{Msg:proc.mesFactory.NewExecuteRoot(nil, false)})
 	}
 
 	close(errRecv)
