@@ -3,6 +3,7 @@ module github.com/raralabs/canal
 go 1.14
 
 require (
+	github.com/Jeffail/gabs v1.4.0 // indirect
 	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/antonmedv/expr v1.8.2 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.3
