@@ -15,8 +15,8 @@ type JoinType uint8
 // These are the current supported strategy for the joins
 const (
 	HASH  		JoinStrategy = iota+1
-	//TABLE
-	//WINDOW
+	TABLE
+	WINDOW
 )
 // These are the currently supported types of join
 const (

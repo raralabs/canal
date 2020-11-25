@@ -1,12 +1,11 @@
 package transforms
 
 import (
-	"fmt"
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/transforms/joinUsingHshMap"
-	"github.com/raralabs/canal/utils/joinqryparser"
 )
 
 
@@ -41,13 +40,13 @@ type joinProcessor struct{
 //}
 //new version
 //creates the join processor
-func NewJoinProcessor(name string,fields1,fields2,selectFields []string,joinType joinUsingHshMap.JoinType,firstTableName,secondTableName string) (*joinProcessor,error) {
+func NewJoinProcessor(name string,fields1,fields2,selectFields []string,joinType joinUsingHshMap.JoinType,subType joinUsingHshMap.JoinSubType,firstTableName,secondTableName string) (*joinProcessor,error) {
 	switch joinType {
 	case joinUsingHshMap.INNER:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, firstTableName,secondTableName,selectFields)
 		return &joinProcessor{name: name, Joiner: joiner, fields1: fields1, fields2: fields2},nil
 	case joinUsingHshMap.OUTER:
-		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, firstTableName,secondTableName,selectFields,"")
+		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, firstTableName,secondTableName,selectFields,subType)
 		return &joinProcessor{name: name, Joiner: joiner,fields1: fields1, fields2: fields2},nil
 	default:
 		panic("unsupported join type ")
