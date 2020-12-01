@@ -40,14 +40,14 @@ type joinProcessor struct{
 //}
 //new version
 //creates the join processor
-func NewJoinProcessor(name string,fields1,fields2,selectFields []string,joinType joinUsingHshMap.JoinType,subType joinUsingHshMap.JoinSubType,firstTableName,secondTableName string) (*joinProcessor,error) {
+func NewJoinProcessor(name string,fields1,fields2,selectFields []string,joinType joinUsingHshMap.JoinType,subType joinUsingHshMap.JoinSubType,firstTableName,secondTableName string) *joinProcessor {
 	switch joinType {
 	case joinUsingHshMap.INNER:
 		joiner := joinUsingHshMap.NewInnerJoin(joinUsingHshMap.HASH, firstTableName,secondTableName,selectFields)
-		return &joinProcessor{name: name, Joiner: joiner, fields1: fields1, fields2: fields2},nil
+		return &joinProcessor{name: name, Joiner: joiner, fields1: fields1, fields2: fields2}
 	case joinUsingHshMap.OUTER:
 		joiner := joinUsingHshMap.NewOuterJoin(joinUsingHshMap.HASH, firstTableName,secondTableName,selectFields,subType)
-		return &joinProcessor{name: name, Joiner: joiner,fields1: fields1, fields2: fields2},nil
+		return &joinProcessor{name: name, Joiner: joiner,fields1: fields1, fields2: fields2}
 	default:
 		panic("unsupported join type ")
 	}

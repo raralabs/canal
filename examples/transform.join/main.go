@@ -5,6 +5,8 @@ import (
 	"github.com/raralabs/canal/core/pipeline"
 	"github.com/raralabs/canal/ext/sinks"
 	"github.com/raralabs/canal/ext/sources"
+	"github.com/raralabs/canal/ext/transforms/joinUsingHshMap"
+
 	//"canal/ext/transforms/joinUsingHshMap"
 	//"canal/ext/transforms"
 	"github.com/raralabs/canal/ext/transforms"
@@ -36,9 +38,15 @@ func main() {
 	f1 := delay1.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
 	delay2 := newPipeline.AddTransform("Delay")
 	f2 := delay2.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path2")
-	query := "SELECT first_name,full_name,age FROM path3 c FULLOUTERJOIN path4 d on path3.age = path4.age"
 	joinStage := newPipeline.AddTransform("join")
-	j1 := joinStage.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("outerjoin",query),"path3","path4")
+	//var selFields, field1,field2 []string
+	selFields := []string{"*"}
+	field1 :=[]string{"age"}
+	field2 := []string{"age"}
+
+	j1 := joinStage.AddProcessor(pipeline.DefaultProcessorOptions,transforms.NewJoinProcessor("innerjoin",field1,field2,selFields,
+		joinUsingHshMap.INNER,joinUsingHshMap.INN,"path3","path4"),"path3","path4")
+
 	delay1.ReceiveFrom("path1", sp1)
 	delay2.ReceiveFrom("path2",sp2)
 	joinStage.ReceiveFrom("path3",f1)

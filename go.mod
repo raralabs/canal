@@ -18,8 +18,8 @@ require (
 	github.com/google/go-cmp v0.5.0
 	github.com/jfeliu007/goplantuml v1.5.0 // indirect
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
+	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/spf13/afero v1.2.2 // indirect
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
