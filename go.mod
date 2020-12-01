@@ -18,6 +18,7 @@ require (
 	github.com/google/go-cmp v0.5.0
 	github.com/jfeliu007/goplantuml v1.5.0 // indirect
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
+	github.com/liftbridge-io/go-liftbridge/v2 v2.0.2-0.20201002231334-dd0ae5b3c895
 	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.5.1

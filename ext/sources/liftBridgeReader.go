@@ -24,6 +24,7 @@ const (
 	AMTIME
 )
 
+
 type LiftBridgeReader struct{
 	name 		string
 	option 		bridgeOpt
@@ -47,7 +48,6 @@ func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int6
 
 //executes the stage for the pipeline
 func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
-
 	client,err := liftbridge.Connect(lyft.clientAddr)
 	if err != nil{
 		log.Panic(err)
