@@ -8,6 +8,7 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -26,9 +27,9 @@ const (
 
 
 type LiftBridgeReader struct{
-	name 		string
-	option 		bridgeOpt
-	clientAddr  []string
+	name 		string	  //name of the sink
+	option 		bridgeOpt //options for the type of read
+	clientAddr  []string  //holds the ip address and port to which the connection is to be made
 	time 		time.Time //time for the subscription with TIME
 	offset 		int64 	  // offset for the subscription with specific offset
 
@@ -36,8 +37,13 @@ type LiftBridgeReader struct{
 }
 
 //initializes new liftbridge subscription with the given name and option
-func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int64)*LiftBridgeReader{
-	addrs := []string{"localhost:9292","localhost:9293","localhost:9294"}
+func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int64,ports ...int)*LiftBridgeReader{
+	var addrs []string
+	ip := "localhost:"
+	for _, port := range ports{
+		fullAddr := ip + strconv.Itoa(port)
+		addrs = append(addrs,fullAddr)
+	}
 	return &LiftBridgeReader{name:name,
 		                     option:option,
 		                     clientAddr:addrs,
