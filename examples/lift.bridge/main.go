@@ -30,18 +30,18 @@ func main() {
 	}
 
 	// Publish a message to "foo".
-	go func() {
-		for i:=0;i<10;i++{
-			if _, err := client.Publish(context.Background(), name, []byte("sello")); err != nil {
+
+		for i:=0;i<2;i++{
+			if _, err := client.Publish(context.Background(), name, []byte("eterce")); err != nil {
 				panic(err)
 			}
 		}
 
-	}()
+
 
 	// Subscribe to the stream starting from the beginning.
 	ctx := context.Background()
-	if err := client.Subscribe(ctx, name, func(msg *lift.Message, err error) {
+	if err := client.Subscribe(ctx, "foo-stream", func(msg *lift.Message, err error) {
 		if err != nil {
 			panic(err)
 		}
@@ -49,7 +49,7 @@ func main() {
 		cnt.Add("data",content.NewFieldValue(string(msg.Value()),content.STRING))
 		fmt.Println(cnt)
 
-	}, lift.StartAtLatestReceived()); err != nil {
+	}, lift.StartAtEarliestReceived()); err != nil {
 		panic(err)
 	}
 	<-ctx.Done()

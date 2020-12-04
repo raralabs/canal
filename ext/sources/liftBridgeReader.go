@@ -59,15 +59,15 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 		log.Panic(err)
 	}
 	defer client.Close()
-	newContent := content.New()
+
 	ctx:= context.Background()
+
 	switch lyft.option{
 	case NEW:
 		if err:=client.Subscribe(ctx, lyft.name, func(msg *liftbridge.Message, err error) {
-			fmt.Println(msg.Offset(), string(msg.Value()))
+			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
-
 		});err!=nil{
 			panic(err)
 		}
@@ -77,6 +77,7 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 			if err != nil {
 				panic(err)
 			}
+			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
 			fmt.Println(msg.Offset(), string(msg.Value()))
@@ -89,6 +90,7 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 			if err != nil {
 				panic(err)
 			}
+			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
 			fmt.Println(msg.Offset(), string(msg.Value()))
@@ -101,6 +103,7 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 			if err != nil {
 				panic(err)
 			}
+			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
 			fmt.Println(msg.Offset(), string(msg.Value()))
