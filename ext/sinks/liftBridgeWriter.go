@@ -16,6 +16,8 @@ type LiftBridgeWriter struct {
 
 }
 
+
+//initializes the liftbridge writer as per the given parameters
 func NewLiftBridgeWriter(streamName,subject string ,ports ...int64) pipeline.Executor {
 	var connectPorts  []string
 	for _,port := range ports{
@@ -55,7 +57,6 @@ func (lyft *LiftBridgeWriter) Execute(m pipeline.MsgPod, _ pipeline.IProcessorFo
 	if _, err := client.Publish(ctx, lyft.streamName, []byte(m.Msg.String())); err != nil {
 		panic(err)
 	}
-	<- ctx.Done()
 	return false
 }
 

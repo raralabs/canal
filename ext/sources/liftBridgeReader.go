@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"github.com/liftbridge-io/go-liftbridge/v2"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
@@ -28,6 +27,7 @@ const (
 
 type LiftBridgeReader struct{
 	name 		string	  //name of the sink
+	streamName 	string    //name of the lift bridge stream you want to connect to
 	option 		bridgeOpt //options for the type of read
 	clientAddr  []string  //holds the ip address and port to which the connection is to be made
 	time 		time.Time //time for the subscription with TIME
@@ -44,7 +44,7 @@ func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int6
 		fullAddr := ip + strconv.Itoa(port)
 		addrs = append(addrs,fullAddr)
 	}
-	return &LiftBridgeReader{name:name,
+	return &LiftBridgeReader{streamName:name,
 		                     option:option,
 		                     clientAddr:addrs,
 		                     time:time,
@@ -54,17 +54,21 @@ func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int6
 
 //executes the stage for the pipeline
 func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
+	//make connection to the port specified for getting the msg
 	client,err := liftbridge.Connect(lyft.clientAddr)
+	//if connections can't be made log error
 	if err != nil{
 		log.Panic(err)
 	}
 	defer client.Close()
 
 	ctx:= context.Background()
-
+	//cases for subscribing to the data
+	//lift-bridge supports total 7 options for subscribing the data
 	switch lyft.option{
+
 	case NEW:
-		if err:=client.Subscribe(ctx, lyft.name, func(msg *liftbridge.Message, err error) {
+		if err:=client.Subscribe(ctx, lyft.streamName, func(msg *liftbridge.Message, err error) {
 			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
@@ -72,71 +76,79 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 			panic(err)
 		}
 
+
 	case OLDEST:
-		if err := client.Subscribe(ctx, lyft.name, func(msg *liftbridge.Message, err error) {
+		if err := client.Subscribe(ctx, lyft.streamName, func(msg *liftbridge.Message, err error) {
 			if err != nil {
 				panic(err)
 			}
 			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
-			fmt.Println(msg.Offset(), string(msg.Value()))
 		}, liftbridge.StartAtEarliestReceived()); err != nil {
 			panic(err)
 		}
 
 	case RECENT:
-		if err := client.Subscribe(ctx, lyft.name, func(msg *liftbridge.Message, err error) {
+		if err := client.Subscribe(ctx, lyft.streamName, func(msg *liftbridge.Message, err error) {
 			if err != nil {
 				panic(err)
 			}
 			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
-			fmt.Println(msg.Offset(), string(msg.Value()))
 		}, liftbridge.StartAtLatestReceived()); err != nil {
 			panic(err)
 		}
 
 	case TIME:
-		if err := client.Subscribe(ctx, lyft.name, func(msg *liftbridge.Message, err error) {
+		if err := client.Subscribe(ctx, lyft.streamName, func(msg *liftbridge.Message, err error) {
 			if err != nil {
 				panic(err)
 			}
 			newContent := content.New()
 			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
 			proc.Result(m.Msg, newContent, nil)
-			fmt.Println(msg.Offset(), string(msg.Value()))
 		}, liftbridge.StartAtTime(time.Now())); err != nil {
 			panic(err)
 		}
 
 	case OFFSET:
-		if err := client.Subscribe(ctx,lyft.name,func(msg *liftbridge.Message,err error){
+		if err := client.Subscribe(ctx,lyft.streamName,func(msg *liftbridge.Message,err error){
 			if err != nil{
 				panic(err)
 			}
-			fmt.Println(msg.Offset(),string(msg.Value()))
+			newContent := content.New()
+			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
+			proc.Result(m.Msg, newContent, nil)
 		},liftbridge.StartAtOffset(lyft.offset));err != nil{
 			panic(err)
 		}
 
 	case RANDOMISR:
-		if err := client.Subscribe(ctx,lyft.name,func(msg *liftbridge.Message,err error){
+		if err := client.Subscribe(ctx,lyft.streamName,func(msg *liftbridge.Message,err error){
 			if err != nil{
 				panic(err)
 			}
-			fmt.Println(msg.Offset(),string(msg.Value()))
+			newContent := content.New()
+			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
+			proc.Result(m.Msg, newContent, nil)
 		},liftbridge.ReadISRReplica());err != nil{
 			panic(err)
 		}
 
 	}
-	<-ctx.Done()
-	
+
+	 <-ctx.Done()
+	 lyft.done(m.Msg, proc)
+	 return false
 
 
-	return false
+
+
+
+
+
 }
 
 //checks if the process is complete or not. If complete append eof to the message
@@ -153,7 +165,7 @@ func (lyft *LiftBridgeReader) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SOURCE
 }
 
-//returns information of wether there are local states or not
+//returns information of whether there are local states or not
 func (lyft *LiftBridgeReader) HasLocalState() bool {
 	return false
 }
@@ -163,6 +175,7 @@ func (lyft *LiftBridgeReader) SetName(name string) {
 	lyft.name = name
 }
 
+//returns the name of the lyftbridge
 func (lyft *LiftBridgeReader) Name() string {
 	return lyft.name
 }
