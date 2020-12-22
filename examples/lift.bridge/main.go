@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
 	lift "github.com/liftbridge-io/go-liftbridge/v2"
-	"github.com/raralabs/canal/core/message/content"
 	"golang.org/x/net/context"
 )
+
 
 func main() {
 	// Create Liftbridge client.
@@ -19,8 +18,8 @@ func main() {
 
 	// Create a stream attached to the NATS subject "foo".
 	var (
-		subject = "foo"
-		name    = "foo-stream"
+		subject = "erin.count"
+		name    = "erin-stream"
 	)
 
 	if err := client.CreateStream(context.Background(), subject, name); err != nil {
@@ -31,26 +30,22 @@ func main() {
 
 	// Publish a message to "foo".
 
-		for i:=0;i<2;i++{
-			if _, err := client.Publish(context.Background(), name, []byte("eterce")); err != nil {
-				panic(err)
-			}
-		}
-
-
-
-	// Subscribe to the stream starting from the beginning.
-	ctx := context.Background()
-	if err := client.Subscribe(ctx, "foo-stream", func(msg *lift.Message, err error) {
-		if err != nil {
-			panic(err)
-		}
-		cnt := content.New()
-		cnt.Add("data",content.NewFieldValue(string(msg.Value()),content.STRING))
-		fmt.Println(cnt)
-
-	}, lift.StartAtEarliestReceived()); err != nil {
+	if _, err := client.Publish(context.Background(), name, []byte("subodh")); err != nil {
 		panic(err)
 	}
-	<-ctx.Done()
+
+	// Subscribe to the stream starting from the beginning.
+	//ctx := context.Background()
+	//if err := client.Subscribe(ctx, "foo-stream", func(msg *lift.Message, err error) {
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	cnt := content.New()
+	//	cnt.Add("data",content.NewFieldValue(string(msg.Value()),content.STRING))
+	//	fmt.Println(cnt)
+	//
+	//}, lift.StartAtEarliestReceived()); err != nil {
+	//	panic(err)
+	//}
+	//<-ctx.Done()
 }

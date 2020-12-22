@@ -11,7 +11,7 @@ require (
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dorin131/go-data-structures v0.0.0-20200112181556-cfb304c8c6e8
-	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
+	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a // indirect
 	github.com/golang-collections/go-datastructures v0.0.0-20150211160725-59788d5eb259 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
@@ -20,10 +20,11 @@ require (
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/liftbridge-io/go-liftbridge/v2 v2.0.2-0.20201002231334-dd0ae5b3c895
 	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
+	github.com/nats-io/nats.go v1.10.0
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/raralabs/pg-service-client v0.0.0-20201204045129-ccdba3588272
 	github.com/stretchr/testify v1.5.1
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b // indirect
-	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	gonum.org/v1/gonum v0.7.0
 	google.golang.org/protobuf v1.25.0 // indirect
 )

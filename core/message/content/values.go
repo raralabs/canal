@@ -11,7 +11,7 @@ const (
 	FLOAT                            // Represents floating point number
 	STRING                           // Represents string
 	BOOL                             // Represents boolean value
-
+	BYTE
 	NONE
 )
 

@@ -3,7 +3,11 @@ package sinks
 import (
 	"context"
 	lift "github.com/liftbridge-io/go-liftbridge/v2"
+
+	//"fmt"
+	//"github.com/nats-io/nats.go"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/utils/erp-msg-ready"
 	"strconv"
 )
 
@@ -13,7 +17,7 @@ type LiftBridgeWriter struct {
 	addrs 	   []string				//ports to publish the msg
 	streamName string				//name of the stream of nats
 	subject    string				//name of the subject of the nats from which the msg is published
-
+	      //for context with timeout
 }
 
 
@@ -26,7 +30,6 @@ func NewLiftBridgeWriter(streamName,subject string ,ports ...int64) pipeline.Exe
 		addrs = append(addrs,fullAddr)
 
 	}
-
 	return &LiftBridgeWriter{name: "liftBridgeWriter",addrs :addrs,subject: subject,streamName: streamName}
 }
 
@@ -38,24 +41,35 @@ func (lyft *LiftBridgeWriter) ExecutorType() pipeline.ExecutorType {
 func (lyft *LiftBridgeWriter) Execute(m pipeline.MsgPod, _ pipeline.IProcessorForExecutor) bool {
 	//array of string to hold the ip and port
 	//to which the connection is to be made
+	var ctx context.Context
 
-	ctx:= context.Background()
+	ctx= context.Background()
+
 	//make a connection to the address
 	client, err := lift.Connect(lyft.addrs)
+
+	//nc,err := nats.Connect("0.0.0.0:4222")
 	if err != nil {
 		panic(err)
 	}
 	defer client.Close()
+	//fmt.Println("Sub",lyft.subject)
 	//create a stream with given subject and name
-	if err := client.CreateStream(ctx,lyft.subject, lyft.name); err != nil {
+
+	if err := client.CreateStream(ctx,lyft.subject, lyft.streamName); err != nil {
 		if err != lift.ErrStreamExists {
 			panic(err)
 		}
 	}
+	msgReady := erp_msg_ready.NewErpMsg(lyft.subject,m.Msg)
+	prepMsg := msgReady.MsgSelector()
 	//write the published msg to the log
-	if _, err := client.Publish(ctx, lyft.streamName, []byte(m.Msg.String())); err != nil {
+
+	if _, err := client.Publish(context.Background(), lyft.subject, prepMsg); err != nil {
 		panic(err)
 	}
+	//nc.Flush()
+
 	return false
 }
 

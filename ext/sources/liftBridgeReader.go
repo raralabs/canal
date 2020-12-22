@@ -37,9 +37,8 @@ type LiftBridgeReader struct{
 }
 
 //initializes new liftbridge subscription with the given name and option
-func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int64,ports ...int)*LiftBridgeReader{
+func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int64,ip string,ports ...int)*LiftBridgeReader{
 	var addrs []string
-	ip := "localhost:"
 	for _, port := range ports{
 		fullAddr := ip + strconv.Itoa(port)
 		addrs = append(addrs,fullAddr)
@@ -61,10 +60,14 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 		log.Panic(err)
 	}
 	defer client.Close()
-
+	//create a stream called pgservice-stream
+	//if err := client.CreateStream(context.Background(), "event.*","event-stream"); err != liftbridge.ErrStreamExists && err != nil {
+	//	panic(err)
+	//}
 	ctx:= context.Background()
 	//cases for subscribing to the data
 	//lift-bridge supports total 7 options for subscribing the data
+
 	switch lyft.option{
 
 	case NEW:
@@ -95,7 +98,8 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 				panic(err)
 			}
 			newContent := content.New()
-			newContent.Add("msg",content.NewFieldValue(string(msg.Value()), content.STRING))
+			newContent.Add("msg",content.NewFieldValue(msg.Value(), content.BYTE))
+			newContent.Add("subject",content.NewFieldValue(msg.Subject(),content.STRING))
 			proc.Result(m.Msg, newContent, nil)
 		}, liftbridge.StartAtLatestReceived()); err != nil {
 			panic(err)
@@ -138,16 +142,9 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 		}
 
 	}
-
-	 <-ctx.Done()
+	<-ctx.Done()
 	 lyft.done(m.Msg, proc)
 	 return false
-
-
-
-
-
-
 
 }
 

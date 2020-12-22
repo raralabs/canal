@@ -59,7 +59,6 @@ func (fr *FileReader) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExec
 		content := content2.New()
 		content = content.Add("eof", content2.NewFieldValue(true, content2.BOOL))
 		proc.Result(m.Msg, content, nil)
-
 		proc.Done()
 		fr.close()
 	}
