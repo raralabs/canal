@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	lift "github.com/liftbridge-io/go-liftbridge/v2"
 	"golang.org/x/net/context"
 )
@@ -18,8 +19,8 @@ func main() {
 
 	// Create a stream attached to the NATS subject "foo".
 	var (
-		subject = "erin.count"
-		name    = "erin-stream"
+		subject = "pgservice.write"
+		name    = "pg"
 	)
 
 	if err := client.CreateStream(context.Background(), subject, name); err != nil {
@@ -29,8 +30,16 @@ func main() {
 	}
 
 	// Publish a message to "foo".
+	msg:=map[string]interface{}{"request_id":"37f90977-5c24-4832-a687-510c3aaa70c1","source_data":"bnVsbA==","auth_identity":"",
+		"content":map[string]interface{}{"namespace":"rara","collection":"Lead","success":true,"error":"","id":"8e7cb5d3-8596-41aa-99fb-729b1fd2272c",
+			"before":map[string]interface{}{"status":"Open",
+				"remind_to":[]string{"90f41c84-7b0a-47f5-95aa-6cbec990506e"},
+			"after":map[string]interface{}{"CreatedBy":"","status":"Open","collection":"Contacts",
+				"remind_to":[]string{"90f41c84-7b0a-47f5-95aa-6cbec990506e","437adeff-d56f-46b6-b664-a36e1cc42dc4","c249e3a2-a5b2-4f6e-99b9-ca952fddc6c9","aa164c86-05c4-4d22-8b12-a16bad5af626"}
+				}}}
 
-	if _, err := client.Publish(context.Background(), name, []byte("subodh")); err != nil {
+	bytemsg,err:=json.Marshal(msg)
+	if _, err := client.Publish(context.Background(), name, (bytemsg)); err != nil {
 		panic(err)
 	}
 

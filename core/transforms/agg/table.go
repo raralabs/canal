@@ -81,7 +81,6 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 // One pair is for the update info on removal and the other is
 // the info on addition.
 func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IContent, []content.IContent, error) {
-
 	if contents == nil {
 		if prevContent != nil {
 			values, err := extractValues(prevContent, t.groupBy)
@@ -106,6 +105,7 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 	}
 
 	groupVals, err := extractValues(contents, t.groupBy)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -211,7 +211,6 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 	// Place added contents at the end
 	pCs = append(pCs, pContent)
 	nCs = append(nCs, newContent)
-
 	return nCs, pCs, nil
 }
 

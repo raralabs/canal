@@ -20,11 +20,12 @@ require (
 	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/liftbridge-io/go-liftbridge/v2 v2.0.2-0.20201002231334-dd0ae5b3c895
 	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
-	github.com/nats-io/nats.go v1.10.0
+	github.com/nats-io/nats.go v1.10.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/raralabs/pg-service-client v0.0.0-20201204045129-ccdba3588272
 	github.com/stretchr/testify v1.5.1
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
+	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect
 	gonum.org/v1/gonum v0.7.0
 	google.golang.org/protobuf v1.25.0 // indirect
 )

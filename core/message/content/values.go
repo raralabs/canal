@@ -25,6 +25,8 @@ func (fvt FieldValueType) String() string {
 		return "str"
 	case BOOL:
 		return "bool"
+	case BYTE:
+		return "byte"
 	case NONE:
 		return "none"
 	}

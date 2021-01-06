@@ -1,6 +1,7 @@
 package agg
 
 import (
+
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
