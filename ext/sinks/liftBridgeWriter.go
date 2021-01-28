@@ -3,9 +3,7 @@ package sinks
 import (
 	"context"
 	lift "github.com/liftbridge-io/go-liftbridge/v2"
-
-	//"fmt"
-	//"github.com/nats-io/nats.go"
+	"encoding/json"
 	"github.com/raralabs/canal/core/pipeline"
 	
 )
@@ -51,8 +49,8 @@ func (lyft *LiftBridgeWriter) Execute(m pipeline.MsgPod, _ pipeline.IProcessorFo
 	//to which the connection is to be made
 
 	client := *lyft.client
-
-	if _, err := client.Publish(context.Background(), lyft.streamName, []byte(m.Msg.String())); err != nil {
+	marshalledMsg,_ := json.Marshal(m.Msg.Values())
+	if _, err := client.Publish(context.Background(), lyft.streamName, marshalledMsg); err != nil {
 		panic(err)
 	}
 	return false

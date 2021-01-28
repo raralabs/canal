@@ -40,7 +40,7 @@ func (fe *FilterEvent) Type() EventType { return FILTER }
 // returns it.
 func (fe *FilterEvent) Triggered(m map[string]interface{}) bool {
 
-	// fmt.Println(m)
+	 //fmt.Println(m)
 
 	fe.muRunning.Lock()
 	defer fe.muRunning.Unlock()

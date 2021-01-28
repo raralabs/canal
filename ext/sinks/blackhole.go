@@ -17,11 +17,6 @@ func (s *BlackholeSink) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
 
-//old implementation of the code
-//func (s *BlackholeSink) Execute(m message.Msg, pr pipeline.IProcessorForExecutor) bool {
-//	return true
-//}
-
 func (s *BlackholeSink) Execute(_ pipeline.MsgPod, _ pipeline.IProcessorForExecutor) bool {
 	return true
 }

@@ -22,18 +22,15 @@ func main() {
 	sp := src.AddProcessor(pipeline.DefaultProcessorOptions, sources.NewInlineRange(10))
 
 	delay := p.AddTransform("Delay")
-	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(100*time.Millisecond), "path1")
+	del := delay.AddProcessor(pipeline.DefaultProcessorOptions, doFn.DelayFunction(10*time.Millisecond), "path1")
 
 	count := aggregates.NewCount("SimpleCount", func(m map[string]interface{}) bool {
 		return true
 	})
 
-	avg := aggregates.NewVariance("Sample-Variance", "value", func(m map[string]interface{}) bool {
-		return true
-	})
 
-	aggs := []agg.IAggFuncTemplate{avg, count}
-	aggregator := agg.NewAggregator(aggs, nil)
+	aggs := []agg.IAggFuncTemplate{count}
+	aggregator := agg.NewAggregator(aggs, nil,"value")
 
 	counter := p.AddTransform("Adder")
 	ad := counter.AddProcessor(pipeline.DefaultProcessorOptions, aggregator.Function(), "path")
@@ -43,7 +40,7 @@ func main() {
 
 	delay.ReceiveFrom("path1", sp)
 	counter.ReceiveFrom("path", del)
-	sink.ReceiveFrom("sink", ad)
+	sink.ReceiveFrom("sink", ad,sp)
 
 	c, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	p.Validate()

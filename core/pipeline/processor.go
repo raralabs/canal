@@ -35,7 +35,7 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 
 	for route := range pr.routes {
 		if _, ok := stgRoutes[route]; !ok {
-
+			fmt.Println("route",route)
 			panic("Subscribing messages from a non existing route.")
 		}
 	}

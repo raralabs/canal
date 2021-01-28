@@ -6,6 +6,7 @@ import (
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/sirupsen/logrus"
 	"log"
 	"time"
 )
@@ -36,7 +37,7 @@ type LiftBridgeReader struct{
 }
 
 //initializes new liftbridge subscription with the given name and option
-func NewLiftBridgeReader(name string,option bridgeOpt,time time.Time,offset int64,liftbridgeURL string)*LiftBridgeReader{
+func NewLiftBridgeReader(name string,subject string,option bridgeOpt,time time.Time,offset int64,liftbridgeURL string)*LiftBridgeReader{
 	addrs:= []string{liftbridgeURL}
 	return &LiftBridgeReader{streamName:name,
 		                     option:option,
@@ -56,9 +57,9 @@ func (lyft *LiftBridgeReader) Execute(m pipeline.MsgPod, proc pipeline.IProcesso
 	}
 	defer client.Close()
 	//create a stream called pgservice-stream
-	//if err := client.CreateStream(context.Background(), "event.count","event-stream"); err != liftbridge.ErrStreamExists && err != nil {
-	//	panic(err)
-	//}
+	if err := client.CreateStream(context.Background(), "event.*","event-stream"); err != liftbridge.ErrStreamExists && err != nil {
+		logrus.Info("Stream already exist. Connecting to existing stream")
+	}
 	ctx:= context.Background()
 	//cases for subscribing to the data
 	//lift-bridge supports total 7 options for subscribing the data

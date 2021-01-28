@@ -9,3 +9,4 @@ type ProcessorOptions struct {
 var DefaultProcessorOptions = ProcessorOptions{
 	Persistor: false, // Don't use persistor by default
 }
+

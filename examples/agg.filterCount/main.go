@@ -28,10 +28,18 @@ func main() {
 	p := pipeline.NewPipeline(1)
 	opts := pipeline.DefaultProcessorOptions
 
-	filename := TmpPath + "users.csv"
+	//filename := TmpPath + "users.csv"
+	var DefaultChoices = map[string][]interface{}{
+		"first_name":   {"Madhav", "Shambhu", "Pushpa", "Kumar", "Hero"},
+		"last_name":    {"Mashima", "Dahal", "Poudel", "Rimal", "Amatya", "Shrestha", "Bajracharya"},
+		"age":          {10, 20, 30, 40, 50, 60, 70, 15, 25, 35, 45, 55, 65, 75, 100, 6, 33, 47},
+		"threshold":    {20, 30, 40, 50, 60, 70, 80, 90},
+
+	}
 
 	src := p.AddSource("CSV Reader")
-	sp := src.AddProcessor(opts, sources.NewFileReader(filename, "age", -1))
+	//sp := src.AddProcessor(opts, sources.NewFileReader(filename, "age", -1))
+	sp := src.AddProcessor(opts, sources.NewFaker(10,DefaultChoices))
 
 	delay := p.AddTransform("Delay")
 	del := delay.AddProcessor(opts, doFn.DelayFunction(10*time.Millisecond), "path1")
@@ -48,7 +56,8 @@ func main() {
 			}
 		}
 
-		rawAge, _ := content.Get("eof")
+		rawAge, _ := content.Get("age")
+
 		if age, ok := cast.TryFloat(rawAge.Val); ok {
 			if age > 30 && age < 50 {
 				proc.Result(m, content, nil)
