@@ -22,6 +22,7 @@ require (
 	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
 	github.com/nats-io/nats.go v1.10.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
 	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect

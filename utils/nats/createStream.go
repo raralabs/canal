@@ -1,5 +1,6 @@
 package nats
 
+/*
 // Create a stream attached to the NATS subject "foo.*" that is replicated to
 // all the brokers in the cluster. ErrStreamExists is returned if a stream with
 // the given name already exists.
@@ -12,3 +13,4 @@ allow overriding the server settings.
 // stream compaction.
 client.CreateStream(context.Background(), subject, name,
 lift.RetentionMaxBytes(134217728), lift.CompactEnabled(true))
+*/

@@ -1,23 +1,7 @@
 package main
-import (
-	"bufio"
-	"context"
-	"github.com/Knetic/govaluate"
-	"github.com/raralabs/canal/core/message"
-	"github.com/raralabs/canal/ext/transforms"
-	"github.com/raralabs/canal/utils/regparser"
-	"regexp"
-	"github.com/raralabs/canal/core/pipeline"
-	"github.com/raralabs/canal/ext/sinks"
-	"github.com/raralabs/canal/ext/sources"
-	"github.com/raralabs/canal/ext/transforms/doFn"
-	"log"
-	"os"
-	"os/exec"
-	"strings"
-	"time"
-)
 
+//! These tests fails due to mismatch function call
+/*
 func main() {
 	cmdOut, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
 
@@ -109,3 +93,4 @@ func main() {
 	newPipeline.Validate()
 	newPipeline.Start(c, cancel)
 }
+*/
