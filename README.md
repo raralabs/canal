@@ -1,6 +1,6 @@
 # canal
 
-[![Build Status](https://travis-ci.com/raralabs/canal.svg?token=DW7fs8Y8ozBN3DSsN2Uo&)](https://travis-ci.com/raralabs/canal)
+[![Build Status](https://github.com/raralabs/canal/actions/workflows/go.yml/badge.svg)](https://github.com/raralabs/canal/actions/workflows/go.yml)
 
 A distributed stream processing platform.
 
