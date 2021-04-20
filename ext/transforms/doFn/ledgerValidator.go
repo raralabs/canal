@@ -1,35 +1,36 @@
 package doFn
 
 import (
-	"github.com/raralabs/canal/utils/regparser"
-	"github.com/raralabs/canal/core/transforms/do"
+	"fmt"
 	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/core/transforms/do"
+	"github.com/raralabs/canal/utils/regparser"
 	"regexp"
 )
-type validation struct{
-	name 			string
-	validationRule	string
-	preValidation 	bool
-	ValReq			bool
-	ValType 		content.FieldValueType
+
+type validation struct {
+	name           string
+	validationRule string
+	preValidation  bool
+	ValReq         bool
+	ValType        content.FieldValueType
 }
+
 //{"display_name":"Trace ID","name":"trace_id","validation":{"pre_validation":"str(int(trace_id)) if trace_id else trace_id","required":false,"type":"string"}},
 
-
-
-type reconValidator struct{
-	fields  map[string]validation
+type reconValidator struct {
+	fields map[string]validation
 }
 
-func NewReconValidator()*reconValidator {
+func NewReconValidator() *reconValidator {
 	var recValidator reconValidator
-	keys :=[]string{"card_no","transaction_date","account_no",
-					"ft_id","auth_no","terminal_id","opening_balance",
-					"closing_balance","account_name","status","trace_id"}
+	keys := []string{"card_no", "transaction_date", "account_no",
+		"ft_id", "auth_no", "terminal_id", "opening_balance",
+		"closing_balance", "account_name", "status", "trace_id"}
 	fields := make(map[string]validation)
-	recValidator.fields =fields
+	recValidator.fields = fields
 	for _, key := range keys {
 		switch key {
 		case "card_no":
@@ -110,12 +111,11 @@ func NewReconValidator()*reconValidator {
 			break
 		}
 
-
 	}
 	return &recValidator
 }
-func(rv *reconValidator) ReconFieldValidator(keys ...string) pipeline.Executor {
-	df := func(m message.Msg,proc pipeline.IProcessorForExecutor)bool {
+func (rv *reconValidator) ReconFieldValidator(keys ...string) pipeline.Executor {
+	df := func(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 		msg := m.Content().Copy()
 		if v, ok := msg.Get("eof"); ok {
 			if v.Val == true {
@@ -123,31 +123,29 @@ func(rv *reconValidator) ReconFieldValidator(keys ...string) pipeline.Executor {
 				return true
 			}
 		}
-		for _,key :=range(keys){
-			if v,ok := msg.Get(key);ok{
+		for _, key := range keys {
+			if v, ok := msg.Get(key); ok {
 				//if v.ValType!=rv.fields[key].ValType{
 				//	panic ("value mismatch of {#keys}")
 				//}
-				if rv.fields[key].ValReq == true{
-					reg,err:= regexp.Compile(rv.fields[key].validationRule)
-					if err!= nil{
-						panic ("could not compile regex")
+				if rv.fields[key].ValReq == true {
+					reg, err := regexp.Compile(rv.fields[key].validationRule)
+					if err != nil {
+						panic("could not compile regex")
 					}
 					valType := v.ValType
 					if valType == content.INT {
-						ok:=regparser.ValidateData(reg, string((v.Val.(int))))
-						if ok{
-							proc.Result(m,msg,nil)
+						ok := regparser.ValidateData(reg, fmt.Sprint(v.Val.(int)))
+						if ok {
+							proc.Result(m, msg, nil)
 						}
-					}else if valType == content.STRING{
-						ok:=regparser.ValidateData(reg,v.Val.(string))
-						if ok{
-							proc.Result(m,msg,nil)
+					} else if valType == content.STRING {
+						ok := regparser.ValidateData(reg, v.Val.(string))
+						if ok {
+							proc.Result(m, msg, nil)
 						}
 					}
-
 				}
-
 			}
 		}
 		if v, ok := msg.Get("eof"); ok {
@@ -160,5 +158,3 @@ func(rv *reconValidator) ReconFieldValidator(keys ...string) pipeline.Executor {
 	}
 	return do.NewOperator(df)
 }
-
-
