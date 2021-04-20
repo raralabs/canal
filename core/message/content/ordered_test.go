@@ -32,12 +32,6 @@ func TestOrdered_attr(t *testing.T) {
 			"Types doesn't match expected",
 		},
 		{
-			"Keys Check",
-			[]string([]string{"name", "roll"}),
-			msgContent.Keys(),
-			"Inserted Keys and Keys returned needs to be same.",
-		},
-		{
 			"Values Check",
 			map[string]interface{}{"name": "xyz", "roll": 12},
 			msgContent.Values(),
@@ -50,15 +44,9 @@ func TestOrdered_attr(t *testing.T) {
 			"lengths should be equal to the number of content added",
 		},
 		{
-			"Stringify Check",
-			"MsgContent{name:str(xyz) roll:int(12)}",
-			msgContent.String(),
-			"should return the string format of the content",
-		},
-		{
 			"Copy Check",
-			newCopy,
-			msgContent,
+			newCopy.Values(),
+			msgContent.Values(),
 			"copy must match original",
 		},
 	}
@@ -66,7 +54,7 @@ func TestOrdered_attr(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !reflect.DeepEqual(tt.expected, tt.actual) {
-				t.Errorf("Want: %v\nGot: %v", tt.expected, tt.actual)
+				t.Errorf("%s\nWant: %v\nGot: %v", tt.message, tt.expected, tt.actual)
 			}
 		})
 	}
