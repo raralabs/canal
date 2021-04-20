@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/Jeffail/gabs v1.4.0 // indirect
 	github.com/Knetic/govaluate v3.0.0+incompatible
-	github.com/antonmedv/expr v1.8.2 // indirect
+	github.com/antonmedv/expr v1.8.9 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
@@ -22,7 +22,6 @@ require (
 	github.com/liftbridge-io/liftbridge v1.3.0 // indirect
 	github.com/nats-io/nats.go v1.10.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/raralabs/pg-service-client v0.0.0-20201204045129-ccdba3588272
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
 	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect
