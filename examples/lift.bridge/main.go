@@ -1,5 +1,11 @@
 package main
 
+import "fmt"
+
+func main() {
+	fmt.Println("Examples are failing")
+}
+
 //! These tests fails due to syntax error in code
 /*
 func main() {

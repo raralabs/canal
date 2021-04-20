@@ -1,5 +1,11 @@
 package main
 
+import "fmt"
+
+func main() {
+	fmt.Println("Examples are failing")
+}
+
 //! These tests fails due to mismatch function call
 /*
 func main() {
