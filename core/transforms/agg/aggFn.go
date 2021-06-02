@@ -30,8 +30,7 @@ func NewOperator(
 func (af *Operator) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	contents, pContents, err := af.aggFunc(m.Msg, af.state)
 	if err != nil {
-		log.Printf("[ERROR] %v", err)
-		return false
+		log.Printf("[WARN] %v", err)
 	}
 
 	if af.after == nil {
