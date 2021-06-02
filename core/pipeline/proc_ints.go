@@ -15,16 +15,17 @@ type IProcessorCommon interface {
 	// It checks if the processor is already closed, and if it is not closed, closes it.
 	Done()
 
-	// Checks if a processor is closed.
+	// IsClosed checks if a processor is closed.
 	IsClosed() bool
 }
 
 // IProcessorExecutor defines the interface for a processor from the perspective of an Executor.
 type IProcessorExecutor interface {
+	// Result handles the results produced by the executor in the pipeline.
 	// An Executor expects a processor to be able to handle the results it produce.
 	Result(m message.Msg, content, pContent content.IContent)
 
-	// Returns the persistor held by the processor.
+	// Persistor returns the persistor held by the processor.
 	Persistor() IPersistor
 }
 
@@ -35,7 +36,7 @@ type IProcessorReceiver interface {
 	//process(message.Msg) bool //old implementation of the code
 	//process(msgPod)bool//old implementation
 
-	process(MsgPod)bool
+	process(MsgPod) bool
 	// Returns the message routes for the incoming message for processor.
 	incomingRoutes() msgRoutes
 

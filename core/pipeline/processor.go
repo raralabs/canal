@@ -35,8 +35,7 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 
 	for route := range pr.routes {
 		if _, ok := stgRoutes[route]; !ok {
-			fmt.Println("route",route)
-			panic("Subscribing messages from a non existing route.")
+			panic(fmt.Sprint("Subscribing messages from a non existing route:", route))
 		}
 	}
 
@@ -46,7 +45,6 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 
 	pr.meta.lock()
 }
-
 
 //Note :uncomment to revert back to old implementation!!!!!!
 // process executes the corresponding executor of the execute on the passed
@@ -60,13 +58,13 @@ func (pr *Processor) lock(stgRoutes msgRoutes) {
 //	return pr.executor.Execute(msg, pr)
 //}
 //new implementation of processor process method
-func(pr *Processor) process(messagePod MsgPod) bool{
+func (pr *Processor) process(msgPod MsgPod) bool {
 	if pr.executor.ExecutorType() == SOURCE {
 		pod := newMsgPod(pr.statusMessage(pr.procPool.stage().withTrace))
-		messagePod.Msg = pod.Msg
+		msgPod.Msg = pod.Msg
 	}
-	pr.meta.ping(messagePod.Msg)
-	return pr.executor.Execute(messagePod,pr)
+	pr.meta.ping(msgPod.Msg)
+	return pr.executor.Execute(msgPod, pr)
 }
 
 func (pr *Processor) Result(srcMsg message.Msg, content, pContent content.IContent) {
@@ -84,7 +82,7 @@ func (pr *Processor) Result(srcMsg message.Msg, content, pContent content.IConte
 	}
 }
 
-// Returns persistor held by the processor
+// Persistor returns persistor held by the processor
 func (pr *Processor) Persistor() IPersistor {
 	return pr.persistor
 }
@@ -120,10 +118,6 @@ func (pr *Processor) IsClosed() bool {
 func (pr *Processor) addSendTo(stage *stage, route MsgRouteParam) {
 	pr.sndPool.addSendTo(stage, route)
 }
-//old implementation
-//func (pr *Processor) channelForStageId(stage *stage) <-chan msgPod {
-//	return pr.sndPool.getChannel(stage)
-//}
 
 //new implementation
 func (pr *Processor) channelForStageId(stage *stage) <-chan MsgPod {

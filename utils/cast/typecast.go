@@ -44,8 +44,7 @@ func TryInt(v interface{}) (int64, bool) {
 	case uint32:
 		return int64(val), true
 	case string:
-		i, err := strconv.ParseInt(val, 10, 64)
-		if err == nil {
+		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 			return i, true
 		}
 	}
@@ -81,8 +80,7 @@ func TryFloat(v interface{}) (float64, bool) {
 	case float64:
 		return val, true
 	case string:
-		f, err := strconv.ParseFloat(val, 64)
-		if err == nil {
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
 			return f, true
 		}
 	}
@@ -133,4 +131,3 @@ func GetStringValue(str string) interface{} {
 
 	return value
 }
-

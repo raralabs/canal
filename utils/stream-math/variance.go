@@ -9,7 +9,7 @@ func square(x float64) float64 {
 	return x * x
 }
 
-// Calculates ** Population Variance **
+// Variance calculates the population variance
 type Variance struct {
 	num      uint64  // The number of elements that has arrived
 	mean     float64 // Mean of the last data
