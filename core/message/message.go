@@ -30,9 +30,10 @@ type Msg struct {
 	srcProcessorId uint32           //
 	srcMessageId   uint64           //
 	msgType        MsgType          // MsgType of the message
-	msgContent     content.IContent // MsgContent of the message
+	msgContent     content.IContent // msgContent of the message
 	prevContent    content.IContent // Content of previous message
 	trace          trace            // trace of the message
+	eof            bool             // flag to check if the message is the last one
 }
 
 func (m *Msg) Id() uint64 {
@@ -46,17 +47,17 @@ func (m *Msg) SetField(key string, value content.MsgFieldValue) *Msg {
 	return m
 }
 
-// MsgContent returns the data stored by the message.
+// Content returns the data stored by the message.
 func (m *Msg) Content() content.IContent {
 	return m.msgContent
 }
 
-// returns the previous data stored by the message.
+// PrevContent returns the previous data stored by the message.
 func (m *Msg) PrevContent() content.IContent {
 	return m.prevContent
 }
 
-// sets content of time (t) as previous content for (t+1) message.
+// SetPrevContent sets content of time (t) as previous content for (t+1) message.
 func (m *Msg) SetPrevContent(content content.IContent) {
 	m.prevContent = content
 }
@@ -86,10 +87,14 @@ func (m *Msg) ProcessorId() uint32 {
 	return m.processorId
 }
 
+func (m *Msg) PipelineId() uint32 {
+	return m.pipelineId
+}
+
 func (m *Msg) String() string {
 	return fmt.Sprintf(
 		"Msg[Id:%d, Stg:%d, Prc:%d,Content:%s]",
-		m.id, m.stageId, m.processorId,m.msgContent)
+		m.id, m.stageId, m.processorId, m.msgContent)
 }
 
 func (m *Msg) IsControl() bool {
@@ -104,24 +109,32 @@ func (m *Msg) IsExecute() bool {
 	return m.msgType == EXECUTE
 }
 
+func (m *Msg) Eof() bool {
+	return m.eof
+}
+
+func (m *Msg) SetEof(b bool) {
+	m.eof = b
+}
+
 // msgHolder holds the message to be serialized.
 type msgHolder struct {
-	Id                	 uint64
-	PipelineId        	 uint32
-	StageId           	 uint32
-	ProcessorId       	 uint32
-	SrcStageId        	 uint32
-	SrcProcessorId    	 uint32
-	SrcMessageId      	 uint64
-	Mtype             	 MsgType
-	McontentValues    	 map[string]interface{}
-	PrevContentValues 	 map[string]interface{}
-	McontentType      	 map[string]content.FieldValueType
-	PrevContentType   	 map[string]content.FieldValueType
-	NilFlagForContent 	 bool //flag to check if the message content is nil inorder to prevent encoding errors
+	Id                   uint64
+	PipelineId           uint32
+	StageId              uint32
+	ProcessorId          uint32
+	SrcStageId           uint32
+	SrcProcessorId       uint32
+	SrcMessageId         uint64
+	Mtype                MsgType
+	McontentValues       map[string]interface{}
+	PrevContentValues    map[string]interface{}
+	McontentType         map[string]content.FieldValueType
+	PrevContentType      map[string]content.FieldValueType
+	NilFlagForContent    bool //flag to check if the message content is nil inorder to prevent encoding errors
 	NilFlagForPreContent bool //flag to check if the previous content is nil inorder to prevent encoding errors
-	TraceFlag         	 bool
-	TracePath         	[]tracePath
+	TraceFlag            bool
+	TracePath            []tracePath
 }
 
 // AsBytes returns the gob-encoded byte array of the message.
@@ -129,30 +142,30 @@ func (m *Msg) AsBytes() ([]byte, error) {
 	var buf bytes.Buffer
 
 	MessageHolder := &msgHolder{
-		Id:                m.id,
-		PipelineId:        m.pipelineId,
-		StageId:           m.stageId,
-		ProcessorId:       m.processorId,
-		SrcStageId:        m.srcStageId,
-		SrcProcessorId:    m.srcProcessorId,
-		SrcMessageId:      m.srcMessageId,
-		Mtype:             m.msgType,
-		TraceFlag:         m.trace.enabled,
-		TracePath:         m.trace.path,
+		Id:             m.id,
+		PipelineId:     m.pipelineId,
+		StageId:        m.stageId,
+		ProcessorId:    m.processorId,
+		SrcStageId:     m.srcStageId,
+		SrcProcessorId: m.srcProcessorId,
+		SrcMessageId:   m.srcMessageId,
+		Mtype:          m.msgType,
+		TraceFlag:      m.trace.enabled,
+		TracePath:      m.trace.path,
 	}
-	if m.msgContent != nil{
+	if m.msgContent != nil {
 		MessageHolder.McontentValues = m.msgContent.Values()
 		MessageHolder.McontentType = m.msgContent.Types()
-	}else{
+	} else {
 		nilValues := make(map[string]interface{})
 		nilValues["key"] = "nil"
 		MessageHolder.McontentValues = nilValues
 		MessageHolder.NilFlagForContent = true
 	}
-	if m.prevContent != nil{
+	if m.prevContent != nil {
 		MessageHolder.PrevContentValues = m.prevContent.Values()
-		MessageHolder.PrevContentType =m.prevContent.Types()
-	}else{
+		MessageHolder.PrevContentType = m.prevContent.Types()
+	} else {
 		nilValues := make(map[string]interface{})
 		nilValues["key"] = "nil"
 		MessageHolder.PrevContentValues = nilValues
@@ -181,21 +194,20 @@ func NewFromBytes(bts []byte) (*Msg, error) {
 	currentDecodedMsgContent := content.New()
 	prevDecodedMsgContent := content.New()
 
-	for key, value := range m.McontentValues {
-		if !m.NilFlagForContent{
+	if !m.NilFlagForContent {
+		for key, value := range m.McontentValues {
 			currentDecodedMsgContent.Add(key, content.NewFieldValue(value, m.McontentType[key]))
-		}else{
-			currentDecodedMsgContent = nil
 		}
+	} else {
+		currentDecodedMsgContent = nil
 	}
 
-	for key, value := range m.PrevContentValues {
-		if !m.NilFlagForPreContent {
+	if !m.NilFlagForPreContent {
+		for key, value := range m.PrevContentValues {
 			prevDecodedMsgContent.Add(key, content.NewFieldValue(value, m.PrevContentType[key]))
-		}else{
-
-			prevDecodedMsgContent = nil
 		}
+	} else {
+		prevDecodedMsgContent = nil
 	}
 
 	message := &Msg{
@@ -223,5 +235,15 @@ func NewError(pipelineId uint32, stageId uint32, processorId uint32, code uint8,
 		stageId:     stageId,
 		processorId: processorId,
 		msgContent:  cont,
+	}
+}
+
+func NewEof(pipelineId uint32, stageId uint32, processorId uint32) Msg {
+	return Msg{
+		pipelineId:  pipelineId,
+		stageId:     stageId,
+		processorId: processorId,
+		msgContent:  nil,
+		eof:         true,
 	}
 }

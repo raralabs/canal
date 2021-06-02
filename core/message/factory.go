@@ -4,7 +4,8 @@ import (
 	"github.com/raralabs/canal/core/message/content"
 	"sync/atomic"
 )
-// A MessageFactory represents a factory that can produce message(s).
+
+// Factory represents a factory that can produce message(s).
 type Factory struct {
 	pipelineId  uint32 //
 	stageId     uint32 //
@@ -12,13 +13,13 @@ type Factory struct {
 	HWM         uint64 // hwm is used to provide id to the message.
 }
 
-// newMessageFactory creates a new un-traceable message producing factory on the
+// NewFactory creates a new un-traceable message producing factory on the
 // basis of provided parameters.
 func NewFactory(pipelineId uint32, stageId uint32, processorId uint32) Factory {
 	return Factory{pipelineId: pipelineId, stageId: stageId, processorId: processorId, HWM: 0}
 }
 
-// NewExecute creates a new message with the 'value' as actual data and returns it.
+// NewExecuteRoot creates a new message with the 'content' as actual data and returns it.
 func (mf *Factory) NewExecuteRoot(content content.IContent, withTrace bool) Msg {
 	traceRoot := newTraceRoot(withTrace)
 	return Msg{
@@ -35,7 +36,7 @@ func (mf *Factory) NewExecuteRoot(content content.IContent, withTrace bool) Msg 
 
 // NewExecute creates a new message with the 'value' as actual data and returns it.
 func (mf *Factory) NewExecute(srcMessage Msg, content content.IContent, pContent content.IContent) Msg {
-	return Msg{
+	m := Msg{
 		id:             atomic.AddUint64(&mf.HWM, 1),
 		pipelineId:     mf.pipelineId,
 		stageId:        mf.stageId,
@@ -44,10 +45,17 @@ func (mf *Factory) NewExecute(srcMessage Msg, content content.IContent, pContent
 		srcProcessorId: srcMessage.processorId,
 		srcMessageId:   srcMessage.id,
 		msgType:        EXECUTE,
-		msgContent:     content.Copy(),
 		trace:          newTrace(srcMessage),
-		prevContent:    pContent,
+		eof:            srcMessage.eof,
 	}
+	if content != nil {
+		m.msgContent = content.Copy()
+	}
+	if pContent != nil {
+		m.prevContent = pContent.Copy()
+	}
+
+	return m
 }
 
 // NewError creates a new message with the 'value' as actual data and returns it.
