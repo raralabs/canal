@@ -27,18 +27,19 @@ func NewOperator(
 	}
 }
 
-//func (af *Operator) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {//older version
-//new
 func (af *Operator) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	contents, pContents, err := af.aggFunc(m.Msg, af.state)
+	if err != nil {
+		log.Printf("[ERROR] %v", err)
+		return false
+	}
 
 	if af.after == nil {
-		if err != nil {
-			log.Printf("[ERROR] %v", err)
-			return false
-		}
-
-		for i := range contents {
+		if m.Msg.Eof() {
+			proc.Result(m.Msg, nil, nil)
+			proc.Done()
+		} else if len(contents) > 0 {
+			i := len(contents) - 1
 			if !(contents[i] == nil && pContents[i] == nil) {
 				proc.Result(m.Msg, contents[i], pContents[i])
 			}
