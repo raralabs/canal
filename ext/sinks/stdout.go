@@ -14,7 +14,7 @@ type StdoutSink struct {
 
 func NewStdoutSink(header ...string) pipeline.Executor {
 	return &StdoutSink{
-		name: "StdOut",
+		name:   "StdOut",
 		header: header,
 	}
 }
@@ -23,24 +23,24 @@ func (s *StdoutSink) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
 
-func (s *StdoutSink) Execute(m pipeline.MsgPod, _ pipeline.IProcessorForExecutor) bool {
+func (s *StdoutSink) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
+
+	if m.Msg.Eof() {
+		proc.Done()
+		return false
+	}
+
 	var trace string
-	//if m.Trace() != nil {
-	//	trace = m.Trace().String()
-	//}
 	if m.Msg.Trace() != nil {
 		trace = m.Msg.Trace().String()
 	}
-	//contents := m.Content()//oldone
 	contents := m.Msg.Content()
 
 	fmt.Print("[StdoutSink] ")
 	if s.header == nil || len(s.header) == 0 {
-		//fmt.Println(fmt.Sprintf("%s %s", m.String(), trace))
-		fmt.Println(fmt.Sprintf("%s %s", m.Msg.String(), trace))//new implementation
+		fmt.Println(fmt.Sprintf("%s %s", m.Msg.String(), trace))
 
 	} else {
-		//fmt.Printf("Msg[Id:%d, Stg:%d, Prc:%d; Contents:{", m.Id(), m.StageId(), m.ProcessorId())//older implementations
 		fmt.Printf("Msg[Id:%d, Stg:%d, Prc:%d; Contents:{", m.Msg.Id(), m.Msg.StageId(), m.Msg.ProcessorId())
 		for _, k := range s.header {
 			if v, ok := contents.Get(k); ok {

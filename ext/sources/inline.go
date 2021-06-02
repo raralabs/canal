@@ -1,25 +1,25 @@
 package sources
 
 import (
-
-	//"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message"
 	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
 )
 
 type InlineRange struct {
 	name   string
-	curVal uint64
-	maxVal uint64
+	curVal int64
+	maxVal int64
 }
 
-func NewInlineRange(maxVal uint64) pipeline.Executor {
+func NewInlineRange(maxVal int64) pipeline.Executor {
 	return &InlineRange{name: "Inline", curVal: 0, maxVal: maxVal}
 }
 
-//func (s *InlineRange) Execute(m message.Msg, proc pipeline.IProcessorForExecutor) bool {
 func (s *InlineRange) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 	if s.curVal >= s.maxVal {
+		msg := message.NewEof(m.Msg.PipelineId(), m.Msg.StageId(), m.Msg.ProcessorId())
+		proc.Result(msg, nil, nil)
 		proc.Done()
 		return true
 	}

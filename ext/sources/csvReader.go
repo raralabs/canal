@@ -2,13 +2,13 @@ package sources
 
 import (
 	"encoding/csv"
-	"github.com/raralabs/canal/core/message/content"
-	"github.com/raralabs/canal/utils/extract"
 	"io"
 	"log"
 
 	"github.com/raralabs/canal/core/message"
+	"github.com/raralabs/canal/core/message/content"
 	"github.com/raralabs/canal/core/pipeline"
+	"github.com/raralabs/canal/utils/extract"
 )
 
 type CsvReader struct {
@@ -72,6 +72,7 @@ func (cr *CsvReader) done(m message.Msg, proc pipeline.IProcessorForExecutor) {
 	// Send eof if done
 	contents := content.New()
 	contents.Add("eof", content.NewFieldValue(true, content.BOOL))
+	m.SetEof(true)
 	proc.Result(m, contents, nil)
 	proc.Done()
 }

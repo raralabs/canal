@@ -28,15 +28,21 @@ func NewFileWriter(path, key string) pipeline.Executor {
 func (fw *FileWriter) ExecutorType() pipeline.ExecutorType {
 	return pipeline.SINK
 }
-// for older implementation use m message.Msg instead of m pipeline.MsgPod
+
 func (fw *FileWriter) Execute(m pipeline.MsgPod, proc pipeline.IProcessorForExecutor) bool {
 
-	//content := m.Content()
-	//new
+	if m.Msg.Eof() {
+		proc.Done()
+		return false
+	}
+
 	content := m.Msg.Content()
 	if val, ok := content.Get(fw.key); ok {
 		str := fmt.Sprintf("%v\n", val.Val)
-		fw.writer.WriteString(str)
+		_, err := fw.writer.WriteString(str)
+		if err != nil {
+			log.Println("[ERROR]", err)
+		}
 	}
 
 	return false
