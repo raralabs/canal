@@ -10,8 +10,8 @@ type FreqCounter struct {
 
 func NewFreqCounter() *FreqCounter {
 	return &FreqCounter{
-		valMu:  &sync.Mutex{},
-		values: make(map[interface{}]uint64),
+		valMu:   &sync.Mutex{},
+		values:  make(map[interface{}]uint64),
 		totalFq: uint64(0),
 	}
 }
@@ -66,7 +66,9 @@ func (fc *FreqCounter) TotalFreq() uint64 {
 }
 
 func (fc *FreqCounter) Reset() {
-	for k := range fc.values {
-		delete(fc.values, k)
-	}
+	fc.valMu.Lock()
+	defer fc.valMu.Unlock()
+
+	fc.values = make(map[interface{}]uint64)
+	fc.totalFq = 0
 }

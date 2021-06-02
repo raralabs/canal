@@ -36,6 +36,10 @@ func newTrace(fromMsg Msg) trace {
 	return t
 }
 
+func (t *trace) Enabled() bool {
+	return t.enabled
+}
+
 func (t *trace) String() string {
 	if !t.enabled {
 		return ""
