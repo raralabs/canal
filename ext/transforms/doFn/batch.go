@@ -7,19 +7,32 @@ import (
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/core/transforms/do"
 	"github.com/raralabs/canal/utils/extract"
+	"log"
 )
 
-func BatchAgg(done func(m message.Msg) bool) pipeline.Executor {
+func BatchAgg(done, reset func(m message.Msg) bool) pipeline.Executor {
 
 	var batch *agg.Aggregator
 	first := true
 
 	after := func(m message.Msg, proc pipeline.IProcessorForExecutor, _, _ []content.IContent) {
+		if reset != nil {
+			if reset(m) {
+				entries := batch.Entries()
+				for _, e := range entries {
+					proc.Result(m, e, nil)
+				}
+				batch.Reset()
+			}
+		}
 		if done(m) {
 			entries := batch.Entries()
+			eof := m.Eof()
+			m.SetEof(false)
 			for _, e := range entries {
 				proc.Result(m, e, nil)
 			}
+			m.SetEof(eof)
 
 			proc.Result(m, m.Content(), nil)
 			proc.Done()
@@ -38,10 +51,10 @@ func BatchAgg(done func(m message.Msg) bool) pipeline.Executor {
 			}
 		}
 
-		if !first {
-			batch.AggFunc(m, &struct{}{})
-			after(m, proc, nil, nil)
+		if _, _, err := batch.AggFunc(m, &struct{}{}); err != nil {
+			log.Println("[ERROR]", err)
 		}
+		after(m, proc, nil, nil)
 
 		return false
 	})
