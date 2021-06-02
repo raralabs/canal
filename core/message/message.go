@@ -57,6 +57,11 @@ func (m *Msg) PrevContent() content.IContent {
 	return m.prevContent
 }
 
+// SetContent sets content given as the new content of the message.
+func (m *Msg) SetContent(content content.IContent) {
+	m.msgContent = content
+}
+
 // SetPrevContent sets content of time (t) as previous content for (t+1) message.
 func (m *Msg) SetPrevContent(content content.IContent) {
 	m.prevContent = content
