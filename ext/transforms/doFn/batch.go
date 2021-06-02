@@ -7,7 +7,6 @@ import (
 	"github.com/raralabs/canal/core/transforms/agg"
 	"github.com/raralabs/canal/core/transforms/do"
 	"github.com/raralabs/canal/utils/extract"
-	"log"
 )
 
 func BatchAgg(done, reset func(m message.Msg) bool) pipeline.Executor {
@@ -51,10 +50,10 @@ func BatchAgg(done, reset func(m message.Msg) bool) pipeline.Executor {
 			}
 		}
 
-		if _, _, err := batch.AggFunc(m, &struct{}{}); err != nil {
-			log.Println("[ERROR]", err)
+		if !first {
+			_, _, _ = batch.AggFunc(m, &struct{}{})
+			after(m, proc, nil, nil)
 		}
-		after(m, proc, nil, nil)
 
 		return false
 	})
