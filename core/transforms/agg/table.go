@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/raralabs/canal/core/message/content"
+	streamath "github.com/raralabs/canal/utils/stream-math"
 	"log"
 	"strings"
-	stream_math "github.com/raralabs/canal/utils/stream-math"
 )
 
 func stringRep(strs ...interface{}) string {
@@ -44,12 +44,12 @@ func extractValues(m content.IContent, header []string) ([]content.MsgFieldValue
 }
 
 type Table struct {
-	groupBy     []string              // The groups in the table
-	aggFns      map[string][]IAggFunc // The aggregators for each group
-	aggFnTmplts []IAggFuncTemplate
-	table       map[string][]content.MsgFieldValue
-	mesFq       *stream_math.FreqCounter
-	mesList     *list.List
+	groupBy     []string                           // The groups in the table
+	aggFns      map[string][]IAggFunc              // The aggregators for each group
+	aggFnTmplts []IAggFuncTemplate                 // Templates to be used for aggregations
+	table       map[string][]content.MsgFieldValue // table stores the actual value for each field for the groups
+	mesFq       *streamath.FreqCounter             // Counts the frequency of messages with same groups
+	mesList     *list.List                         // Stores the message's group in order by arrival
 }
 
 func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
@@ -71,7 +71,7 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 		aggFns:      aggFns,
 		aggFnTmplts: aggFnTmplts,
 		table:       table,
-		mesFq:       stream_math.NewFreqCounter(),
+		mesFq:       streamath.NewFreqCounter(),
 		mesList:     list.New(),
 	}
 }
@@ -133,8 +133,12 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 				pContentRem = content.New()
 				contentRem = content.New()
 				// Insert group info to the contents
-				t.fillGroupInfo(pContentRem, prevStrRep)
-				t.fillGroupInfo(contentRem, prevStrRep)
+				if err := t.fillGroupInfo(pContentRem, prevStrRep); err != nil {
+					return nil, nil, err
+				}
+				if err := t.fillGroupInfo(contentRem, prevStrRep); err != nil {
+					return nil, nil, err
+				}
 
 				// Collect contents before removal
 				t.collectResults(pContentRem, prevStrRep)
@@ -167,7 +171,9 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 			pContent = content.New()
 			// Insert group info to the contents, and collect
 			// results.
-			t.fillGroupInfo(pContent, strRep)
+			if err := t.fillGroupInfo(pContent, strRep); err != nil {
+				return nil, nil, err
+			}
 			t.collectResults(pContent, strRep)
 
 			for _, aggFn := range t.aggFns[strRep] {
@@ -196,7 +202,9 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 
 	newContent := content.New()
 	// Insert group info and results to the newContent
-	t.fillGroupInfo(newContent, strRep)
+	if err := t.fillGroupInfo(newContent, strRep); err != nil {
+		return nil, nil, err
+	}
 	t.collectResults(newContent, strRep)
 
 	var nCs, pCs []content.IContent
@@ -220,7 +228,11 @@ func (t *Table) Entry(group string) content.IContent {
 	contents := content.New()
 
 	// Insert group info to the content
-	t.fillGroupInfo(contents, group)
+	err := t.fillGroupInfo(contents, group)
+	if err != nil {
+		log.Println("[WARN]", err)
+		return nil
+	}
 
 	// Insert aggregator functions' results to the content
 	t.collectResults(contents, group)
@@ -236,26 +248,34 @@ func (t *Table) Entries() []content.IContent {
 
 	for e := t.mesList.Front(); e != nil; e = e.Next() {
 		k, _ := e.Value.(string)
-		contents = append(contents, t.Entry(k))
+		if entry := t.Entry(k); entry != nil {
+			contents = append(contents, entry)
+		}
 	}
 
 	return contents
 }
 
+// Reset sets all the aggregator functions to their respective
+// zero state
 func (t *Table) Reset() {
-	panic("implement me")
+	t.aggFns = make(map[string][]IAggFunc)
+	t.table = make(map[string][]content.MsgFieldValue)
+	t.mesFq.Reset()
+	t.mesList.Init()
 }
 
 // fillGroupInfo fills the group info for the provided
 // group string.
-func (t *Table) fillGroupInfo(m content.IContent, grpStr string) {
+func (t *Table) fillGroupInfo(m content.IContent, grpStr string) error {
 	values := t.table[grpStr]
 	if len(t.groupBy) != len(values) {
-		log.Panic("Error in filling group info.")
+		return errors.New("error in filling group info")
 	}
 	for i, grp := range t.groupBy {
 		m = m.Add(grp, values[i])
 	}
+	return nil
 }
 
 // collectResults collects the aggregator results for the
