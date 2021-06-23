@@ -81,27 +81,58 @@ func NewTable(aggs []IAggFuncTemplate, groupBy ...string) *Table {
 // One pair is for the update info on removal and the other is
 // the info on addition.
 func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IContent, []content.IContent, error) {
+
+	var pContentRem, contentRem content.IContent
+	replaceRemoved := false
+
 	if contents == nil {
 		if prevContent != nil {
+
 			values, err := extractValues(prevContent, t.groupBy)
 			if err != nil {
 				return nil, nil, err
 			}
 			prevStrRep := getStringRep(values)
 
-			t.mesFq.Remove(prevStrRep)
-			for e := t.mesList.Front(); e != nil; e = e.Next() {
-				k, _ := e.Value.(string)
-				if k == prevStrRep {
-					t.mesList.Remove(e)
-					break
+			// Check if previous contents exists in table
+			if _, ok := t.table[prevStrRep]; ok {
+
+				pContentRem = content.New()
+				contentRem = content.New()
+				// Insert group info to the contents
+				if err := t.fillGroupInfo(pContentRem, prevStrRep); err != nil {
+					return nil, nil, err
+				}
+				if err := t.fillGroupInfo(contentRem, prevStrRep); err != nil {
+					return nil, nil, err
+				}
+
+				// Collect contents before removal
+				t.collectResults(pContentRem, prevStrRep)
+				for _, aggFn := range t.aggFns[prevStrRep] {
+					aggFn.Remove(prevContent)
+				}
+				// Collect contents after removal
+				t.collectResults(contentRem, prevStrRep)
+
+				// Remove the group from table
+				if v := t.mesFq.Remove(prevStrRep); v != nil {
+					for e := t.mesList.Front(); e != nil; e = e.Next() {
+						k, _ := e.Value.(string)
+						if k == prevStrRep {
+							t.mesList.Remove(e)
+							break
+						}
+					}
+					// Replace the removed message from subsequent stages
+					replaceRemoved = true
+
+					delete(t.table, prevStrRep)
+					delete(t.aggFns, prevStrRep)
 				}
 			}
-
-			delete(t.table, prevStrRep)
-			delete(t.aggFns, prevStrRep)
 		}
-		return nil, nil, nil
+		return []content.IContent{contentRem}, []content.IContent{pContentRem}, nil
 	}
 
 	groupVals, err := extractValues(contents, t.groupBy)
@@ -112,9 +143,6 @@ func (t *Table) Insert(contents, prevContent content.IContent) ([]content.IConte
 	strRep := getStringRep(groupVals)
 
 	var pContent content.IContent
-	var pContentRem, contentRem content.IContent
-	replaceRemoved := false
-
 	// Skip the insertion and removal of contents, if current contents and
 	// the previous contents is identical.
 	if prevContent == nil || !cmp.Equal(prevContent.Values(), contents.Values()) {
