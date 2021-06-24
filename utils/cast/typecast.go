@@ -18,6 +18,10 @@ func TryBool(v interface{}) (bool, bool) {
 			return b, true
 		}
 	}
+	// Try a final time by string-casting first
+	if b, err := strconv.ParseBool(fmt.Sprintf("%v", v)); err == nil {
+		return b, true
+	}
 
 	return false, false
 }
@@ -47,6 +51,10 @@ func TryInt(v interface{}) (int64, bool) {
 		if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 			return i, true
 		}
+	}
+	// Try a final time by string-casting first
+	if i, err := strconv.ParseInt(fmt.Sprintf("%v", v), 10, 64); err == nil {
+		return i, true
 	}
 
 	return 0, false
@@ -83,6 +91,10 @@ func TryFloat(v interface{}) (float64, bool) {
 		if f, err := strconv.ParseFloat(val, 64); err == nil {
 			return f, true
 		}
+	}
+	// Try a final time by string-casting first
+	if f, err := strconv.ParseFloat(fmt.Sprintf("%v", v), 10); err == nil {
+		return f, true
 	}
 
 	return 0.0, false
