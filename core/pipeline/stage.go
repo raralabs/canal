@@ -64,7 +64,6 @@ func (stg *stage) ReceiveFrom(route MsgRouteParam, processors ...IProcessor) *st
 		processor.addSendTo(stg, route)
 	}
 
-
 	if _, ok := stg.routes[route]; !ok {
 		stg.routes[route] = struct{}{}
 	}
@@ -166,19 +165,22 @@ sourceLoop:
 // loop starts the execution of the stg. The 'doneCallback' function is called
 // after the stg has finished execution. The stg finishes it's execution if all
 // the processors associated with the stg have emitted Done Message.
-func (stg *stage) loop(ctx context.Context, onComplete func()) {
+func (stg *stage) loop(ctx context.Context, onComplete func()) chan error {
+
+	var err chan error
 
 	if stg.isRunning() || stg.isClosed() {
-		return
+		return nil
 	}
 	stg.runLock.Store(true)
+
 	if stg.executorType == SOURCE {
 		// If its a source Stage, run srcLoop. Context sent only to source, it will cascade.
 
 		stg.srcLoop(ctx, stg.processorPool)
-	}else {
+	} else {
 		// Else runs receivePool.loop to receive and execute new messages
-		stg.receivePool.loop(stg.processorPool)
+		err = stg.receivePool.loop(stg.processorPool)
 	}
 
 	// Finally call the onComplete callback
@@ -186,6 +188,8 @@ func (stg *stage) loop(ctx context.Context, onComplete func()) {
 		onComplete()
 	}
 	//println("Closed stg ", stg.name)
+
+	return err
 }
 
 func (stg *stage) error(code uint8, text string) {
@@ -214,7 +218,7 @@ func newStageFactory(pipeline *Pipeline) stageFactory {
 	return stageFactory{pipeline: pipeline, hwm: 0}
 }
 
-func (sf *stageFactory)new(name string, executorType ExecutorType) *stage {
+func (sf *stageFactory) new(name string, executorType ExecutorType) *stage {
 	s := &stage{
 		id:           atomic.AddUint32(&sf.hwm, 1),
 		name:         name,

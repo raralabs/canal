@@ -1,12 +1,13 @@
 package pipeline
 
 import (
+	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
 	"github.com/raralabs/canal/core/message"
 )
-
 
 // An IProcessorForReceiver is a lite version of IProcessor that is designed for the IReceivePool. IProcessor can also
 // be passed, wherever IProcessorForReceiver can be passed, to achieve the same result.
@@ -28,7 +29,7 @@ type IReceivePool interface {
 
 	// loop starts the collection of messages from various processors that have been registered to the receivePool and
 	//streams the messages to the processor pool.
-	loop(pool IProcessorPool)
+	loop(pool IProcessorPool) chan error
 
 	// isRunning checks if a receive pool is running.
 	isRunning() bool
@@ -93,28 +94,43 @@ func (rp *receivePool) lock() {
 
 // loop starts the collection of messages from various processors that have
 // been registered to the receivePool and streams the messages to Receiver.
-func (rp *receivePool) loop(pool IProcessorPool) {
+func (rp *receivePool) loop(pool IProcessorPool) chan error {
+
+	err := make(chan error)
+	wg := sync.WaitGroup{}
+
 	if rp.isRunning() {
-		return
+		return nil
 	}
 	rp.runLock.Store(true)
 	if len(rp.receiveFrom) > 0 {
-		wg := sync.WaitGroup{}
 		wg.Add(len(rp.receiveFrom))
 		for _, proc := range rp.receiveFrom {
 			rchan := proc.channelForStageId(rp.stage)
 
 			go func() {
+				defer func() {
+					if v := recover(); v != nil {
+						err <- errors.New(fmt.Sprintf("%v", v))
+					}
+				}()
+
 				for pod := range rchan {
 					pool.execute(pod)
 				}
 				wg.Done()
 			}()
 		}
-		wg.Wait()
 	}
-	//println("Receiveloop exited, closing ", rp.stage.name)
-	pool.done()
+
+	go func() {
+		wg.Wait()
+		//println("Receiveloop exited, closing ", rp.stage.name)
+		pool.done()
+		close(err)
+	}()
+
+	return err
 }
 
 func (rp *receivePool) isRunning() bool {

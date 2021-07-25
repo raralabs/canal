@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
 
@@ -83,9 +84,9 @@ func (pl *Pipeline) Validate() {
 }
 
 // Start initializes and starts all the stages in the Pipeline as go routines.
-func (pl *Pipeline) Start(ctx context.Context, done func()) {
+func (pl *Pipeline) Start(ctx context.Context, done func()) chan error {
 	if pl.runLock.Load().(bool) {
-		return
+		return nil
 	}
 
 	// Once started, lets runLock the Pipeline
@@ -97,15 +98,30 @@ func (pl *Pipeline) Start(ctx context.Context, done func()) {
 		}
 	}()
 
+	err := make(chan error)
+
 	// Every stg runs its own goroutine, we should wait for all to finish
 	pl.wg.Add(len(pl.stages))
 	for _, stage := range pl.stages {
-		go stage.loop(ctx, pl.wg.Done)
-	}
-	pl.wg.Wait()
 
-	if done != nil {
-		done()
+		st := stage
+		go func() {
+			for e := range st.loop(ctx, pl.wg.Done) {
+				logrus.Println(err)
+				err <- e
+			}
+		}()
 	}
-	close(pl.errorReceiver)
+
+	go func() {
+		pl.wg.Wait()
+
+		if done != nil {
+			done()
+		}
+		close(pl.errorReceiver)
+		close(err)
+	}()
+
+	return err
 }
